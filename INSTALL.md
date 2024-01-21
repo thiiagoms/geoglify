@@ -30,16 +30,6 @@ Make sure you have the following installed on your system:
 
 Once Geoglify is running, you can start using it by accessing the specified endpoints or integrating it into your applications.
 
-## Additional Configuration
-
-- **Customization:** Explore and modify the configuration files in the `config/` directory to suit your needs.
-
-- **Logging:** Adjust logging settings in the `docker-compose.yml` file if necessary.
-
-## Troubleshooting
-
-If you encounter issues during the installation, refer to the Troubleshooting section in the Geoglify documentation or check the logs for more information.
-
 ## Cleanup
 
 To stop Geoglify and remove the containers, run:
