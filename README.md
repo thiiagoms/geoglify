@@ -1,6 +1,6 @@
 # Geoglify
 
-Welcome to Geoglify, an innovative open-source project delving into the expansive realm of ships, maritime data, planning, and related statistics. This repository houses a variety of tools and resources for exploring and deeply understanding the maritime universe.
+Welcome to Geoglify, an innovative open-source project delving into the expansive realm of ships, maritime data, planning, and related statistics. This repository houses a variety of geospatial tools and resources for exploring and deeply understanding the maritime universe in GIS space.
 
 ![image](https://github.com/geoglify/geoglify/assets/4217810/a884ecb4-fb84-4cc4-99d3-adcd95b78dee)
 
