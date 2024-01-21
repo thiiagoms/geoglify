@@ -2,6 +2,8 @@
 
 Welcome to Geoglify, an innovative open-source project delving into the expansive realm of ships, maritime data, planning, and related statistics. This repository houses a variety of tools and resources for exploring and deeply understanding the maritime universe.
 
+![image](https://github.com/geoglify/geoglify/assets/4217810/a884ecb4-fb84-4cc4-99d3-adcd95b78dee)
+
 ## Objective
 
 The primary goal of Geoglify is to provide a centralized platform for the analysis and visualization of data related to the sea. We aim to offer valuable insights into the shipping industry, maritime planning, and associated statistics, promoting a comprehensive understanding of the marine environment.
@@ -31,7 +33,7 @@ We welcome contributions from the community! If you're interested in contributin
 
 ## Environment Setup
 
-To set up the development environment, follow the instructions in the `INSTALL.md` file.
+To set up the development environment, follow the instructions in the [`INSTALL.md`](INSTALL.md) file.
 
 ## Technology Stack
 
