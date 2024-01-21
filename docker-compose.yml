@@ -1,0 +1,61 @@
+version: '3.1'
+
+services:
+  app:
+    container_name: app
+    build: ./app
+    ports:
+      - "3000:3000"
+    tty: true
+    environment:
+      - HOST=0.0.0.0
+      - port=3000
+      - CHOKIDAR_USEPOLLING=true
+    command: sh -c "pnpm dev"
+    depends_on:
+      - mongodb
+      - realtime
+
+  mongodb:
+    container_name: mongodb
+    build:
+      context: ./mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: |
+        test $$(mongosh --quiet -u root -p root --eval "try { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb' }] }).ok } catch (_) { rs.status().ok }") -eq 1
+      interval: 10s
+      start_period: 30s
+
+  ais:
+    build: ./ais
+    restart: always
+    container_name: ais
+    working_dir: /opt/ais
+    environment:
+      - NODE_ENV=production
+    command: "node main.js"
+    depends_on:
+      - mongodb
+
+  realtime:
+    build: ./realtime
+    restart: always
+    container_name: realtime
+    working_dir: /opt/realtime
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+    command: "node main.js"
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:
