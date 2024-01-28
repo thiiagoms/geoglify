@@ -16,36 +16,19 @@ Make sure you have the following installed on your system:
    cd geoglify
 ```
 
-2. Create a `.env` file for environment variables:
-
-```bash
-   cp .env.example .env
-```
-   Customize the `.env` file as needed.
-
-3. Start Geoglify using Docker Compose:
+2. Start Geoglify using Docker Compose:
 
 ```bash
    docker-compose up -d
 ```
 
-4. Verify that Geoglify is running:
+3. Verify that Geoglify is running:
 
-   Open your browser and navigate to [http://localhost:PORT](http://localhost:PORT) (replace `PORT` with the specified port in your `.env` file).
+   Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
 
 ## Usage
 
 Once Geoglify is running, you can start using it by accessing the specified endpoints or integrating it into your applications.
-
-## Additional Configuration
-
-- **Customization:** Explore and modify the configuration files in the `config/` directory to suit your needs.
-
-- **Logging:** Adjust logging settings in the `docker-compose.yml` file if necessary.
-
-## Troubleshooting
-
-If you encounter issues during the installation, refer to the Troubleshooting section in the Geoglify documentation or check the logs for more information.
 
 ## Cleanup
 
