@@ -8,7 +8,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       REALTIME_URL: process.env.REALTIME_URL,
-      MAPBOX_TOKEN: process.env.MAPBOX_TOKEN
+      API_URL: process.env.API_URL,
+      MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
+      OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY
     },
   },
   modules: [

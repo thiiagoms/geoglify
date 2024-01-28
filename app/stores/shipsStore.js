@@ -15,10 +15,12 @@ export const shipsStore = defineStore("shipsStore", {
   actions: {
     // Action to fetch ships from MongoDB
     async fetchShips() {
+
+      const timestamp = new Date().toLocaleString("en-GB", {
+        timeZone: "UTC",
+      });
+
       try {
-        const timestamp = new Date().toLocaleString("en-GB", {
-          timeZone: "UTC",
-        });
 
         console.info(`[${timestamp}] Fetching ships list from MongoDB...`);
 

@@ -13,8 +13,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
     command: sh -c "pnpm dev"
     depends_on:
-      - mongodb
       - realtime
+      - api
 
   mongodb:
     container_name: mongodb
@@ -51,6 +51,19 @@ services:
     working_dir: /opt/realtime
     ports:
       - "8080:8080"
+    environment:
+      - NODE_ENV=production
+    command: "node main.js"
+    depends_on:
+      - mongodb
+
+  api:
+    build: ./api
+    restart: always
+    container_name: api
+    working_dir: /opt/api
+    ports:
+      - "8081:8081"
     environment:
       - NODE_ENV=production
     command: "node main.js"

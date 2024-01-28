@@ -48,27 +48,7 @@ export default {
     const deck = ref(null);
     const mapRef = ref(null);
     const ships = shipsStore();
-    
     const mapDiv = ref(null);
-
-    const resizeHandler = () => {
-      if (mapRef.value) {
-        mapRef.value.resize();
-      }
-    };
-
-    let resizeObserver = null;
-
-    onMounted(() => {
-      resizeObserver = new ResizeObserver(resizeHandler);
-      resizeObserver.observe(mapDiv.value);
-    });
-
-    onBeforeUnmount(() => {
-      if (resizeObserver && mapDiv.value) {
-        resizeObserver.unobserve(mapDiv.value);
-      }
-    });
 
     return { currentViewState, deck, mapRef, ships, mapDiv};
   },

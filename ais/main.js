@@ -79,7 +79,8 @@ async function run() {
         logInfo('WebSocket Connected');
         let subscriptionMessage = {
             Apikey: process.env.AISSTREAM_TOKEN,
-            BoundingBoxes: [[[27.955591, -40.012207], [44.574817, 1.801758]]],
+            BoundingBoxes: [[[180, -90], [-180, 90]]], // World bounding box
+            //BoundingBoxes: [[[27.955591, -40.012207], [44.574817, 1.801758]]],
         };
         socket.send(JSON.stringify(subscriptionMessage));
     };
