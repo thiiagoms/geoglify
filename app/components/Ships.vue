@@ -1,57 +1,63 @@
 <template>
+  <v-toolbar
+    dark
+    class="fixed-bar"
+    v-if="shipsStoreInstance.isNavigationDrawerOpen"
+  >
+    <v-toolbar-title class="font-weight-black">
+      SHIPS ({{ filteredShips.length }} /
+      {{ shipsStoreInstance.shipList.size }})
+    </v-toolbar-title>
+    <v-btn icon @click="shipsStoreInstance.setNavigationDrawerState(false)">
+      <v-icon>mdi-close</v-icon>
+    </v-btn>
+  </v-toolbar>
+
   <div>
+    <!-- Search input field -->
     <v-text-field
-      v-model="searchText"
+      v-model="shipsStoreInstance.searchText"
       outlined
       clearable
       placeholder="Search ships by name or MMSI"
       hide-details
     ></v-text-field>
 
-    <v-virtual-scroll :items="filteredShipsList" item-height="49" style="height: calc(100vh - 195px)">
+    <!-- Virtual scroll for ships list -->
+    <v-virtual-scroll
+      :items="filteredShips"
+      item-height="49"
+      style="height: calc(100vh - 195px)"
+    >
       <template v-slot:default="{ item }">
-        <v-list-item class="item">
+        <!-- List item for each ship -->
+        <v-list-item class="ship-item" @click="selectShip(item)">
+          <!-- Ship name -->
           <v-list-item-title class="font-weight-bold">{{
-            item.ship_name || "N/A"
+            item.name || "N/A"
           }}</v-list-item-title>
 
+          <!-- Ship details: MMSI, Cargo, Updated At -->
           <v-list-item-subtitle class="text-caption">
             <p><b>MMSI:</b> {{ item.mmsi || "N/A" }}</p>
-            <p><b>CARGO:</b> {{ item.cargo_name || "N/A" }}</p>
-            <p><b>ETA:</b>  {{ item.eta ? new Date(item.eta).toLocaleString("en-GB", { timeZone: "UTC" }) : "N/A" }}</p>
+            <p><b>CARGO:</b> {{ item.cargo || "N/A" }}</p>
+            <p><b>UPDATED AT:</b> {{ formatDate(item.time_utc) || "N/A" }}</p>
           </v-list-item-subtitle>
 
+          <!-- Flag image in the prepend slot -->
           <template v-slot:prepend>
             <v-avatar size="30">
               <v-img
-                v-if="item?.country?.code"
-                :src="`https://hatscripts.github.io/circle-flags/flags/${item.country.code.toLowerCase()}.svg`"
+                v-if="item?.country_code"
+                :src="`https://hatscripts.github.io/circle-flags/flags/${item.country_code.toLowerCase()}.svg`"
                 @error="handleImageError"
               ></v-img>
-
               <v-img
                 v-else
                 src="https://hatscripts.github.io/circle-flags/flags/xx.svg"
               ></v-img>
             </v-avatar>
           </template>
-
-          <template v-slot:append>
-            <v-btn
-              color="grey-lighten-1"
-              icon="mdi-target-variant"
-              variant="text"
-              size="small"
-            ></v-btn>
-            <v-btn
-              color="grey-lighten-1"
-              icon="mdi-information-outline"
-              variant="text"
-              size="small"
-              @click="ships.selected = item"
-            ></v-btn>
-          </template>
-
         </v-list-item>
       </template>
     </v-virtual-scroll>
@@ -59,105 +65,44 @@
 </template>
 
 <script>
-import { io } from "socket.io-client";
 import { shipsStore } from "~/stores/shipsStore";
 
 export default {
-  data() {
-    return {
-      connected: false,
-      socket: null,
-      shipSelected: null,
-      messageBuffer: [],
-      bufferInterval: null,
-      searchText: "",
-    };
-  },
-
   setup() {
-    const ships = shipsStore();
-    return { ships };
-  },
-
-  beforeDestroy() {
-    clearInterval(this.bufferInterval);
-  },
-
-  mounted() {
-    this.ships.fetchShips().then(() => {
-      this.socket = io(this.$config.public.REALTIME_URL);
-      this.socket.on("connect", this.onSocketConnect);
-      this.socket.on("disconnect", this.onSocketDisconnect);
-      this.bufferInterval = setInterval(this.processMessageBatch, 5000);
-    });
+    const shipsStoreInstance = shipsStore();
+    const filteredShips = shipsStoreInstance.filteredShipsList;
+    return { shipsStoreInstance, filteredShips };
   },
 
   computed: {
-    shipsList() {
-      return [...this.ships?.list?.values()];
-    },
-    filteredShipsList() {
-      if (!this.searchText) {
-        return this.shipsList.slice(0, 100);
-      }
-
-      return this.shipsList
-        .filter((item) => {
-          return (
-            (item.ship_name &&
-              item.ship_name
-                .toLowerCase()
-                .includes(this.searchText.toLowerCase())) ||
-            (item.mmsi &&
-              item.mmsi
-                .toString()
-                .toLowerCase()
-                .includes(this.searchText.toLowerCase()))
-          );
-        })
-        .slice(0, 100);
+    filteredShips() {
+      return [...this.shipsStoreInstance.filteredList.values()];
     },
   },
 
   methods: {
+    // Handle image loading errors
     handleImageError(e) {
-      // Handle image loading errors
       e.target.src = "https://hatscripts.github.io/circle-flags/flags/xx.svg";
     },
-    onSocketConnect() {
-      // Log when the socket is connected and set up message event handler
-      this.log("Socket connected");
-      this.socket.on("message", this.onSocketMessage);
+
+    // Helper method to format date
+    formatDate(date) {
+      return date
+        ? new Date(date).toLocaleString("en-GB", { timeZone: "UTC" })
+        : "";
     },
 
-    onSocketDisconnect() {
-      // Log when the socket is disconnected and remove message event handler
-      this.log("Socket disconnected");
-      this.socket.off("message");
-    },
-
-    onSocketMessage(...args) {
-      // Add received message to the buffer for later processing
-      this.messageBuffer.push(args[0]);
-    },
-
-    processMessageBatch() {
-      // Process each message in the buffer and update ships data
-      this.messageBuffer.forEach((msg) => {
-        this.ships.createOrReplace(msg);
-      });
-      this.messageBuffer = [];
-    },
-
-    log(message) {
-      // Log a formatted message with timestamp
-      console.info(`[${new Date()}] ${message}`);
+    // Select a ship and view details
+    selectShip(ship) {
+      this.shipsStoreInstance.setSelectedShip(ship);
     },
   },
 };
 </script>
+
 <style scoped>
-.item {
+.ship-item {
   border-bottom: 1px solid #e0e0e0;
 }
 </style>

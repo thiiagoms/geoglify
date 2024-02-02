@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "5f3e2e3e3f5e4b001f3e3f51",
+    "code": "PORTS",
+    "name": "Ports",
+    "description": "List of port locations. This is a comprehensive collection providing detailed information on various port facilities around the designated areas.",
+    "style": {}
+  },
+  {
+    "_id": "5f3e2e3e3f5e4b001f3e3f52",
+    "code": "LIGHTHOUSES",
+    "name": "Lighthouses",
+    "description": "List of lighthouse locations. This dataset includes an extensive list of lighthouses with in-depth details about their specifications and geographical coordinates.",
+    "style": {}
+  },
+  {
+    "_id": "5f3e2e3e3f5e4b001f3e3f53",
+    "code": "EEZS",
+    "name": "Exclusive Economic Zones",
+    "description": "List of Exclusive Economic Zones with corresponding details. Explore this dataset to access information about Exclusive Economic Zones, including economic activities and jurisdictional boundaries.",
+    "style": {
+      "getFillColor": [255, 0, 0, 125], 
+      "getLineColor": [0, 0, 255, 125],
+      "getLineWidth": 10
+    }
+  },
+  {
+    "_id": "5f3e2e3e3f5e4b001f3e3f54",
+    "code": "ECZS",
+    "name": "Exclusive Coastal Zones",
+    "description": "List of Exclusive Coastal Zones with corresponding details. Delve into this dataset to discover Exclusive Coastal Zones, featuring comprehensive information on environmental regulations and coastal management.",
+    "style": {
+      "getFillColor": [255, 255, 0, 125], 
+      "getLineColor": [0, 255, 255, 125],
+      "getLineWidth": 10
+    }
+  }
+]

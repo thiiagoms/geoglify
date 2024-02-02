@@ -6,78 +6,104 @@ import { defineStore } from "pinia";
 export const shipsStore = defineStore("shipsStore", {
   // Define the initial state of the store
   state: () => ({
-    list: new Map(),
-    selected: null,
-    loading: false,
+    shipList: new Map(),
+    selectedShip: null,
+    isLoading: false,
+    searchText: "",
+    isNavigationDrawerOpen: false,
   }),
+
+  getters: {
+    filteredList(state) {
+      const list = Array.from(state.shipList.values()).filter((ship) => {
+        const { name, mmsi, cargo } = ship;
+        const searchTextLower = state.searchText
+          ? state.searchText.toLowerCase()
+          : "";
+
+        return (
+          (name && name.toLowerCase().includes(searchTextLower)) ||
+          (mmsi && mmsi.toString().includes(searchTextLower)) ||
+          (cargo && cargo.toString().includes(searchTextLower))
+        );
+      });
+
+      // return list with the filtered ships
+      return new Map(list.map((ship) => [ship._id, ship]));
+    },
+  },
 
   // Define the actions for interacting with the state
   actions: {
     // Action to fetch ships from MongoDB
     async fetchShips() {
-
-      const timestamp = new Date().toLocaleString("en-GB", {
-        timeZone: "UTC",
-      });
-
+      this.isLoading = true;
       try {
-
-        console.info(`[${timestamp}] Fetching ships list from MongoDB...`);
-
-        this.loading = true;
-
-        const { data } = await useFetch("http://localhost:8080/ships");
+        const { data } = await useFetch("http://localhost:8081/ais_ships");
 
         let ships = toRaw(data.value);
 
         ships.forEach((ship) => {
-          this.createOrReplace(ship);
+          this.createOrReplaceShip(ship);
         });
 
-        this.loading = false;
+        this.isLoading = false;
 
-        console.info(`[${timestamp}] Ships list successfully retrieved`);
+        console.info(`Ships list successfully retrieved`);
       } catch (error) {
-        console.error(`[${timestamp}] Error fetching ships list`, error);
+        console.error(`Error fetching ships list`, error);
 
-        this.loading = false;
+        this.isLoading = false;
       }
     },
 
     // Action to create or replace a ship in the list
-    createOrReplace(ship) {
+    createOrReplaceShip(ship) {
       // Process ship data before storing it
-      this.list.set(ship._id, this.processData(ship));
+      this.shipList.set(ship._id, this.processShipData(ship));
     },
 
     // Action to process ship data
-    processData(ship) {
+    processShipData(ship) {
+
       // Extract relevant properties from the ship object
-      const { hdg, cargo_type } = ship;
+      const { hdg, cargo_code } = ship;
 
       // Check if heading is valid
-      const isHeadingValid = hdg && hdg !== 511;
+      const isHeadingValid = !!(hdg && hdg !== 511);
 
       // Determine ship icon, size, and priority based on heading validity
       ship.icon = isHeadingValid ? "models/boat.png" : "models/circle.png";
-      ship.size = 22;
+      ship.size = isHeadingValid ? 22 : 10;
       ship.priority = isHeadingValid ? 1 : -1;
+      ship.width = isHeadingValid ? 41 : 20;
+      ship.height = isHeadingValid ? 96 : 20;
 
       // Get ship type from configs based on cargo type
-      const type = configs.getShipType(cargo_type);
+      const shipType = configs.getShipType(cargo_code);
+      if (!ship.cargo) ship.cargo = shipType.name;
 
       // Set ship color, type, and update priority
-      ship.color = configs.hexToRgb(type.color);
-      ship.type = type;
-      ship.priority += type.priority ?? 0;
+      ship.color = configs.hexToRgb(shipType.color);
+      ship.priority += shipType.priority ?? 0;
 
       // Return the processed ship object
       return ship;
     },
 
     // Action to set the selected ship
-    setSelected(ship) {
-      this.selected = ship;
+    setSelectedShip(ship) {
+      this.selectedShip = ship;
     },
+
+    // Action to set navigation drawer state
+    setNavigationDrawerState(state) {
+      this.isNavigationDrawerOpen = state;
+    },
+
+    // Toggle navigation drawer state
+    toggleNavigationDrawerState() {
+      this.isNavigationDrawerOpen = !this.isNavigationDrawerOpen;
+    }
   },
 });
