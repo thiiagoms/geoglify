@@ -33,6 +33,15 @@ services:
       interval: 10s
       start_period: 30s
 
+  mongodb-seed:
+    image: mongo:7.0
+    links:
+      - mongodb
+    volumes:
+      - ./mongodb-seed:/mongodb-seed
+    command:
+      /mongodb-seed/_import.sh
+
   ais:
     build: ./ais
     restart: always

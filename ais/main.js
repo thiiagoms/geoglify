@@ -43,7 +43,7 @@ async function getAllShipsToMap() {
         const documents = await ships.find({}).toArray();
         const db = new Map();
         for (const document of documents) {
-            db.set(document.susi, document);
+            db.set(document.mmsi, document);
         }
         logInfo('Ships list successfully retrieved');
         return db;
@@ -68,7 +68,7 @@ async function connectWithRetry() {
 // Main processing function
 async function run() {
     const database = client.db('geoglify');
-    const aisMessagesCollection = database.collection('ais_messages');
+    const aisMessagesCollection = database.collection('ais');
 
     shipsListDB = await getAllShipsToMap();
 
@@ -79,8 +79,8 @@ async function run() {
         logInfo('WebSocket Connected');
         let subscriptionMessage = {
             Apikey: process.env.AISSTREAM_TOKEN,
-            BoundingBoxes: [[[180, -90], [-180, 90]]], // World bounding box
-            //BoundingBoxes: [[[27.955591, -40.012207], [44.574817, 1.801758]]],
+            //BoundingBoxes: [[[180, -90], [-180, 90]]], // World bounding box
+            BoundingBoxes: [[[27.955591, -40.012207], [44.574817, 1.801758]]],
         };
         socket.send(JSON.stringify(subscriptionMessage));
     };
@@ -96,13 +96,13 @@ async function run() {
             if (aisMessage.MessageType == "PositionReport") {
                 message = {
                     mmsi: mmsi,
-                    ship_name: aisMessage.MetaData.ShipName,
+                    name: aisMessage.MetaData.ShipName,
                     time_utc: new Date(aisMessage.MetaData.time_utc),
                     cog: aisMessage.Message.PositionReport.Cog,
                     sog: aisMessage.Message.PositionReport.Sog,
                     hdg: aisMessage.Message.PositionReport.TrueHeading,
                     location: { type: "Point", coordinates: [aisMessage.MetaData.longitude, aisMessage.MetaData.latitude] },
-                    type: aisMessage.MessageType,
+                    message_type: aisMessage.MessageType,
                     expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
                 }
             } else if (aisMessage.MessageType == "ShipStaticData") {
@@ -110,26 +110,26 @@ async function run() {
                 let eta = etaObj ? new Date(etaObj.Year ?? new Date().getFullYear(), etaObj.Month, etaObj.Day, etaObj.Hour, etaObj.Minute) : null;
                 message = {
                     mmsi: mmsi,
-                    ship_name: aisMessage.MetaData.ShipName,
+                    name: aisMessage.MetaData.ShipName,
                     time_utc: new Date(aisMessage.MetaData.time_utc),
                     dimension: aisMessage.Message.ShipStaticData.Dimension,
                     eta: eta,
                     imo: aisMessage.Message.ShipStaticData.ImoNumber,
-                    cargo_type: aisMessage.Message.ShipStaticData.Type,
-                    calls_sign: aisMessage.Message.ShipStaticData.CallSign,
+                    cargo_code: aisMessage.Message.ShipStaticData.Type,
+                    call_sign: aisMessage.Message.ShipStaticData.CallSign,
                     destination: aisMessage.Message.ShipStaticData.Destination,
-                    maximum_static_draught: aisMessage.Message.ShipStaticData.MaximumStaticDraught,
+                    draught: aisMessage.Message.ShipStaticData.MaximumStaticDraught,
                     location: { type: "Point", coordinates: [aisMessage.MetaData.longitude, aisMessage.MetaData.latitude] },
-                    type: aisMessage.MessageType,
+                    message_type: aisMessage.MessageType,
                     expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
                 }
             } else {
                 message = {
                     mmsi: mmsi,
-                    ship_name: aisMessage.MetaData.ShipName,
+                    name: aisMessage.MetaData.ShipName,
                     time_utc: new Date(aisMessage.MetaData.time_utc),
                     location: { type: "Point", coordinates: [aisMessage.MetaData.longitude, aisMessage.MetaData.latitude] },
-                    type: aisMessage.MessageType,
+                    message_type: aisMessage.MessageType,
                     expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
                 }
             }
@@ -138,14 +138,14 @@ async function run() {
 
             if (foundShip && message) {
                 message = {
-                    ...message,
-                    cargo_name: foundShip.scgtdec,
-                    country: foundShip.sayc ? {
-                        code: foundShip.sayc,
-                        name: foundShip.say
-                    } : null
+                  ...message,
+                  ...Object.fromEntries(
+                    Object.entries(foundShip).filter(
+                      ([key, value]) => !message[key] || message[key] === null
+                    )
+                  ),
                 };
-            }
+              }
 
             messageDB.set(mmsi, message);
 
@@ -187,8 +187,8 @@ async function run() {
         }
     }
 
-    // Set interval to process and save messages every 2 seconds
-    setInterval(processAndSaveMessages, 2000);
+    // Set interval to process and save messages every 1 seconds
+    setInterval(processAndSaveMessages, 1000);
 
     // Create an index for expire_at field if not already created
     if (!isIndexCreated) {

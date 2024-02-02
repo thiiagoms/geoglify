@@ -1,43 +1,69 @@
 <template>
-  <!-- Dialog for displaying ship details -->
-  <v-dialog v-model="opened" max-width="400px" v-if="shipInfo">
+  <v-card class="pa-0" flat v-if="shipDetails">
+    <!-- Toolbar with ship name and flag -->
     <v-toolbar color="white" dark>
       <v-toolbar-title class="font-weight-black text-h6">
-        <v-avatar size="30">
-          <v-img
-            :src="`https://hatscripts.github.io/circle-flags/flags/${(
-              shipInfo?.country?.code || 'xx'
-            ).toLowerCase()}.svg`"
-          ></v-img>
-        </v-avatar>
-        {{ shipInfo?.Name }}
+        <v-list density="compact">
+          <v-list-item class="pa-0 ma-0">
+            <template v-slot:prepend>
+              <!-- Display ship flag -->
+              <v-avatar size="30">
+                <v-img
+                  :src="`https://hatscripts.github.io/circle-flags/flags/${(
+                    shipDetails?.Flag || 'xx'
+                  ).toLowerCase()}.svg`"
+                ></v-img>
+              </v-avatar>
+            </template>
+            <!-- Display ship name and MMSI -->
+            <v-list-item-title class="font-weight-black">
+              {{ shipDetails?.Name }}
+            </v-list-item-title>
+            <v-list-item-subtitle>{{ shipDetails?.MMSI }}</v-list-item-subtitle>
+          </v-list-item>
+        </v-list>
       </v-toolbar-title>
-      <v-btn icon @click="opened = null">
+      <!-- Close button in the toolbar -->
+      <v-btn icon @click="dialogOpened = null">
         <v-icon>mdi-close</v-icon>
       </v-btn>
     </v-toolbar>
-    <v-card class="pa-0">
-      <v-card-text class="results pa-0">
-        <!-- Table for displaying ship information -->
-        <v-table density="compact">
-          <tbody>
-            <!-- Use v-for to loop through ship information -->
-            <tr v-for="(value, label) in shipInfo" :key="label">
-              <td class="font-weight-bold">{{ label }}</td>
-              <td>
-                <!-- Display other ship information -->
-                {{
-                  label === "eta"
-                    ? value ? new Date(value).toLocaleString("en-GB", { timeZone: "UTC" }) : "N/A" 
-                    : value || "N/A"
-                }}
-              </td>
-            </tr>
-          </tbody>
-        </v-table>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+    <!-- Divider between toolbar and ship information -->
+    <v-divider></v-divider>
+    <v-card-text
+      class="pa-0"
+      style="height: calc(100vh - 140px); overflow: auto"
+    >
+      <!-- Display ship icon -->
+      <v-img
+        :src="
+          'https://photos.marinetraffic.com/ais/showphoto.aspx?imo=' +
+          shipDetails.IMO
+        "
+      >
+        <template v-slot:error>
+          <v-img
+            class="mx-auto"
+            src="https://placehold.co/600x400?text=No+Photo"
+          ></v-img> </template
+      ></v-img>
+      <!-- Table for displaying ship information -->
+      <v-table density="compact">
+        <tbody>
+          <!-- Use v-for to loop through ship information -->
+          <tr v-for="(value, label) in shipDetails" :key="label">
+            <!-- Display label in bold -->
+            <td class="font-weight-bold">{{ label }}</td>
+            <!-- Conditionally format and display ship information -->
+            <td v-if="label === 'eta'">{{ formatDate(value) || "N/A" }}</td>
+            <td v-else>
+              {{ value != null ? formatWithUnit(value, label) : "N/A" }}
+            </td>
+          </tr>
+        </tbody>
+      </v-table>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script>
@@ -47,38 +73,43 @@ import { shipsStore } from "~/stores/shipsStore";
 export default {
   setup() {
     // Use shipsStore to get ship data
-    const ships = shipsStore();
-    return { ships };
+    const shipsStoreInstance = shipsStore();
+    return { shipsStoreInstance };
   },
 
   computed: {
-    opened: {
+    // Computed property for dialog state
+    dialogOpened: {
       get() {
-        return !!this.ships?.selected;
+        return !!this.shipsStoreInstance?.selectedShip;
       },
       set(value) {
-        this.ships.selected = value;
+        this.shipsStoreInstance.selectedShip = value;
       },
     },
 
-    ship() {
-      return this.ships?.selected;
-    },
-
-    shipInfo() {
-      return this.ship
+    // Computed property for selected ship details
+    shipDetails() {
+      const selectedShip = this.shipsStoreInstance?.selectedShip;
+      return selectedShip
         ? {
-            MMSI: this.ship.mmsi,
-            IMO: this.ship.imo,
-            "Call Sign": this.ship.calls_sign,
-            Name: this.ship.ship_name,
-            Type: this.ship.cargo_name,
-            Country: this.ship.country,
-            Destination: this.ship.destination,
-            ETA: this.ship.eta ? this.formatDate(this.ship.eta) : "",
-            "Latest Report": this.ship.time_utc
-              ? this.formatDate(this.ship.time_utc)
-              : "",
+            MMSI: selectedShip.mmsi,
+            IMO: selectedShip.imo,
+            Name: selectedShip.name,
+            Cargo: selectedShip.cargo,
+            "Cargo Code": selectedShip.cargo_code,
+            Flag: selectedShip.country_code,
+            Country: selectedShip.country_name,
+            Destination: selectedShip.destination,
+            "Call Sign": selectedShip.call_sign,
+            Length: selectedShip.length,
+            Breadth: selectedShip.breadth,
+            Draught: selectedShip.draught,
+            SOG: selectedShip.sog,
+            HDG: selectedShip.hdg,
+            COG: selectedShip.cog,
+            ETA: selectedShip.eta,
+            "Latest Report": selectedShip.time_utc,
           }
         : null;
     },
@@ -90,6 +121,20 @@ export default {
       return date
         ? new Date(date).toLocaleString("en-GB", { timeZone: "UTC" })
         : "";
+    },
+
+    // Helper method to get SI units based on label and format with the unit
+    formatWithUnit(value, label) {
+      const units = {
+        Length: " m",
+        Breadth: " m",
+        Draught: " m",
+        SOG: " º",
+        HDG: " º",
+        COG: " º",
+      };
+      const unit = units[label] || "";
+      return value + unit;
     },
   },
 };
