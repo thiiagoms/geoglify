@@ -51,7 +51,7 @@ export const layersStore = defineStore("layersStore", {
     async fetchLayers() {
       this.isLoading = true;
       try {
-        const { data } = await useFetch("http://localhost:8081/layers");
+        const { data } = await useFetch(`${this.getRequestBaseURL()}/layers`);
 
         let layers = toRaw(data.value);
 
@@ -94,7 +94,7 @@ export const layersStore = defineStore("layersStore", {
     // Create a new layer
     async createLayer(newLayer) {
       try {
-        const response = await useFetch("http://localhost:8081/layers", {
+        const response = await useFetch(`${this.getRequestBaseURL()}/layers`, {
           method: "POST",
           body: JSON.stringify(newLayer),
           headers: {
@@ -117,7 +117,7 @@ export const layersStore = defineStore("layersStore", {
     async updateLayer(updatedLayer) {
       try {
         const response = await useFetch(
-          `http://localhost:8081/layers/${updatedLayer._id}`,
+          `${this.getRequestBaseURL()}/layers/${updatedLayer._id}`,
           {
             method: "PUT",
             body: JSON.stringify(updatedLayer),
@@ -144,7 +144,7 @@ export const layersStore = defineStore("layersStore", {
     async deleteLayer(layerId) {
       try {
         const response = await useFetch(
-          `http://localhost:8081/layers/${layerId}`,
+          `${this.getRequestBaseURL()}/layers/${layerId}`,
           {
             method: "DELETE",
           }
@@ -168,7 +168,7 @@ export const layersStore = defineStore("layersStore", {
     async fetchFeaturesByLayer(layerId) {
       try {
         const { data } = await useFetch(
-          `http://localhost:8081/layers/${layerId}/features`
+          `${this.getRequestBaseURL()}/layers/${layerId}/features`
         );
 
         let features = toRaw(data.value);
@@ -209,7 +209,7 @@ export const layersStore = defineStore("layersStore", {
     async createFeature(layerId, newFeature) {
       try {
         const response = await useFetch(
-          `http://localhost:8081/layers/${layerId}/features`,
+          `${this.getRequestBaseURL()}/layers/${layerId}/features`,
           {
             method: "POST",
             body: JSON.stringify(newFeature),
@@ -233,7 +233,7 @@ export const layersStore = defineStore("layersStore", {
     async updateFeature(layerId, updatedFeature) {
       try {
         const response = await useFetch(
-          `http://localhost:8081/layers/${layerId}/features/${updatedFeature._id}`,
+          `${this.getRequestBaseURL()}/layers/${layerId}/features/${updatedFeature._id}`,
           {
             method: "PUT",
             body: JSON.stringify(updatedFeature),
@@ -261,7 +261,7 @@ export const layersStore = defineStore("layersStore", {
     async deleteFeature(layerId, featureId) {
       try {
         const response = await useFetch(
-          `http://localhost:8081/layers/${layerId}/features/${featureId}`,
+          `${this.getRequestBaseURL()}/layers/${layerId}/features/${featureId}`,
           {
             method: "DELETE",
           }
@@ -285,6 +285,10 @@ export const layersStore = defineStore("layersStore", {
       } catch (error) {
         console.error(`Error deleting feature`, error);
       }
+    },
+
+    getRequestBaseURL() {
+      return useRuntimeConfig().public.API_URL;
     },
   },
 });
