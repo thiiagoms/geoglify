@@ -38,8 +38,11 @@ export const shipsStore = defineStore("shipsStore", {
     // Action to fetch ships from MongoDB
     async fetchShips() {
       this.isLoading = true;
+
       try {
-        const { data } = await useFetch("http://localhost:8081/ais_ships");
+        const { data } = await useFetch(
+          this.getRequestBaseURL() + "/ais_ships"
+        );
 
         let ships = toRaw(data.value);
 
@@ -65,7 +68,6 @@ export const shipsStore = defineStore("shipsStore", {
 
     // Action to process ship data
     processShipData(ship) {
-
       // Extract relevant properties from the ship object
       const { hdg, cargo_code } = ship;
 
@@ -104,6 +106,10 @@ export const shipsStore = defineStore("shipsStore", {
     // Toggle navigation drawer state
     toggleNavigationDrawerState() {
       this.isNavigationDrawerOpen = !this.isNavigationDrawerOpen;
-    }
+    },
+
+    getRequestBaseURL() {
+      return useRuntimeConfig().public.API_URL;
+    },
   },
 });
