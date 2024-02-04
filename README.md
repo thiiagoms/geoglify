@@ -39,7 +39,7 @@ To set up the development environment, follow the instructions in the [`INSTALL.
 
 Geoglify utilizes the following technology stack:
 
-- Frontend: [Nuxt.js](https://nuxtjs.org/)
+- Frontend: [Nuxt.js](https://nuxtjs.org/) with [VuetifyJS](https://vuetifyjs.com/en/)
 - Backend: [Node.js](https://nodejs.org/) with [Express](https://expressjs.com/)
 - Database: [MongoDB](https://www.mongodb.com/)
 - AIS Service: [Custom Node.js Service](https://aisstream.io/)
