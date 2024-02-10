@@ -10,7 +10,6 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, nextTick } from "vue";
 import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
 import { CollisionFilterExtension } from "@deck.gl/extensions";
-import { shipsStore } from "~/stores/shipsStore";
 
 const config = useRuntimeConfig();
 
@@ -42,8 +41,6 @@ const MAP_SETTINGS = {
 };
 
 export default {
-  props: ["idx"],
-  emits: ["update:idx"],
 
   data() {
     return {
@@ -198,7 +195,6 @@ export default {
       const geojsonLayers = [];
 
       this.activeLayersList.forEach((layer) => {
-
         let geojson = new GeoJsonLayer({
           id: layer._id,
           data: [...layer.features],
@@ -206,9 +202,9 @@ export default {
           stroked: true,
           filled: true,
           extruded: false,
-          getFillColor: layer.style.getFillColor || [255, 0, 0, 125],
-          getLineColor: layer.style.getLineColor || [0, 0, 255, 125],
-          getLineWidth: layer.style.getLineWidth || 1
+          getFillColor: layer.style.getFillColor || [0, 0, 0, 0],
+          getLineColor: layer.style.getLineColor || [0, 0, 0, 0],
+          getLineWidth: layer.style.getLineWidth || 1,
         });
 
         geojsonLayers.push(geojson);
@@ -220,6 +216,11 @@ export default {
         this.deck.setProps({
           layers,
         });
+
+      this.activeLayersList.forEach((layer) => {
+        this.layersStoreInstance.setStateLoadingLayer(layer._id, false);
+      });
+
     },
 
     initializeDeck() {

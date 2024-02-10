@@ -73,6 +73,8 @@ export const layersStore = defineStore("layersStore", {
 
     // Create or replace a layer in the list
     createOrReplaceLayer(layer) {
+      layer.isLoading = false;
+      layer.isActive = false;
       this.layerList.set(layer._id, layer);
     },
 
@@ -89,6 +91,14 @@ export const layersStore = defineStore("layersStore", {
     // Toggle navigation drawer state
     toggleNavigationDrawerState() {
       this.isNavigationDrawerOpen = !this.isNavigationDrawerOpen;
+    },
+
+    setStateLoadingLayer(layerId, isLoading) {
+      const layer = this.layerList.get(layerId);
+      if (layer) {
+        layer.isLoading = isLoading;
+        this.layerList.set(layerId, layer);
+      }
     },
 
     // Create a new layer
@@ -167,6 +177,9 @@ export const layersStore = defineStore("layersStore", {
     // Fetch features for a given layer from the server
     async fetchFeaturesByLayer(layerId) {
       try {
+
+        this.setStateLoadingLayer(layerId, true);
+
         const { data } = await useFetch(
           `${this.getRequestBaseURL()}/layers/${layerId}/features`
         );

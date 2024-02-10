@@ -6,8 +6,8 @@
   >
     <v-toolbar-title class="font-weight-black"> Layers </v-toolbar-title>
     <v-spacer></v-spacer>
-    <v-btn icon @click="isNavigationLayersDrawerOpen = false">
-      <v-icon>mdi-close</v-icon>
+    <v-btn icon @click="openDialog()">
+      <v-icon>mdi-plus</v-icon>
     </v-btn>
   </v-toolbar>
   <v-text-field
@@ -33,15 +33,20 @@
         <template v-slot:prepend="{ isActive }">
           <v-list-item-action start>
             <v-checkbox-btn
-              :disabled="!!item.isLoading"
+              v-if="!item.isLoading"
               v-model="item.isActive"
               @change="handleCheckboxChange(item)"
             ></v-checkbox-btn>
+            <v-icon v-else color="primary" class="ma-2">
+              mdi-loading mdi-spin
+            </v-icon>
           </v-list-item-action>
         </template>
       </v-list-item>
     </template>
   </v-virtual-scroll>
+
+  <NewLayer :open="open" @update:open="updateOpenState" />
 </template>
 
 <script>
@@ -49,7 +54,9 @@ import { layersStore } from "~/stores/layersStore";
 
 export default {
   data() {
-    return {};
+    return {
+      open: false,
+    };
   },
 
   setup() {
@@ -72,14 +79,17 @@ export default {
   methods: {
     handleCheckboxChange(layer) {
       if (layer.isActive) {
-        layer.isLoading = true;
-
-        this.layersStoreInstance.fetchFeaturesByLayer(layer._id).then(() => {
-          layer.isLoading = false;
-        });
+        this.layersStoreInstance.fetchFeaturesByLayer(layer._id);
       } else {
         this.layersStoreInstance.clearFeaturesForLayer(layer._id);
       }
+    },
+
+    openDialog() {
+      this.open = true;
+    },
+    updateOpenState(value) {
+      this.open = value;
     },
   },
 };

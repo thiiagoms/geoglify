@@ -131,7 +131,7 @@ async function insertLayer(layer) {
     .db("geoglify")
     .collection("layers")
     .insertOne(layer);
-  return result.ops[0];
+  return result;
 }
 
 async function getLayerById(layerId) {
