@@ -73,6 +73,7 @@ export default {
     },
 
     activeLayersList() {
+      console.log("activeLayersList changed");
       this.drawLayers();
     },
 
@@ -202,9 +203,10 @@ export default {
           stroked: true,
           filled: true,
           extruded: false,
-          getFillColor: layer.style.getFillColor || [0, 0, 0, 0],
-          getLineColor: layer.style.getLineColor || [0, 0, 0, 0],
-          getLineWidth: layer.style.getLineWidth || 1,
+          getFillColor: layer.style?.getFillColor || [255, 0, 0, 125],
+          getLineColor: layer.style?.getFillColor || [0, 0, 0, 255],
+          getLineWidth: layer.style?.getLineWidth || 4,
+          lineWidthUnits: "pixels",
         });
 
         geojsonLayers.push(geojson);

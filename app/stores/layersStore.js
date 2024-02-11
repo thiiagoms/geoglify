@@ -161,26 +161,15 @@ export const layersStore = defineStore("layersStore", {
           `${this.getRequestBaseURL()}/layers/${layerId}/features`
         );
 
-        let features = toRaw(data.value);
+        const layer = this.layerList.get(layerId);
+        layer.features = toRaw(data.value);
+        this.layerList.set(layerId, layer);
 
-        // Add the features to the "features" property of the corresponding layer
-        features.forEach((feature) => {
-          this.createOrReplaceFeature(layerId, feature);
-        });
+        this.setStateLoadingLayer(layerId, false);
 
         console.info(`Features for layer ${layerId} successfully retrieved`);
       } catch (error) {
         console.error(`Error fetching features for layer ${layerId}`, error);
-      }
-    },
-
-    createOrReplaceFeature(layerId, feature) {
-      const layer = this.layerList.get(layerId);
-      if (layer) {
-        layer.features.push(feature);
-        this.layerList.set(layerId, layer);
-      } else {
-        console.error(`Layer ${layerId} not found for feature creation`);
       }
     },
 
@@ -192,90 +181,6 @@ export const layersStore = defineStore("layersStore", {
         this.layerList.set(layerId, layer);
       } else {
         console.error(`Layer ${layerId} not found for feature clearing`);
-      }
-    },
-
-    // Create a new feature for a given layer
-    async createFeature(layerId, newFeature) {
-      try {
-        const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${layerId}/features`,
-          {
-            method: "POST",
-            body: JSON.stringify(newFeature),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const createdFeature = await response.json();
-        // Add the feature to the "features" property of the corresponding layer
-        this.createOrReplaceFeature(layerId, createdFeature);
-
-        console.info(`Feature created successfully`);
-      } catch (error) {
-        console.error(`Error creating feature`, error);
-      }
-    },
-
-    // Update an existing feature for a given layer
-    async updateFeature(layerId, updatedFeature) {
-      try {
-        const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${layerId}/features/${
-            updatedFeature._id
-          }`,
-          {
-            method: "PUT",
-            body: JSON.stringify(updatedFeature),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const result = await response.json();
-
-        if (result > 0) {
-          // Update the feature in the "features" property of the corresponding layer
-          this.createOrReplaceFeature(layerId, updatedFeature);
-          console.info(`Feature updated successfully`);
-        } else {
-          console.error(`Feature not found for update`);
-        }
-      } catch (error) {
-        console.error(`Error updating feature`, error);
-      }
-    },
-
-    // Delete a feature for a given layer
-    async deleteFeature(layerId, featureId) {
-      try {
-        const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${layerId}/features/${featureId}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        const result = await response.json();
-
-        if (result > 0) {
-          const layer = this.layerList.get(layerId);
-          if (layer) {
-            // Remove the feature from the "features" property of the layer
-            layer.features = layer.features.filter(
-              (feature) => feature._id !== featureId
-            );
-            this.layerList.set(layerId, layer);
-          }
-          console.info(`Feature deleted successfully`);
-        } else {
-          console.error(`Feature not found for delete`);
-        }
-      } catch (error) {
-        console.error(`Error deleting feature`, error);
       }
     },
 

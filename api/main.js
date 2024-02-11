@@ -11,7 +11,7 @@ const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
 const app = express();
 const server = http.createServer(app);
 
-app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
 app.use(cors());
 
 app.get("/", (_, res) => {
@@ -29,11 +29,29 @@ app.get("/layers", async (_, res) => {
 });
 
 app.post("/layers", async (req, res) => {
-  const { code, name, description, style } = req.body;
-  const newLayer = { code, name, description, style };
+  const { code, name, description, type, features } = req.body; // Assuming features are present in req.body
 
-  const result = await insertLayer(newLayer);
-  res.json(result);
+  // Inserting the new layer
+  const newLayer = { code, name, description, type };
+  const insertedLayer = await insertLayer(newLayer);
+
+  // If layer insertion is successful, add features to the features table
+  if (insertedLayer) {
+    const layerId = insertedLayer._id; // Assuming _id is the identifier for layers
+
+    // Inserting features with associated layer_id
+    await Promise.all(
+      features.map(async (feature) => {
+        feature.layer_id = layerId; // Adding layer_id to each feature
+        return await insertFeature(layerId, feature); // Inserting feature into the features table
+      })
+    );
+
+    // Sending response
+    res.json(newLayer);
+  } else {
+    res.status(500).json({ error: "Failed to insert layer" });
+  }
 });
 
 app.get("/layers/:id", async (req, res) => {
@@ -44,8 +62,8 @@ app.get("/layers/:id", async (req, res) => {
 
 app.put("/layers/:id", async (req, res) => {
   const layerId = req.params.id;
-  const updatedLayer = req.body;
-
+  const { code, name, description, type } = req.body;
+  const updatedLayer = { code, name, description, type };
   const result = await updateLayer(layerId, updatedLayer);
   res.json(result);
 });
@@ -60,34 +78,6 @@ app.get("/layers/:layerId/features", async (req, res) => {
   const layerId = req.params.layerId;
   const features = await getFeaturesByLayerId(layerId);
   res.json(features);
-});
-
-app.post("/layers/:layerId/features", async (req, res) => {
-  const layerId = req.params.layerId;
-  const newFeature = req.body;
-
-  const result = await insertFeature(layerId, newFeature);
-  res.json(result);
-});
-
-app.get("/layers/:layerId/features/:featureId", async (req, res) => {
-  const { layerId, featureId } = req.params;
-  const feature = await getFeatureById(layerId, featureId);
-  res.json(feature);
-});
-
-app.put("/layers/:layerId/features/:featureId", async (req, res) => {
-  const { layerId, featureId } = req.params;
-  const updatedFeature = req.body;
-
-  const result = await updateFeature(layerId, featureId, updatedFeature);
-  res.json(result);
-});
-
-app.delete("/layers/:layerId/features/:featureId", async (req, res) => {
-  const { layerId, featureId } = req.params;
-  const result = await deleteFeature(layerId, featureId);
-  res.json(result);
 });
 
 async function startServer() {
@@ -139,7 +129,7 @@ async function getLayerById(layerId) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .findOne({ _id: new ObjectId(layerId) }); // Correcting the usage of ObjectId
+    .findOne({ _id: new ObjectId(layerId) });
   return result;
 }
 
@@ -147,15 +137,18 @@ async function updateLayer(layerId, updatedLayer) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .updateOne({ _id: new ObjectId(layerId) }, { $set: updatedLayer }); // Correcting the usage of ObjectId
-  return result.modifiedCount;
+    .updateOne(
+      { _id: new ObjectId(layerId) }, // Filter to find the layer with the provided ID
+      { $set: updatedLayer } // Update the layer with the new data
+    );
+  return result.modifiedCount; // Return the number of modified documents (should be 1 if the update is successful)
 }
 
 async function deleteLayer(layerId) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .deleteOne({ _id: new ObjectId(layerId) }); // Correcting the usage of ObjectId
+    .deleteOne({ _id: new ObjectId(layerId) });
   return result.deletedCount;
 }
 
@@ -163,7 +156,7 @@ async function getFeaturesByLayerId(layerId) {
   const result = await client
     .db("geoglify")
     .collection("features")
-    .find({ layer_id: layerId })
+    .find({ layer_id: new ObjectId(layerId) })
     .toArray();
   return result;
 }
@@ -175,45 +168,5 @@ async function insertFeature(layerId, feature) {
     .collection("features")
     .insertOne(feature);
 
-  const insertedId = result.insertedId;
-
-  const insertedFeature = await client
-    .db("geoglify")
-    .collection("features")
-    .findOne({ _id: insertedId });
-
-  return insertedFeature;
-}
-
-async function getFeatureById(layerId, featureId) {
-  const result = await client
-    .db("geoglify")
-    .collection("features")
-    .findOne({
-      _id: new ObjectId(featureId), // Correcting the usage of ObjectId
-      layer_id: layerId,
-    });
   return result;
-}
-
-async function updateFeature(layerId, featureId, updatedFeature) {
-  const result = await client
-    .db("geoglify")
-    .collection("features")
-    .updateOne(
-      { _id: new ObjectId(featureId), layer_id: layerId }, // Correcting the usage of ObjectId
-      { $set: updatedFeature }
-    );
-  return result.modifiedCount;
-}
-
-async function deleteFeature(layerId, featureId) {
-  const result = await client
-    .db("geoglify")
-    .collection("features")
-    .deleteOne({
-      _id: new ObjectId(featureId), // Correcting the usage of ObjectId
-      layer_id: layerId,
-    });
-  return result.deletedCount;
 }

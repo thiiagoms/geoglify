@@ -1,18 +1,14 @@
 <template>
-  <v-toolbar
-    dark
-    class="fixed-bar"
-    v-if="layersStoreInstance.isNavigationDrawerOpen"
-  >
+  <v-toolbar dark class="fixed-bar" v-if="isNavigationDrawerOpen">
     <v-toolbar-title class="font-weight-black"> Layers </v-toolbar-title>
     <v-spacer></v-spacer>
-    <v-btn icon @click="openDialog()">
+    <v-btn icon @click="openLayerCreator()" density="compact">
       <v-icon>mdi-plus</v-icon>
     </v-btn>
   </v-toolbar>
 
   <v-text-field
-    v-model="layersStoreInstance.searchText"
+    v-model="searchText"
     outlined
     clearable
     placeholder="Search layers by name or description"
@@ -20,15 +16,15 @@
   ></v-text-field>
 
   <v-progress-linear
-    v-if="layersStoreInstance.isLoading"
+    v-if="isLoading"
     indeterminate
     color="primary"
   ></v-progress-linear>
 
   <v-virtual-scroll :items="filteredLayers" style="height: calc(100vh - 195px)">
-    <!-- Render each ship item -->
+    <!-- Render each layer item -->
     <template v-slot:default="{ item }">
-      <v-list-item class="item">
+      <v-list-item class="layer-item">
         <v-list-item-title class="font-weight-bold">{{
           item.name || "N/A"
         }}</v-list-item-title>
@@ -42,8 +38,8 @@
             <v-checkbox-btn
               v-if="!item.isLoading"
               v-model="item.isActive"
-              @change="handleCheckboxChange(item)"
-              :disabled="layersStoreInstance.isLoading"
+              @change="handleLayerCheckboxChange(item)"
+              :disabled="isLoading"
             ></v-checkbox-btn>
             <v-icon v-else color="primary" class="ma-2">
               mdi-loading mdi-spin
@@ -52,31 +48,60 @@
         </template>
 
         <template v-slot:append>
-          <v-btn
-            icon="mdi-delete"
-            variant="text"
-            @click="deleteLayer(item._id)"
-            size="small"
-            color="red darken-1"
-            :disabled="layersStoreInstance.isLoading"
-          ></v-btn>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn
+                icon="mdi-dots-vertical"
+                v-bind="props"
+                variant="text"
+                density="compact"
+              ></v-btn>
+            </template>
+
+            <v-list density="compact">
+              <v-list-item @click="openLayerEditor(item._id, item)">
+                <v-list-item-title>Edit</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="openLayerDeletor(item._id)">
+                <v-list-item-title>Delete</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </template>
       </v-list-item>
     </template>
   </v-virtual-scroll>
 
-  <NewLayer :open="open" @update:open="updateOpenState" />
+  <CreateLayer
+    :open="openCreateDialog"
+    @update:open="updateOpenCreateDialogState"
+  />
+  <EditLayer
+    :open="openEditDialog"
+    :layerData="layerDataToEdit"
+    :layerId="layerIdToEdit"
+    @update:open="updateOpenEditDialogState"
+  />
+  <DeleteLayer
+    :open="openDeleteDialog"
+    :layerId="layerIdToDelete"
+    @update:open="updateOpenDeleteDialogState"
+  />
 </template>
 
 <script>
-import { storeToRefs } from 'pinia'
 import { layersStore } from "~/stores/layersStore";
 
 export default {
   data() {
     return {
-      open: false,
-      loading: false,
+      openCreateDialog: false,
+      openEditDialog: false,
+      openDeleteDialog: false,
+      isLoading: false,
+      layerDataToEdit: null,
+      layerIdToEdit: null,
+      layerIdToDelete: null,
     };
   },
 
@@ -84,8 +109,6 @@ export default {
     const layersStoreInstance = layersStore();
     return { layersStoreInstance };
   },
-
-  beforeDestroy() {},
 
   mounted() {
     this.layersStoreInstance.fetchLayers();
@@ -95,15 +118,16 @@ export default {
     filteredLayers() {
       return [...this.layersStoreInstance.layerList.values()];
     },
-    teste()
-    {
-      console.log(this.layersStoreInstance.teste)
-      return this.layersStoreInstance.teste;
-    }
+    isNavigationDrawerOpen() {
+      return this.layersStoreInstance.isNavigationDrawerOpen;
+    },
+    searchText() {
+      return this.layersStoreInstance.searchText;
+    },
   },
 
   methods: {
-    handleCheckboxChange(layer) {
+    handleLayerCheckboxChange(layer) {
       if (layer.isActive) {
         this.layersStoreInstance.fetchFeaturesByLayer(layer._id);
       } else {
@@ -111,22 +135,38 @@ export default {
       }
     },
 
-    openDialog() {
-      this.open = true;
-    },
-    updateOpenState(value) {
-      this.open = value;
+    openLayerCreator() {
+      this.openCreateDialog = true;
     },
 
-    deleteLayer(layerId) {
-      this.layersStoreInstance.deleteLayer(layerId);
+    openLayerEditor(layerId, layerData) {
+      this.layerIdToDelete = layerId;
+      this.layerDataToEdit = layerData;
+      this.openEditDialog = true;
+    },
+
+    openLayerDeletor(layerId) {
+      this.layerIdToDelete = layerId;
+      this.openDeleteDialog = true;
+    },
+
+    updateOpenCreateDialogState(value) {
+      this.openCreateDialog = value;
+    },
+
+    updateOpenEditDialogState(value) {
+      this.openEditDialog = value;
+    },
+
+    updateOpenDeleteDialogState(value) {
+      this.openDeleteDialog = value;
     },
   },
 };
 </script>
 
 <style scoped>
-.item {
+.layer-item {
   border-bottom: 1px solid #e0e0e0;
   min-height: 60px;
 }

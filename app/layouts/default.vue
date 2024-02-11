@@ -65,6 +65,7 @@
       :width="400"
       class="sidebar"
       @transitionend="dispatchResize"
+      permanent
     >
       <Layers v-if="isNavigationLayersDrawerOpen"></Layers>
       <Ships v-if="isNavigationShipsDrawerOpen"></Ships>
@@ -76,6 +77,7 @@
       :width="400"
       class="sidebar"
       @transitionend="dispatchResize"
+      permanent
     >
       <Ship></Ship>
     </v-navigation-drawer>
