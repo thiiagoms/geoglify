@@ -1,13 +1,11 @@
-// Import the dotenv library to load environment variables from a .env file
-require("dotenv").config();
-
-// Import the necessary libraries
-const { MongoClient, ObjectId } = require("mongodb");
+const { MongoClient } = require("mongodb");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const { ObjectId } = require("mongodb"); // Importing ObjectId correctly
 
-// Create a MongoDB client instance using the connection string provided in the environment variables
+require("dotenv").config();
+
 const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
 
 const app = express();
@@ -16,7 +14,6 @@ const server = http.createServer(app);
 app.use(express.json());
 app.use(cors());
 
-// Create a route to handle the root URL
 app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
@@ -26,7 +23,6 @@ app.get("/ais_ships", async (_, res) => {
   res.json(ais_ships);
 });
 
-// CRUD operations for layers
 app.get("/layers", async (_, res) => {
   const layers = await getLayers();
   res.json(layers);
@@ -60,7 +56,6 @@ app.delete("/layers/:id", async (req, res) => {
   res.json(result);
 });
 
-// CRUD operations for features of a specific layer
 app.get("/layers/:layerId/features", async (req, res) => {
   const layerId = req.params.layerId;
   const features = await getFeaturesByLayerId(layerId);
@@ -95,7 +90,6 @@ app.delete("/layers/:layerId/features/:featureId", async (req, res) => {
   res.json(result);
 });
 
-// Start the server
 async function startServer() {
   try {
     await client.connect();
@@ -116,7 +110,6 @@ async function getAISShips() {
   return result;
 }
 
-// Helper functions for CRUD operations
 async function getLayers() {
   const result = await client
     .db("geoglify")
@@ -131,14 +124,22 @@ async function insertLayer(layer) {
     .db("geoglify")
     .collection("layers")
     .insertOne(layer);
-  return result;
+
+  const insertedId = result.insertedId;
+
+  const insertedLayer = await client
+    .db("geoglify")
+    .collection("layers")
+    .findOne({ _id: insertedId });
+
+  return insertedLayer;
 }
 
 async function getLayerById(layerId) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .findOne({ _id: ObjectId(layerId) });
+    .findOne({ _id: new ObjectId(layerId) }); // Correcting the usage of ObjectId
   return result;
 }
 
@@ -146,7 +147,7 @@ async function updateLayer(layerId, updatedLayer) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .updateOne({ _id: ObjectId(layerId) }, { $set: updatedLayer });
+    .updateOne({ _id: new ObjectId(layerId) }, { $set: updatedLayer }); // Correcting the usage of ObjectId
   return result.modifiedCount;
 }
 
@@ -154,7 +155,7 @@ async function deleteLayer(layerId) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .deleteOne({ _id: ObjectId(layerId) });
+    .deleteOne({ _id: new ObjectId(layerId) }); // Correcting the usage of ObjectId
   return result.deletedCount;
 }
 
@@ -173,7 +174,15 @@ async function insertFeature(layerId, feature) {
     .db("geoglify")
     .collection("features")
     .insertOne(feature);
-  return result.ops[0];
+
+  const insertedId = result.insertedId;
+
+  const insertedFeature = await client
+    .db("geoglify")
+    .collection("features")
+    .findOne({ _id: insertedId });
+
+  return insertedFeature;
 }
 
 async function getFeatureById(layerId, featureId) {
@@ -181,7 +190,7 @@ async function getFeatureById(layerId, featureId) {
     .db("geoglify")
     .collection("features")
     .findOne({
-      _id: ObjectId(featureId),
+      _id: new ObjectId(featureId), // Correcting the usage of ObjectId
       layer_id: layerId,
     });
   return result;
@@ -192,7 +201,7 @@ async function updateFeature(layerId, featureId, updatedFeature) {
     .db("geoglify")
     .collection("features")
     .updateOne(
-      { _id: ObjectId(featureId), layer_id: layerId },
+      { _id: new ObjectId(featureId), layer_id: layerId }, // Correcting the usage of ObjectId
       { $set: updatedFeature }
     );
   return result.modifiedCount;
@@ -203,7 +212,7 @@ async function deleteFeature(layerId, featureId) {
     .db("geoglify")
     .collection("features")
     .deleteOne({
-      _id: ObjectId(featureId),
+      _id: new ObjectId(featureId), // Correcting the usage of ObjectId
       layer_id: layerId,
     });
   return result.deletedCount;

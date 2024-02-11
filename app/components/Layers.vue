@@ -10,6 +10,7 @@
       <v-icon>mdi-plus</v-icon>
     </v-btn>
   </v-toolbar>
+
   <v-text-field
     v-model="layersStoreInstance.searchText"
     outlined
@@ -17,6 +18,12 @@
     placeholder="Search layers by name or description"
     hide-details
   ></v-text-field>
+
+  <v-progress-linear
+    v-if="layersStoreInstance.isLoading"
+    indeterminate
+    color="primary"
+  ></v-progress-linear>
 
   <v-virtual-scroll :items="filteredLayers" style="height: calc(100vh - 195px)">
     <!-- Render each ship item -->
@@ -31,16 +38,28 @@
         </v-list-item-subtitle>
 
         <template v-slot:prepend="{ isActive }">
-          <v-list-item-action start>
+          <v-list-item-action>
             <v-checkbox-btn
               v-if="!item.isLoading"
               v-model="item.isActive"
               @change="handleCheckboxChange(item)"
+              :disabled="layersStoreInstance.isLoading"
             ></v-checkbox-btn>
             <v-icon v-else color="primary" class="ma-2">
               mdi-loading mdi-spin
             </v-icon>
           </v-list-item-action>
+        </template>
+
+        <template v-slot:append>
+          <v-btn
+            icon="mdi-delete"
+            variant="text"
+            @click="deleteLayer(item._id)"
+            size="small"
+            color="red darken-1"
+            :disabled="layersStoreInstance.isLoading"
+          ></v-btn>
         </template>
       </v-list-item>
     </template>
@@ -50,12 +69,14 @@
 </template>
 
 <script>
+import { storeToRefs } from 'pinia'
 import { layersStore } from "~/stores/layersStore";
 
 export default {
   data() {
     return {
       open: false,
+      loading: false,
     };
   },
 
@@ -72,8 +93,13 @@ export default {
 
   computed: {
     filteredLayers() {
-      return [...this.layersStoreInstance.filteredList.values()];
+      return [...this.layersStoreInstance.layerList.values()];
     },
+    teste()
+    {
+      console.log(this.layersStoreInstance.teste)
+      return this.layersStoreInstance.teste;
+    }
   },
 
   methods: {
@@ -91,6 +117,10 @@ export default {
     updateOpenState(value) {
       this.open = value;
     },
+
+    deleteLayer(layerId) {
+      this.layersStoreInstance.deleteLayer(layerId);
+    },
   },
 };
 </script>
@@ -98,5 +128,6 @@ export default {
 <style scoped>
 .item {
   border-bottom: 1px solid #e0e0e0;
+  min-height: 60px;
 }
 </style>

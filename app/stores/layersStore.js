@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 export const layersStore = defineStore("layersStore", {
   state: () => ({
     layerList: new Map(),
+    teste: "ola",
     selected: null,
     isLoading: false,
     searchText: "",
@@ -102,9 +103,39 @@ export const layersStore = defineStore("layersStore", {
     },
 
     // Create a new layer
+    async deleteLayer(layerId) {
+      try {
+        await fetch(`${this.getRequestBaseURL()}/layers/${layerId}`, {
+          method: "DELETE",
+        });
+        this.layerList.delete(layerId);
+      } catch (error) {
+        console.error(`Error deleting layer`, error);
+      }
+    },
+
+    // Update an existing layer
+    async updateLayer(updatedLayer) {
+      try {
+        await fetch(`${this.getRequestBaseURL()}/layers/${updatedLayer._id}`, {
+          method: "PUT",
+          body: JSON.stringify(updatedLayer),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        this.layerList.set(updatedLayer._id, updatedLayer);
+        console.info("Layer updated successfully");
+      } catch (error) {
+        console.error(`Error updating layer`, error);
+      }
+    },
+
+    // Create a new layer
     async createLayer(newLayer) {
       try {
-        const response = await useFetch(`${this.getRequestBaseURL()}/layers`, {
+        const { data } = await useFetch(`${this.getRequestBaseURL()}/layers`, {
           method: "POST",
           body: JSON.stringify(newLayer),
           headers: {
@@ -112,64 +143,11 @@ export const layersStore = defineStore("layersStore", {
           },
         });
 
-        const createdLayer = await response.json();
-        // Add the "features" property as an empty array
-        createdLayer.features = [];
-        this.createOrReplaceLayer(createdLayer);
-
-        console.info(`Layer created successfully`);
+        let layer = toRaw(data.value);
+        this.layerList.set(layer._id, layer);
+        console.info("Layer created successfully");
       } catch (error) {
         console.error(`Error creating layer`, error);
-      }
-    },
-
-    // Update an existing layer
-    async updateLayer(updatedLayer) {
-      try {
-        const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${updatedLayer._id}`,
-          {
-            method: "PUT",
-            body: JSON.stringify(updatedLayer),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const result = await response.json();
-
-        if (result > 0) {
-          this.createOrReplaceLayer(updatedLayer);
-          console.info(`Layer updated successfully`);
-        } else {
-          console.error(`Layer not found for update`);
-        }
-      } catch (error) {
-        console.error(`Error updating layer`, error);
-      }
-    },
-
-    // Delete a layer
-    async deleteLayer(layerId) {
-      try {
-        const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${layerId}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        const result = await response.json();
-
-        if (result > 0) {
-          this.layerList.delete(layerId);
-          console.info(`Layer deleted successfully`);
-        } else {
-          console.error(`Layer not found for delete`);
-        }
-      } catch (error) {
-        console.error(`Error deleting layer`, error);
       }
     },
 
@@ -177,7 +155,6 @@ export const layersStore = defineStore("layersStore", {
     // Fetch features for a given layer from the server
     async fetchFeaturesByLayer(layerId) {
       try {
-
         this.setStateLoadingLayer(layerId, true);
 
         const { data } = await useFetch(
@@ -246,7 +223,9 @@ export const layersStore = defineStore("layersStore", {
     async updateFeature(layerId, updatedFeature) {
       try {
         const response = await useFetch(
-          `${this.getRequestBaseURL()}/layers/${layerId}/features/${updatedFeature._id}`,
+          `${this.getRequestBaseURL()}/layers/${layerId}/features/${
+            updatedFeature._id
+          }`,
           {
             method: "PUT",
             body: JSON.stringify(updatedFeature),
