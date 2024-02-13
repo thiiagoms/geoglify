@@ -38,8 +38,8 @@ export const layersStore = defineStore("layersStore", {
       );
 
       const formattedList = activeLayers.map((layer) => {
-        const { _id, name, code, description, features, style } = layer;
-        return { _id, name, code, description, features, style };
+        const { _id, name, code, description, features, style, type } = layer;
+        return { _id, name, code, description, features, style, type };
       });
 
       return formattedList;
