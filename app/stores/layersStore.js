@@ -4,7 +4,7 @@ export const layersStore = defineStore("layersStore", {
   state: () => ({
     layerList: new Map(),
     teste: "ola",
-    selected: null,
+    selectedFeature: null,
     isLoading: false,
     searchText: "",
     isNavigationDrawerOpen: false,
@@ -79,9 +79,9 @@ export const layersStore = defineStore("layersStore", {
       this.layerList.set(layer._id, layer);
     },
 
-    // Set the selected layer
-    setSelectedLayer(layer) {
-      this.selected = layer;
+    // Set the selected feature
+    setSelectedFeature(feature) {
+      this.selectedFeature = feature;
     },
 
     // Set navigation drawer state

@@ -1,6 +1,17 @@
 <template>
   <v-toolbar dark class="fixed-bar" v-if="isNavigationDrawerOpen">
-    <v-toolbar-title class="font-weight-black"> Layers </v-toolbar-title>
+    <v-toolbar-title>
+      <v-list-item class="px-0">
+        <v-list-item-title class="text-h6 font-weight-black"
+          >Layers</v-list-item-title
+        >
+        <v-list-item-subtitle class="text-caption"
+          >({{ filteredLayers.length }} /
+          {{ layersStoreInstance.layerList.size }})</v-list-item-subtitle
+        >
+      </v-list-item>
+    </v-toolbar-title>
+
     <v-spacer></v-spacer>
     <v-btn icon @click="openLayerCreator()" density="compact">
       <v-icon>mdi-plus</v-icon>
@@ -8,23 +19,17 @@
   </v-toolbar>
 
   <v-text-field
-    v-model="searchText"
+    v-model="layersStoreInstance.searchText"
     outlined
     clearable
     placeholder="Search layers by name or description"
     hide-details
   ></v-text-field>
 
-  <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-  ></v-progress-linear>
-
   <v-virtual-scroll :items="filteredLayers" style="height: calc(100vh - 195px)">
     <!-- Render each layer item -->
     <template v-slot:default="{ item }">
-      <v-list-item class="layer-item">
+      <v-list-item class="layer-item px-2">
         <v-list-item-title class="font-weight-bold">{{
           item.name || "N/A"
         }}</v-list-item-title>
@@ -60,10 +65,15 @@
 
             <v-list density="compact">
               <v-list-item @click="openLayerEditor(item._id, item)">
-                <v-list-item-title>Edit</v-list-item-title>
+                <v-list-item-title>Edit Information</v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                @click="openLayerStyleEditor(item._id, item.type, item.style)"
+              >
+                <v-list-item-title>Style Layer</v-list-item-title>
               </v-list-item>
               <v-list-item @click="openLayerDeletor(item._id)">
-                <v-list-item-title>Delete</v-list-item-title>
+                <v-list-item-title>Delete Layer</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
@@ -76,16 +86,26 @@
     :open="openCreateDialog"
     @update:open="updateOpenCreateDialogState"
   />
+
   <EditLayer
     :open="openEditDialog"
     :layerData="layerDataToEdit"
     :layerId="layerIdToEdit"
     @update:open="updateOpenEditDialogState"
   />
+
   <DeleteLayer
     :open="openDeleteDialog"
     :layerId="layerIdToDelete"
     @update:open="updateOpenDeleteDialogState"
+  />
+
+  <EditStyle
+    :open="openEditStyleDialog"
+    :style="styleDataToEdit"
+    :layerType="layerTypeToEditStyle"
+    :layerId="layerIdToEditStyle"
+    @update:open="updateOpenEditStyleDialogState"
   />
 </template>
 
@@ -98,10 +118,13 @@ export default {
       openCreateDialog: false,
       openEditDialog: false,
       openDeleteDialog: false,
-      isLoading: false,
+      openEditStyleDialog: false,
       layerDataToEdit: null,
+      styleDataToEdit: null,
       layerIdToEdit: null,
       layerIdToDelete: null,
+      layerTypeToEditStyle: null,
+      layerIdToEditStyle: null,
     };
   },
 
@@ -116,13 +139,10 @@ export default {
 
   computed: {
     filteredLayers() {
-      return [...this.layersStoreInstance.layerList.values()];
+      return [...this.layersStoreInstance.filteredList.values()];
     },
     isNavigationDrawerOpen() {
       return this.layersStoreInstance.isNavigationDrawerOpen;
-    },
-    searchText() {
-      return this.layersStoreInstance.searchText;
     },
   },
 
@@ -150,6 +170,13 @@ export default {
       this.openDeleteDialog = true;
     },
 
+    openLayerStyleEditor(layerId, layerType, styleData) {
+      this.layerIdToEditStyle = layerId;
+      this.layerTypeToEditStyle = layerType;
+      this.styleDataToEdit = styleData || {};
+      this.openEditStyleDialog = true;
+    },
+
     updateOpenCreateDialogState(value) {
       this.openCreateDialog = value;
     },
@@ -160,6 +187,10 @@ export default {
 
     updateOpenDeleteDialogState(value) {
       this.openDeleteDialog = value;
+    },
+
+    updateOpenEditStyleDialogState(value) {
+      this.openEditStyleDialog = value;
     },
   },
 };

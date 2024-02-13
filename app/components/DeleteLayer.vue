@@ -1,13 +1,12 @@
 <template>
   <v-dialog v-model="confirmDelete" max-width="500px">
     <v-card>
-      <v-toolbar color="red-darken-3" dark>
-        <v-toolbar-title class="font-weight-black">
-          CONFIRM DELETION
-        </v-toolbar-title>
-      </v-toolbar>
 
-      <v-card-text>Are you sure you want to delete this layer? </v-card-text>
+      <v-card-title class="font-weight-black py-5">CONFIRM DELETION</v-card-title>
+      <v-divider></v-divider>
+
+      <v-card-text>Are you sure you want to delete this layer?</v-card-text>
+
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn @click="cancelDelete">Cancel</v-btn>

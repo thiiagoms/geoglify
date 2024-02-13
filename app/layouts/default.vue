@@ -1,7 +1,13 @@
 <template>
   <v-app>
     <v-app-bar color="white" density="compact" elevation="0">
-      <v-app-bar-title><span class="title">GEOGLIFY</span></v-app-bar-title>
+      <template v-slot:prepend>
+        <v-avatar size="24"
+          ><v-img src="@/assets/logo.png" alt="logo"></v-img
+        ></v-avatar>
+      </template>
+
+      <v-app-bar-title class="font-weight-black">GEOGLIFY</v-app-bar-title>
 
       <template v-slot:append>
         <v-list-item v-if="weather" class="pa-0 weather_info">
@@ -60,7 +66,7 @@
     </v-system-bar>
 
     <v-navigation-drawer
-      v-model="combinedNavigationState"
+      v-model="combinedNavigationLeftState"
       location="left"
       :width="400"
       class="sidebar"
@@ -72,40 +78,46 @@
     </v-navigation-drawer>
 
     <v-navigation-drawer
-      v-model="isSelectedShipDrawerOpen"
+      v-model="combinedNavigationRightState"
       location="right"
       :width="400"
       class="sidebar"
       @transitionend="dispatchResize"
       permanent
     >
-      <Ship></Ship>
+      <Ship v-if="isSelectedShipDrawerOpen"></Ship>
+      <Feature v-if="isSelectedFeatureDrawerOpen"></Feature>
     </v-navigation-drawer>
 
     <v-main class="main-content">
-      <v-layout-item model-value class="float-left pointer-events-none">
-        <div class="ma-4 pointer-events-initial">
-          <v-btn
-            icon="mdi-ferry"
-            color="white"
-            dark
-            elevation="0"
-            rounded="lg"
-            :active="isNavigationShipsDrawerOpen"
-            @click="toggleNavigation('ships')"
-          />
-        </div>
-        <div class="ma-4 pointer-events-initial">
-          <v-btn
-            icon="mdi-layers"
-            color="white"
-            dark
-            elevation="0"
-            rounded="lg"
-            :active="isNavigationLayersDrawerOpen"
-            @click="toggleNavigation('layers')"
-          />
-        </div>
+      <v-layout-item
+        model-value
+        class="float-left pointer-events-none"
+        height="auto"
+      >
+        <v-btn
+          icon="mdi-ferry"
+          color="white"
+          dark
+          elevation="0"
+          rounded="lg"
+          :active="isNavigationShipsDrawerOpen"
+          @click="toggleNavigation('ships')"
+          class="float-left pointer-events-initial"
+          style="position: absolute; top: 10px; left: 10px;"
+        />
+
+        <v-btn
+          icon="mdi-layers"
+          color="white"
+          dark
+          elevation="0"
+          rounded="lg"
+          :active="isNavigationLayersDrawerOpen"
+          @click="toggleNavigation('layers')"
+          class="float-left pointer-events-initial"
+          style="position: absolute; top: 70px; left: 10px;"
+        />
       </v-layout-item>
       <slot />
     </v-main>
@@ -134,9 +146,15 @@ export default {
       return this.shipsStoreInstance.isNavigationDrawerOpen;
     },
     isSelectedShipDrawerOpen() {
-      return this.shipsStoreInstance.selectedShip;
+      return !!this.shipsStoreInstance.selectedShip;
     },
-    combinedNavigationState() {
+    isSelectedFeatureDrawerOpen() {
+      return !!this.layersStoreInstance.selectedFeature;
+    },
+    combinedNavigationRightState() {
+      return this.isSelectedFeatureDrawerOpen || this.isSelectedShipDrawerOpen;
+    },
+    combinedNavigationLeftState() {
       return (
         this.layersStoreInstance.isNavigationDrawerOpen ||
         this.shipsStoreInstance.isNavigationDrawerOpen

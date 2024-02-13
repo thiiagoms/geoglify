@@ -1,11 +1,9 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-toolbar color="blue-grey-darken-3" dark>
-        <v-toolbar-title class="font-weight-black">
-          EDIT LAYER
-        </v-toolbar-title>
-      </v-toolbar>
+
+      <v-card-title class="font-weight-black py-5">EDIT LAYER</v-card-title>
+      <v-divider></v-divider>
 
       <v-card-text>
         <v-form ref="form">

@@ -41,12 +41,11 @@ const MAP_SETTINGS = {
 };
 
 export default {
-
   data() {
     return {
       socket: null,
       messageBuffer: [],
-      bufferInterval: null,
+      bufferInterval: null
     };
   },
 
@@ -73,7 +72,10 @@ export default {
     },
 
     activeLayersList() {
-      console.log("activeLayersList changed");
+      this.drawLayers();
+    },
+
+    selectedFeature() {
       this.drawLayers();
     },
 
@@ -107,6 +109,9 @@ export default {
     },
     selectedShip() {
       return this.shipsStoreInstance.selectedShip;
+    },
+    selectedFeature() {
+      return this.layersStoreInstance.selectedFeature;
     },
     activeLayersList() {
       return this.layersStoreInstance.activeLayersList;
@@ -152,21 +157,23 @@ export default {
         id: "ais-layer",
         data: this.filteredShips,
         billboard: false,
-        getIcon: (d) => ({
-          url: d.icon,
-          width: d.width,
-          height: d.height,
+        autoHighlight: true,
+        highlightColor: [255, 234, 0],
+        getIcon: (f) => ({
+          url: f.icon,
+          width: f.width,
+          height: f.height,
           mask: true,
         }),
-        getPosition: (d) => d.location.coordinates,
-        getAngle: (d) => 360 - d.hdg,
-        getSize: (d) => d.size,
-        getColor: (d) => d.color,
-        getCollisionPriority: (d) => d.priority,
+        getPosition: (f) => f.location.coordinates,
+        getAngle: (f) => 360 - f.hdg,
+        getSize: (f) => f.size,
+        getColor: (f) => f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : f.color,
+        getCollisionPriority: (f) => f.priority,
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
         pickable: true,
-        onClick: ({ object, x, y }) =>
+        onClick: ({ object }) =>
           this.shipsStoreInstance.setSelectedShip(object),
         visible: true, // Add visibility condition based on your logic
       });
@@ -176,9 +183,9 @@ export default {
         id: "text-layer",
         data: this.filteredShips,
         fontFamily: "Monaco, monospace",
-        getPosition: (d) => d.location.coordinates,
-        getText: (d) => "   " + d.name.trim(),
-        getSize: (d) => 70,
+        getPosition: (f) => f.location.coordinates,
+        getText: (f) => "   " + f.name.trim(),
+        getSize: (f) => 70,
         sizeMaxPixels: "12",
         opacity: 1,
         getTextAnchor: "start",
@@ -199,14 +206,19 @@ export default {
         let geojson = new GeoJsonLayer({
           id: layer._id,
           data: [...layer.features],
-          pickable: false,
+          pickable: true,
           stroked: true,
           filled: true,
           extruded: false,
-          getFillColor: layer.style?.getFillColor || [255, 0, 0, 125],
-          getLineColor: layer.style?.getFillColor || [0, 0, 0, 255],
+          autoHighlight: true,
+          highlightColor: [255, 234, 0, 125],
+          getFillColor: (f) => f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : layer.style?.getFillColor || [255, 0, 0, 125],
+          getLineColor: layer.style?.getLineColor || [0, 0, 0, 255],
           getLineWidth: layer.style?.getLineWidth || 4,
           lineWidthUnits: "pixels",
+          onClick: ({ object }) => {
+            this.layersStoreInstance.setSelectedFeature(object);
+          },
         });
 
         geojsonLayers.push(geojson);
@@ -222,7 +234,6 @@ export default {
       this.activeLayersList.forEach((layer) => {
         this.layersStoreInstance.setStateLoadingLayer(layer._id, false);
       });
-
     },
 
     initializeDeck() {

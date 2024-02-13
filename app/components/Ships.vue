@@ -4,11 +4,15 @@
     class="fixed-bar"
     v-if="shipsStoreInstance.isNavigationDrawerOpen"
   >
-    <v-toolbar-title class="font-weight-black">
-      SHIPS ({{ filteredShips.length }} /
-      {{ shipsStoreInstance.shipList.size }})
+    <v-toolbar-title>
+      <v-list-item class="px-0">
+        <v-list-item-title class="text-h6 font-weight-black">Ships</v-list-item-title>
+        <v-list-item-subtitle class="text-caption">({{ filteredShips.length }} / {{ shipsStoreInstance.shipList.size }})</v-list-item-subtitle>
+      </v-list-item>
     </v-toolbar-title>
-    <v-btn icon @click="shipsStoreInstance.setNavigationDrawerState(false)">
+
+    <v-spacer></v-spacer>
+    <v-btn icon @click="shipsStoreInstance.setNavigationDrawerState(false)" density="compact">
       <v-icon>mdi-close</v-icon>
     </v-btn>
   </v-toolbar>
