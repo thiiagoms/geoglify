@@ -19,6 +19,7 @@
                   :stroke="hexToRgba(styleToUpdate.borderColor)"
                   :fill="hexToRgba(styleToUpdate.fillColor)"
                   :stroke-width="styleToUpdate.borderSize"
+                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
                 />
               </template>
               <template v-else-if="layerType === 'line' && style">
@@ -29,6 +30,7 @@
                   y2="90"
                   :stroke="hexToRgba(styleToUpdate.lineColor)"
                   :stroke-width="styleToUpdate.lineWidth"
+                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
                 />
               </template>
 
@@ -41,6 +43,7 @@
                   :stroke="hexToRgba(styleToUpdate.borderColor)"
                   :fill="hexToRgba(styleToUpdate.fillColor)"
                   :stroke-width="styleToUpdate.borderSize"
+                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
                 />
               </template>
             </svg>
@@ -123,6 +126,15 @@
               thumb-label
               class="my-5"
             ></v-slider>
+
+            <v-text-field
+              v-model="styleToUpdate.dashArray"
+              label="Dash Array"
+              placeholder="Enter Dash Array"
+              variant="outlined"
+              class="mb-2"
+              v-maska:[dashArray]
+            />
           </template>
 
           <!-- Additional fields for line type layers -->
@@ -164,6 +176,15 @@
               thumb-label
               class="my-5"
             ></v-slider>
+
+            <v-text-field
+              v-model="styleToUpdate.dashArray"
+              label="Dash Array"
+              placeholder="Enter Dash Array"
+              variant="outlined"
+              class="mb-2"
+              v-maska:[dashArray]
+            />
           </template>
 
           <!-- Additional fields for polygon type layers -->
@@ -233,6 +254,15 @@
                 v-model="styleToUpdate.fillColor"
               ></v-color-picker>
             </v-menu>
+
+            <v-text-field
+              v-model="styleToUpdate.dashArray"
+              label="Dash Array"
+              placeholder="Enter Dash Array"
+              variant="outlined"
+              class="mb-2"
+              v-maska:[dashArray]
+            />
           </template>
         </v-form>
       </v-card-text>
@@ -247,6 +277,8 @@
 </template>
 
 <script>
+import { vMaska } from "maska";
+
 const defaultStyle = {
   radius: 1,
   borderSize: 5,
@@ -254,6 +286,7 @@ const defaultStyle = {
   fillColor: "#DF950D", // Default fill color
   borderColor: "#000000ff", // Default border color
   lineColor: "#000000ff", // Default line color
+  dashArray: "0,0", // Default dash array
 };
 
 export default {
@@ -267,10 +300,15 @@ export default {
     const layersStoreInstance = layersStore();
     return { layersStoreInstance };
   },
+  directives: { maska: vMaska },
   data() {
     return {
       dialogVisible: false,
       styleToUpdate: defaultStyle,
+      dashArray: {
+        mask: "#,#",
+        eager: true,
+      },
     };
   },
   watch: {

@@ -9,7 +9,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, nextTick } from "vue";
 import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
-import { CollisionFilterExtension } from "@deck.gl/extensions";
+import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
 
 const config = useRuntimeConfig();
 
@@ -226,6 +226,11 @@ export default {
             onClick: ({ object }) => {
               this.layersStoreInstance.setSelectedFeature(object);
             },
+            
+            getDashArray: layer.style?.dashArray?.split(',').map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
           });
         } else if (layer.type === "line") {
           geojson = new GeoJsonLayer({
@@ -243,6 +248,10 @@ export default {
             onClick: ({ object }) => {
               this.layersStoreInstance.setSelectedFeature(object);
             },
+            getDashArray: layer.style?.dashArray?.split(',').map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
           });
         } else if (layer.type === "polygon") {
           geojson = new GeoJsonLayer({
@@ -264,6 +273,10 @@ export default {
             onClick: ({ object }) => {
               this.layersStoreInstance.setSelectedFeature(object);
             },
+            getDashArray: layer.style?.dashArray?.split(',').map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
           });
         }
 

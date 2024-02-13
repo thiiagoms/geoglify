@@ -38,10 +38,11 @@ app.post("/layers", async (req, res) => {
   newLayer.style = {
     radius: 1,
     borderSize: 5,
-    lineWidth: 1,
+    lineWidth: 5,
     fillColor: "#DF950D", // Default fill color
     borderColor: "#000000ff", // Default border color
     lineColor: "#000000ff", // Default line color
+    dashArray: "0,0", // Default dash array
   };
 
   const insertedLayer = await insertLayer(newLayer);
