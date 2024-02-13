@@ -1,0 +1,352 @@
+<template>
+  <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
+    <!-- Dialog content -->
+    <v-card>
+
+      <v-card-title class="font-weight-black py-5">EDIT STYLE</v-card-title>
+      <v-divider></v-divider>
+
+      <v-card-text>
+        <v-form ref="form">
+          <!-- SVG container to preview the style -->
+          <div class="svg-container mb-5">
+            <svg width="100" height="100">
+              <!-- Rendering SVG according to layer type and style -->
+              <template v-if="layerType === 'point' && style">
+                <circle
+                  cx="50"
+                  cy="50"
+                  :r="style.radius * 5"
+                  :stroke="hexToRgba(style.borderColor)"
+                  :fill="hexToRgba(style.fillColor)"
+                  :stroke-width="style.borderSize"
+                />
+              </template>
+              <template v-else-if="layerType === 'line' && style">
+                <line
+                  x1="10"
+                  y1="10"
+                  x2="90"
+                  y2="90"
+                  :stroke="hexToRgba(style.lineColor)"
+                  :stroke-width="style.lineWidth"
+                />
+              </template>
+
+              <template v-else-if="layerType === 'polygon' && style">
+                <rect
+                  x="10"
+                  y="10"
+                  width="80"
+                  height="80"
+                  :stroke="hexToRgba(style.borderColor)"
+                  :fill="hexToRgba(style.fillColor)"
+                  :stroke-width="style.borderSize"
+                />
+              </template>
+            </svg>
+          </div>
+
+          <!-- Additional fields for point type layers -->
+          <template v-if="layerType === 'point'">
+            <v-menu open-on-hover>
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="style.borderColor"
+                  label="Border Color"
+                  placeholder="Enter Border Color"
+                  variant="outlined"
+                  class="mb-2"
+                  readonly
+                  v-bind="props"
+                >
+                  <template v-slot:append-inner>
+                    <div
+                      :style="{
+                        backgroundColor: style.borderColor
+                          ? style.borderColor.slice(0, -2)
+                          : 'transparent',
+                        width: '24px',
+                        height: '24px',
+                      }"
+                    ></div>
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-color-picker v-model="style.borderColor"></v-color-picker>
+            </v-menu>
+
+            <v-slider
+              v-model="style.borderSize"
+              label="Border Size"
+              min="0"
+              max="10"
+              step="1"
+              thumb-label
+              class="my-5"
+            ></v-slider>
+
+            <v-menu open-on-hover>
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="style.fillColor"
+                  label="Fill Color"
+                  placeholder="Enter Fill Color"
+                  variant="outlined"
+                  class="mb-2"
+                  readonly
+                  v-bind="props"
+                >
+                  <template v-slot:append-inner>
+                    <div
+                      :style="{
+                        backgroundColor: style.fillColor
+                          ? style.fillColor.slice(0, -2)
+                          : 'transparent',
+                        width: '24px',
+                        height: '24px',
+                      }"
+                    ></div>
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-color-picker v-model="style.fillColor"></v-color-picker>
+            </v-menu>
+
+            <v-slider
+              v-model="style.radius"
+              label="Radius size"
+              min="0"
+              max="10"
+              step="1"
+              thumb-label
+              class="my-5"
+            ></v-slider>
+          </template>
+
+          <!-- Additional fields for line type layers -->
+          <template v-else-if="layerType === 'line'">
+            <v-menu open-on-hover>
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="style.lineColor"
+                  label="Line Color"
+                  placeholder="Enter Line Color"
+                  readonly
+                  variant="outlined"
+                  class="mb-2"
+                  v-bind="props"
+                >
+                  <template v-slot:append-inner>
+                    <div
+                      :style="{
+                        backgroundColor: style.lineColor
+                          ? style.lineColor.slice(0, -2)
+                          : 'transparent',
+                        width: '24px',
+                        height: '24px',
+                      }"
+                    ></div>
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-color-picker v-model="style.lineColor"></v-color-picker>
+            </v-menu>
+
+            <v-slider
+              v-model="style.lineWidth"
+              label="Line Width"
+              min="0"
+              max="10"
+              step="1"
+              thumb-label
+              class="my-5"
+            ></v-slider>
+          </template>
+
+          <!-- Additional fields for polygon type layers -->
+          <template v-else-if="layerType === 'polygon'">
+            <v-menu open-on-hover>
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="style.borderColor"
+                  label="Border Color"
+                  placeholder="Enter Border Color"
+                  variant="outlined"
+                  class="mb-2"
+                  readonly
+                  v-bind="props"
+                >
+                  <template v-slot:append-inner>
+                    <div
+                      :style="{
+                        backgroundColor: style.borderColor
+                          ? style.borderColor.slice(0, -2)
+                          : 'transparent',
+                        width: '24px',
+                        height: '24px',
+                      }"
+                    ></div>
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-color-picker v-model="style.borderColor"></v-color-picker>
+            </v-menu>
+
+            <v-slider
+              v-model="style.borderSize"
+              label="Border Size"
+              min="0"
+              max="10"
+              step="1"
+              thumb-label
+              class="my-5"
+            ></v-slider>
+
+            <v-menu open-on-hover>
+              <template v-slot:activator="{ props }">
+                <v-text-field
+                  v-model="style.fillColor"
+                  label="Fill Color"
+                  placeholder="Enter Fill Color"
+                  variant="outlined"
+                  class="mb-2"
+                  readonly
+                  v-bind="props"
+                >
+                  <template v-slot:append-inner>
+                    <div
+                      :style="{
+                        backgroundColor: style.fillColor
+                          ? style.fillColor.slice(0, -2)
+                          : 'transparent',
+                        width: '24px',
+                        height: '24px',
+                      }"
+                    ></div>
+                  </template>
+                </v-text-field>
+              </template>
+
+              <v-color-picker v-model="style.fillColor"></v-color-picker>
+            </v-menu>
+          </template>
+        </v-form>
+      </v-card-text>
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog">Close</v-btn>
+        <v-btn text @click="saveLayer">Save</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script>
+export default {
+  props: {
+    open: Boolean,
+    layerType: String,
+    style: Object,
+    layerId: String,
+  },
+  data() {
+    // Check if style object is defined and has color properties, else use default colors
+    const defaultStyle = {
+      radius: 1,
+      borderSize: 1,
+      lineWidth: 1,
+      fillColor: "#ff0000ff", // Default fill color
+      borderColor: "#ff0000ff", // Default border color
+      lineColor: "#ff0000ff", // Default line color
+    };
+
+    const appliedStyle = this.style
+      ? {
+          ...defaultStyle,
+          ...this.style,
+        }
+      : defaultStyle;
+
+    return {
+      dialogVisible: false,
+      style: appliedStyle,
+    };
+  },
+  watch: {
+    open(value) {
+      this.dialogVisible = value;
+    },
+    dialogVisible(value) {
+      this.$emit("update:open", value);
+    },
+    style: {
+      handler(newStyleData) {
+        const defaultStyle = {
+          radius: 1,
+          borderSize: 1,
+          lineWidth: 1,
+          fillColor: "#ff0000ff", // Default fill color
+          borderColor: "#ff0000ff", // Default border color
+          lineColor: "#ff0000ff", // Default line color
+        };
+
+        const appliedStyle = newStyleData
+          ? {
+              ...defaultStyle,
+              ...newStyleData,
+            }
+          : defaultStyle;
+
+        this.style = appliedStyle;
+      },
+      deep: true,
+    },
+  },
+  methods: {
+    async saveLayer() {
+      if (!this.layerId) {
+        console.error("Layer ID not provided.");
+        return;
+      }
+
+      await this.layersStoreInstance.updateLayerStyle(this.layerId, this.style);
+
+      this.closeDialog();
+    },
+    closeDialog() {
+      this.dialogVisible = false;
+    },
+    hexToRgba(hex) {
+      if (!hex) return "";
+
+      // If hex is in #rrggbb format, append 'ff' for alpha channel
+      if (hex.length === 7) {
+        hex += "ff";
+      }
+
+      const r = parseInt(hex.substring(1, 3), 16);
+      const g = parseInt(hex.substring(3, 5), 16);
+      const b = parseInt(hex.substring(5, 7), 16);
+      const a = parseInt(hex.substring(7, 9), 16) / 255;
+
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    },
+  },
+};
+</script>
+
+<style scoped>
+.svg-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  background-color: #ebeaea;
+}
+</style>

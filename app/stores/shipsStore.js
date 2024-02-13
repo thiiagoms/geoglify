@@ -62,6 +62,11 @@ export const shipsStore = defineStore("shipsStore", {
 
     // Action to create or replace a ship in the list
     createOrReplaceShip(ship) {
+      // Check if the ship object is valid
+      if (!ship || !ship._id) {
+        console.error(`Invalid ship object`, ship);
+        return;
+      }
       // Process ship data before storing it
       this.shipList.set(ship._id, this.processShipData(ship));
     },

@@ -1,11 +1,13 @@
 <template>
-   <NuxtLayout>
-    <NuxtPage/>
+  <VitePwaManifest />
+  <NuxtLayout>
+    <NuxtPage />
   </NuxtLayout>
 </template>
 
 <style>
-body, html {
-  overflow: hidden
+body,
+html {
+  overflow: hidden;
 }
 </style>
