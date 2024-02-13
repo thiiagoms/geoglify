@@ -33,6 +33,17 @@ app.post("/layers", async (req, res) => {
 
   // Inserting the new layer
   const newLayer = { code, name, description, type };
+
+  // Add default style to the new layer
+  newLayer.style = {
+    radius: 1,
+    borderSize: 5,
+    lineWidth: 1,
+    fillColor: "#DF950D", // Default fill color
+    borderColor: "#000000ff", // Default border color
+    lineColor: "#000000ff", // Default line color
+  };
+
   const insertedLayer = await insertLayer(newLayer);
 
   // If layer insertion is successful, add features to the features table
@@ -46,6 +57,8 @@ app.post("/layers", async (req, res) => {
         return await insertFeature(layerId, feature); // Inserting feature into the features table
       })
     );
+
+    newLayer.features = features;
 
     // Sending response
     res.json(newLayer);
@@ -78,6 +91,13 @@ app.get("/layers/:layerId/features", async (req, res) => {
   const layerId = req.params.layerId;
   const features = await getFeaturesByLayerId(layerId);
   res.json(features);
+});
+
+app.put("/layers/:id/style", async (req, res) => {
+  const layerId = req.params.id;
+  const newStyle = req.body;
+  const result = await updateLayerStyle(layerId, newStyle);
+  res.json(result);
 });
 
 async function startServer() {
@@ -138,10 +158,10 @@ async function updateLayer(layerId, updatedLayer) {
     .db("geoglify")
     .collection("layers")
     .updateOne(
-      { _id: new ObjectId(layerId) }, // Filter to find the layer with the provided ID
-      { $set: updatedLayer } // Update the layer with the new data
+      { _id: new ObjectId(layerId) }, 
+      { $set: updatedLayer }
     );
-  return result.modifiedCount; // Return the number of modified documents (should be 1 if the update is successful)
+  return result.modifiedCount;
 }
 
 async function deleteLayer(layerId) {
@@ -169,4 +189,15 @@ async function insertFeature(layerId, feature) {
     .insertOne(feature);
 
   return result;
+}
+
+async function updateLayerStyle(layerId, newStyle) {
+  const result = await client
+    .db("geoglify")
+    .collection("layers")
+    .updateOne(
+      { _id: new ObjectId(layerId) },
+      { $set: { style: newStyle } }
+    );
+  return result.modifiedCount; 
 }

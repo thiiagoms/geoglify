@@ -44,7 +44,6 @@
               v-if="!item.isLoading"
               v-model="item.isActive"
               @change="handleLayerCheckboxChange(item)"
-              :disabled="isLoading"
             ></v-checkbox-btn>
             <v-icon v-else color="primary" class="ma-2">
               mdi-loading mdi-spin

@@ -119,6 +119,9 @@ export default {
   },
   watch: {
     open(value) {
+      if (!value) {
+        this.clearForm();
+      }
       this.dialogVisible = value;
     },
     dialogVisible(value) {
@@ -130,6 +133,18 @@ export default {
     return { layersStoreInstance };
   },
   methods: {
+    clearForm() {
+      this.newLayer.code = null;
+      this.newLayer.name = null;
+      this.newLayer.description = null;
+      this.newLayer.type = null;
+      this.newLayer.file = null;
+      this.newLayer.style = null;
+      this.newLayer.features = [];
+      this.newLayer.hasError = false;
+      this.newLayer.msgError = "";
+      this.$refs.form.resetValidation();
+    },
     async saveLayer() {
       const { valid } = await this.$refs.form.validate();
       if (valid) {

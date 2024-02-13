@@ -45,7 +45,7 @@ export default {
     return {
       socket: null,
       messageBuffer: [],
-      bufferInterval: null
+      bufferInterval: null,
     };
   },
 
@@ -168,7 +168,8 @@ export default {
         getPosition: (f) => f.location.coordinates,
         getAngle: (f) => 360 - f.hdg,
         getSize: (f) => f.size,
-        getColor: (f) => f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : f.color,
+        getColor: (f) =>
+          f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : f.color,
         getCollisionPriority: (f) => f.priority,
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
@@ -212,9 +213,12 @@ export default {
           extruded: false,
           autoHighlight: true,
           highlightColor: [255, 234, 0, 125],
-          getFillColor: (f) => f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : layer.style?.getFillColor || [255, 0, 0, 125],
-          getLineColor: layer.style?.getLineColor || [0, 0, 0, 255],
-          getLineWidth: layer.style?.getLineWidth || 4,
+          getFillColor: (f) =>
+            f._id == this.selectedFeature?._id
+              ? [255, 234, 0, 255]
+              : this.hexToRgbaArray(layer.style?.fillColor),
+          getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
+          getLineWidth: layer.style?.borderSize || 4,
           lineWidthUnits: "pixels",
           onClick: ({ object }) => {
             this.layersStoreInstance.setSelectedFeature(object);
@@ -258,6 +262,25 @@ export default {
         },
         controller: true,
       });
+    },
+
+    hexToRgbaArray(hex) {
+      
+      if (!hex) return [223, 149, 13, 255]; // Return orange with alpha 255 if no color is defined
+
+      // If hex is in #rrggbb format, append 'ff' for the alpha channel
+      if (hex.length === 7) {
+        hex += "ff";
+      }
+
+      // Parse hexadecimal values to decimal for each color channel and alpha channel
+      const r = parseInt(hex.substring(1, 3), 16);
+      const g = parseInt(hex.substring(3, 5), 16);
+      const b = parseInt(hex.substring(5, 7), 16);
+      const a = parseInt(hex.substring(7, 9), 16); // Alpha from 0 to 255
+      
+      // Return array with values [r, g, b, a]
+      return [r, g, b, a];
     },
   },
 

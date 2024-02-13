@@ -3,7 +3,6 @@ import { defineStore } from "pinia";
 export const layersStore = defineStore("layersStore", {
   state: () => ({
     layerList: new Map(),
-    teste: "ola",
     selectedFeature: null,
     isLoading: false,
     searchText: "",
@@ -144,6 +143,7 @@ export const layersStore = defineStore("layersStore", {
         });
 
         let layer = toRaw(data.value);
+        layer.isActive = true;
         this.layerList.set(layer._id, layer);
         console.info("Layer created successfully");
       } catch (error) {
@@ -181,6 +181,27 @@ export const layersStore = defineStore("layersStore", {
         this.layerList.set(layerId, layer);
       } else {
         console.error(`Layer ${layerId} not found for feature clearing`);
+      }
+    },
+
+    // Update the style of a layer
+    async updateLayerStyle(layerId, newStyle) {
+      try {
+        await fetch(`${this.getRequestBaseURL()}/layers/${layerId}/style`, {
+          method: "PUT",
+          body: JSON.stringify(newStyle),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const layer = this.layerList.get(layerId);
+        layer.style = newStyle;
+        this.layerList.set(layerId, layer);
+
+        console.info("Layer style updated successfully");
+      } catch (error) {
+        console.error(`Error updating layer style`, error);
       }
     },
 

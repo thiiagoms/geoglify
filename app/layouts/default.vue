@@ -93,7 +93,7 @@
       <v-layout-item
         model-value
         class="float-left pointer-events-none"
-        height="auto"
+        height="0"
       >
         <v-btn
           icon="mdi-ferry"
@@ -104,7 +104,7 @@
           :active="isNavigationShipsDrawerOpen"
           @click="toggleNavigation('ships')"
           class="float-left pointer-events-initial"
-          style="position: absolute; top: 10px; left: 10px;"
+          style="position: absolute; top: 10px; left: 10px"
         />
 
         <v-btn
@@ -116,7 +116,7 @@
           :active="isNavigationLayersDrawerOpen"
           @click="toggleNavigation('layers')"
           class="float-left pointer-events-initial"
-          style="position: absolute; top: 70px; left: 10px;"
+          style="position: absolute; top: 70px; left: 10px"
         />
       </v-layout-item>
       <slot />
