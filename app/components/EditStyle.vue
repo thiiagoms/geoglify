@@ -2,7 +2,6 @@
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <!-- Dialog content -->
     <v-card>
-
       <v-card-title class="font-weight-black py-5">EDIT STYLE</v-card-title>
       <v-divider></v-divider>
 
@@ -16,10 +15,10 @@
                 <circle
                   cx="50"
                   cy="50"
-                  :r="style.radius * 5"
-                  :stroke="hexToRgba(style.borderColor)"
-                  :fill="hexToRgba(style.fillColor)"
-                  :stroke-width="style.borderSize"
+                  :r="styleToUpdate.radius * 5"
+                  :stroke="hexToRgba(styleToUpdate.borderColor)"
+                  :fill="hexToRgba(styleToUpdate.fillColor)"
+                  :stroke-width="styleToUpdate.borderSize"
                 />
               </template>
               <template v-else-if="layerType === 'line' && style">
@@ -28,8 +27,8 @@
                   y1="10"
                   x2="90"
                   y2="90"
-                  :stroke="hexToRgba(style.lineColor)"
-                  :stroke-width="style.lineWidth"
+                  :stroke="hexToRgba(styleToUpdate.lineColor)"
+                  :stroke-width="styleToUpdate.lineWidth"
                 />
               </template>
 
@@ -39,9 +38,9 @@
                   y="10"
                   width="80"
                   height="80"
-                  :stroke="hexToRgba(style.borderColor)"
-                  :fill="hexToRgba(style.fillColor)"
-                  :stroke-width="style.borderSize"
+                  :stroke="hexToRgba(styleToUpdate.borderColor)"
+                  :fill="hexToRgba(styleToUpdate.fillColor)"
+                  :stroke-width="styleToUpdate.borderSize"
                 />
               </template>
             </svg>
@@ -52,7 +51,7 @@
             <v-menu open-on-hover>
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="style.borderColor"
+                  v-model="styleToUpdate.borderColor"
                   label="Border Color"
                   placeholder="Enter Border Color"
                   variant="outlined"
@@ -63,9 +62,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: style.borderColor
-                          ? style.borderColor.slice(0, -2)
-                          : 'transparent',
+                        backgroundColor: hexToRgba(styleToUpdate.borderColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -74,11 +71,13 @@
                 </v-text-field>
               </template>
 
-              <v-color-picker v-model="style.borderColor"></v-color-picker>
+              <v-color-picker
+                v-model="styleToUpdate.borderColor"
+              ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="style.borderSize"
+              v-model="styleToUpdate.borderSize"
               label="Border Size"
               min="0"
               max="10"
@@ -90,7 +89,7 @@
             <v-menu open-on-hover>
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="style.fillColor"
+                  v-model="styleToUpdate.fillColor"
                   label="Fill Color"
                   placeholder="Enter Fill Color"
                   variant="outlined"
@@ -101,9 +100,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: style.fillColor
-                          ? style.fillColor.slice(0, -2)
-                          : 'transparent',
+                        backgroundColor: hexToRgba(styleToUpdate.fillColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -112,11 +109,13 @@
                 </v-text-field>
               </template>
 
-              <v-color-picker v-model="style.fillColor"></v-color-picker>
+              <v-color-picker
+                v-model="styleToUpdate.fillColor"
+              ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="style.radius"
+              v-model="styleToUpdate.radius"
               label="Radius size"
               min="0"
               max="10"
@@ -131,7 +130,7 @@
             <v-menu open-on-hover>
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="style.lineColor"
+                  v-model="styleToUpdate.lineColor"
                   label="Line Color"
                   placeholder="Enter Line Color"
                   readonly
@@ -142,9 +141,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: style.lineColor
-                          ? style.lineColor.slice(0, -2)
-                          : 'transparent',
+                        backgroundColor: hexToRgba(styleToUpdate.lineColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -153,11 +150,13 @@
                 </v-text-field>
               </template>
 
-              <v-color-picker v-model="style.lineColor"></v-color-picker>
+              <v-color-picker
+                v-model="styleToUpdate.lineColor"
+              ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="style.lineWidth"
+              v-model="styleToUpdate.lineWidth"
               label="Line Width"
               min="0"
               max="10"
@@ -172,7 +171,7 @@
             <v-menu open-on-hover>
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="style.borderColor"
+                  v-model="styleToUpdate.borderColor"
                   label="Border Color"
                   placeholder="Enter Border Color"
                   variant="outlined"
@@ -183,9 +182,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: style.borderColor
-                          ? style.borderColor.slice(0, -2)
-                          : 'transparent',
+                        backgroundColor: hexToRgba(styleToUpdate.borderColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -194,11 +191,13 @@
                 </v-text-field>
               </template>
 
-              <v-color-picker v-model="style.borderColor"></v-color-picker>
+              <v-color-picker
+                v-model="styleToUpdate.borderColor"
+              ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="style.borderSize"
+              v-model="styleToUpdate.borderSize"
               label="Border Size"
               min="0"
               max="10"
@@ -210,7 +209,7 @@
             <v-menu open-on-hover>
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="style.fillColor"
+                  v-model="styleToUpdate.fillColor"
                   label="Fill Color"
                   placeholder="Enter Fill Color"
                   variant="outlined"
@@ -221,9 +220,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: style.fillColor
-                          ? style.fillColor.slice(0, -2)
-                          : 'transparent',
+                        backgroundColor: hexToRgba(styleToUpdate.fillColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -232,7 +229,9 @@
                 </v-text-field>
               </template>
 
-              <v-color-picker v-model="style.fillColor"></v-color-picker>
+              <v-color-picker
+                v-model="styleToUpdate.fillColor"
+              ></v-color-picker>
             </v-menu>
           </template>
         </v-form>
@@ -241,13 +240,22 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn text @click="closeDialog">Close</v-btn>
-        <v-btn text @click="saveLayer">Save</v-btn>
+        <v-btn text @click="updateLayerStyle">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
+const defaultStyle = {
+  radius: 1,
+  borderSize: 5,
+  lineWidth: 1,
+  fillColor: "#DF950D", // Default fill color
+  borderColor: "#000000ff", // Default border color
+  lineColor: "#000000ff", // Default line color
+};
+
 export default {
   props: {
     open: Boolean,
@@ -255,67 +263,39 @@ export default {
     style: Object,
     layerId: String,
   },
+  setup() {
+    const layersStoreInstance = layersStore();
+    return { layersStoreInstance };
+  },
   data() {
-    // Check if style object is defined and has color properties, else use default colors
-    const defaultStyle = {
-      radius: 1,
-      borderSize: 1,
-      lineWidth: 1,
-      fillColor: "#ff0000ff", // Default fill color
-      borderColor: "#ff0000ff", // Default border color
-      lineColor: "#ff0000ff", // Default line color
-    };
-
-    const appliedStyle = this.style
-      ? {
-          ...defaultStyle,
-          ...this.style,
-        }
-      : defaultStyle;
-
     return {
       dialogVisible: false,
-      style: appliedStyle,
+      styleToUpdate: defaultStyle,
     };
   },
   watch: {
     open(value) {
+      if (value) {
+        this.styleToUpdate = this.style || defaultStyle;
+      }
+
       this.dialogVisible = value;
     },
     dialogVisible(value) {
       this.$emit("update:open", value);
     },
-    style: {
-      handler(newStyleData) {
-        const defaultStyle = {
-          radius: 1,
-          borderSize: 1,
-          lineWidth: 1,
-          fillColor: "#ff0000ff", // Default fill color
-          borderColor: "#ff0000ff", // Default border color
-          lineColor: "#ff0000ff", // Default line color
-        };
-
-        const appliedStyle = newStyleData
-          ? {
-              ...defaultStyle,
-              ...newStyleData,
-            }
-          : defaultStyle;
-
-        this.style = appliedStyle;
-      },
-      deep: true,
-    },
   },
   methods: {
-    async saveLayer() {
+    async updateLayerStyle() {
       if (!this.layerId) {
         console.error("Layer ID not provided.");
         return;
       }
 
-      await this.layersStoreInstance.updateLayerStyle(this.layerId, this.style);
+      console.log("Updating layer style", this.styleToUpdate);
+      await this.layersStoreInstance.updateLayerStyle(this.layerId, {
+        ...this.styleToUpdate,
+      });
 
       this.closeDialog();
     },
