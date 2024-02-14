@@ -204,28 +204,72 @@ export default {
       const geojsonLayers = [];
 
       this.activeLayersList.forEach((layer) => {
-        let geojson = new GeoJsonLayer({
-          id: layer._id,
-          data: [...layer.features],
-          pickable: true,
-          stroked: true,
-          filled: true,
-          extruded: false,
-          autoHighlight: true,
-          highlightColor: [255, 234, 0, 125],
-          getFillColor: (f) =>
-            f._id == this.selectedFeature?._id
-              ? [255, 234, 0, 255]
-              : this.hexToRgbaArray(layer.style?.fillColor),
-          getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
-          getLineWidth: layer.style?.borderSize || 4,
-          lineWidthUnits: "pixels",
-          onClick: ({ object }) => {
-            this.layersStoreInstance.setSelectedFeature(object);
-          },
-        });
+        let geojson;
 
-        geojsonLayers.push(geojson);
+        if (layer.type === "point") {
+          geojson = new GeoJsonLayer({
+            id: layer._id,
+            data: [...layer.features],
+            pickable: true,
+            filled: true,
+            getPointRadius: layer.style?.radius || 4,
+            getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
+            getLineWidth: layer.style?.borderSize || 4,
+            lineWidthUnits: "pixels",
+            pointRadiusUnits: "pixels",
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: (f) =>
+              f._id == this.selectedFeature?._id
+                ? [255, 234, 0, 255]
+                : this.hexToRgbaArray(layer.style?.fillColor),
+            onClick: ({ object }) => {
+              this.layersStoreInstance.setSelectedFeature(object);
+            },
+          });
+        } else if (layer.type === "line") {
+          geojson = new GeoJsonLayer({
+            id: layer._id,
+            data: [...layer.features],
+            pickable: true,
+            getLineWidth: layer.style?.lineWidth || 4,
+            lineWidthUnits: "pixels",
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getLineColor: (f) =>
+              f._id == this.selectedFeature?._id
+                ? [255, 234, 0, 255]
+                : this.hexToRgbaArray(layer.style?.lineColor),
+            onClick: ({ object }) => {
+              this.layersStoreInstance.setSelectedFeature(object);
+            },
+          });
+        } else if (layer.type === "polygon") {
+          geojson = new GeoJsonLayer({
+            id: layer._id,
+            data: [...layer.features],
+            pickable: true,
+            stroked: true,
+            filled: true,
+            extruded: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: (f) =>
+              f._id == this.selectedFeature?._id
+                ? [255, 234, 0, 255]
+                : this.hexToRgbaArray(layer.style?.fillColor),
+            getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
+            getLineWidth: layer.style?.borderSize || 4,
+            lineWidthUnits: "pixels",
+            onClick: ({ object }) => {
+              this.layersStoreInstance.setSelectedFeature(object);
+            },
+          });
+        }
+
+        if (geojson) {
+          geojsonLayers.push(geojson);
+        }
       });
 
       let layers = Object.freeze(geojsonLayers.concat([aisLayer, legendLayer]));
@@ -265,7 +309,6 @@ export default {
     },
 
     hexToRgbaArray(hex) {
-      
       if (!hex) return [223, 149, 13, 255]; // Return orange with alpha 255 if no color is defined
 
       // If hex is in #rrggbb format, append 'ff' for the alpha channel
@@ -278,7 +321,7 @@ export default {
       const g = parseInt(hex.substring(3, 5), 16);
       const b = parseInt(hex.substring(5, 7), 16);
       const a = parseInt(hex.substring(7, 9), 16); // Alpha from 0 to 255
-      
+
       // Return array with values [r, g, b, a]
       return [r, g, b, a];
     },

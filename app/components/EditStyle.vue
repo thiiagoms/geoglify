@@ -15,7 +15,7 @@
                 <circle
                   cx="50"
                   cy="50"
-                  :r="styleToUpdate.radius * 5"
+                  :r="styleToUpdate.radius"
                   :stroke="hexToRgba(styleToUpdate.borderColor)"
                   :fill="hexToRgba(styleToUpdate.fillColor)"
                   :stroke-width="styleToUpdate.borderSize"
@@ -118,7 +118,7 @@
               v-model="styleToUpdate.radius"
               label="Radius size"
               min="0"
-              max="10"
+              max="20"
               step="1"
               thumb-label
               class="my-5"
