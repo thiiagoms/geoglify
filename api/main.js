@@ -36,13 +36,14 @@ app.post("/layers", async (req, res) => {
 
   // Add default style to the new layer
   newLayer.style = {
-    radius: 1,
-    borderSize: 5,
-    lineWidth: 5,
+    radius: 6, // Default radius
+    lineWidth: 5, // Default border size
     fillColor: "#DF950D", // Default fill color
-    borderColor: "#000000ff", // Default border color
-    lineColor: "#000000ff", // Default line color
+    lineColor: "#000000ff", // Default Line Color
     dashArray: "0,0", // Default dash array
+    fillPattern: "none", // Default fill pattern
+    fillPatternScale: 1, // Default fill pattern scale
+    fillPatternOffset: [0, 0], // Default fill pattern offset
   };
 
   const insertedLayer = await insertLayer(newLayer);
@@ -76,10 +77,33 @@ app.get("/layers/:id", async (req, res) => {
 
 app.put("/layers/:id", async (req, res) => {
   const layerId = req.params.id;
-  const { code, name, description, type } = req.body;
-  const updatedLayer = { code, name, description, type };
-  const result = await updateLayer(layerId, updatedLayer);
-  res.json(result);
+  const { code, name, description, type, features } = req.body;
+
+  const updatedLayer = await updateLayer(layerId, { code, name, description, type });
+  
+  // Clear all features for the layer and insert the new ones only if features are present in the request and has a length greater than 0
+  if (updatedLayer && features && features.length > 0) {
+
+    const layerId = updatedLayer._id; // Assuming _id is the identifier for layers
+
+    await client
+      .db("geoglify")
+      .collection("features")
+      .deleteMany({ layer_id: new ObjectId(layerId) });
+
+    // Inserting features with associated layer_id
+    await Promise.all(
+      features.map(async (feature) => {
+        feature.layer_id = layerId; // Adding layer_id to each feature
+        return await insertFeature(layerId, feature); // Inserting feature into the features table
+      })
+    );
+
+    updatedLayer.features = features;
+  }
+
+  // Sending response
+  res.json(updatedLayer);
 });
 
 app.delete("/layers/:id", async (req, res) => {
@@ -155,14 +179,17 @@ async function getLayerById(layerId) {
 }
 
 async function updateLayer(layerId, updatedLayer) {
+  await client
+    .db("geoglify")
+    .collection("layers")
+    .updateOne({ _id: new ObjectId(layerId) }, { $set: updatedLayer });
+
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .updateOne(
-      { _id: new ObjectId(layerId) }, 
-      { $set: updatedLayer }
-    );
-  return result.modifiedCount;
+    .findOne({ _id: new ObjectId(layerId) });
+
+  return result;
 }
 
 async function deleteLayer(layerId) {
@@ -196,9 +223,6 @@ async function updateLayerStyle(layerId, newStyle) {
   const result = await client
     .db("geoglify")
     .collection("layers")
-    .updateOne(
-      { _id: new ObjectId(layerId) },
-      { $set: { style: newStyle } }
-    );
-  return result.modifiedCount; 
+    .updateOne({ _id: new ObjectId(layerId) }, { $set: { style: newStyle } });
+  return result.modifiedCount;
 }

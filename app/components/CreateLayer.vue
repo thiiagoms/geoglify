@@ -148,7 +148,6 @@ export default {
     async saveLayer() {
       const { valid } = await this.$refs.form.validate();
       if (valid) {
-        delete this.newLayer.file;
         await this.layersStoreInstance.createLayer(this.newLayer);
         this.closeDialog();
       }

@@ -38,6 +38,19 @@
             class="mb-2"
           ></v-textarea>
 
+          <v-file-input
+            v-model="updatedLayer.file"
+            label="GeoJSON File"
+            type="file"
+            @change="handleFileUpload"
+            accept=".geojson"
+            variant="outlined"
+            class="mb-2"
+            append-inner-icon="mdi-paperclip"
+            prepend-icon=""
+            :rules="fileRules"
+          ></v-file-input>
+
           <v-select
             v-model="updatedLayer.type"
             :items="layerTypes"
@@ -50,6 +63,7 @@
             readonly
             disabled
           ></v-select>
+
         </v-form>
       </v-card-text>
       <v-divider></v-divider>
@@ -120,6 +134,17 @@ export default {
   methods: {
     async loadLayerData(data) {
       this.updatedLayer = { ...data };
+    },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const geoJsonData = JSON.parse(e.target.result);
+        this.updatedLayer.features = geoJsonData.features;
+      };
+      reader.readAsText(file);
     },
     async saveLayer() {
       const { valid } = await this.$refs.form.validate();

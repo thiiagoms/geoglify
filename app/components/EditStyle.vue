@@ -5,58 +5,23 @@
       <v-card-title class="font-weight-black py-5">EDIT STYLE</v-card-title>
       <v-divider></v-divider>
 
-      <v-card-text>
+      <v-card-text v-if="!!styleToUpdate">
         <v-form ref="form">
-          <!-- SVG container to preview the style -->
           <div class="svg-container mb-5">
-            <svg width="100" height="100">
-              <!-- Rendering SVG according to layer type and style -->
-              <template v-if="layerType === 'point' && style">
-                <circle
-                  cx="50"
-                  cy="50"
-                  :r="styleToUpdate.radius"
-                  :stroke="hexToRgba(styleToUpdate.borderColor)"
-                  :fill="hexToRgba(styleToUpdate.fillColor)"
-                  :stroke-width="styleToUpdate.borderSize"
-                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
-                />
-              </template>
-              <template v-else-if="layerType === 'line' && style">
-                <line
-                  x1="10"
-                  y1="10"
-                  x2="90"
-                  y2="90"
-                  :stroke="hexToRgba(styleToUpdate.lineColor)"
-                  :stroke-width="styleToUpdate.lineWidth"
-                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
-                />
-              </template>
-
-              <template v-else-if="layerType === 'polygon' && style">
-                <rect
-                  x="10"
-                  y="10"
-                  width="80"
-                  height="80"
-                  :stroke="hexToRgba(styleToUpdate.borderColor)"
-                  :fill="hexToRgba(styleToUpdate.fillColor)"
-                  :stroke-width="styleToUpdate.borderSize"
-                  :stroke-dasharray="styleToUpdate.dashArray?.replace(',', ' ')"
-                />
-              </template>
-            </svg>
+            <PreviewStyle
+              :style.sync="styleToUpdate"
+              :type.sync="layerType"
+            ></PreviewStyle>
           </div>
 
           <!-- Additional fields for point type layers -->
           <template v-if="layerType === 'point'">
-            <v-menu open-on-hover>
+            <v-menu open-on-hover :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="styleToUpdate.borderColor"
-                  label="Border Color"
-                  placeholder="Enter Border Color"
+                  v-model="styleToUpdate.lineColor"
+                  label="Line Color"
+                  placeholder="Enter Line Color"
                   variant="outlined"
                   class="mb-2"
                   readonly
@@ -65,7 +30,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: hexToRgba(styleToUpdate.borderColor),
+                        backgroundColor: hexToRgba(styleToUpdate.lineColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -75,13 +40,13 @@
               </template>
 
               <v-color-picker
-                v-model="styleToUpdate.borderColor"
+                v-model="styleToUpdate.lineColor"
               ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="styleToUpdate.borderSize"
-              label="Border Size"
+              v-model="styleToUpdate.lineWidth"
+              label="Line Width"
               min="0"
               max="10"
               step="1"
@@ -89,7 +54,7 @@
               class="my-5"
             ></v-slider>
 
-            <v-menu open-on-hover>
+            <v-menu open-on-hover :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.fillColor"
@@ -126,20 +91,11 @@
               thumb-label
               class="my-5"
             ></v-slider>
-
-            <v-text-field
-              v-model="styleToUpdate.dashArray"
-              label="Dash Array"
-              placeholder="Enter Dash Array"
-              variant="outlined"
-              class="mb-2"
-              v-maska:[dashArray]
-            />
           </template>
 
           <!-- Additional fields for line type layers -->
           <template v-else-if="layerType === 'line'">
-            <v-menu open-on-hover>
+            <v-menu open-on-hover :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.lineColor"
@@ -179,7 +135,7 @@
 
             <v-text-field
               v-model="styleToUpdate.dashArray"
-              label="Dash Array"
+              label="Dash Array Line"
               placeholder="Enter Dash Array"
               variant="outlined"
               class="mb-2"
@@ -189,12 +145,12 @@
 
           <!-- Additional fields for polygon type layers -->
           <template v-else-if="layerType === 'polygon'">
-            <v-menu open-on-hover>
+            <v-menu open-on-hover :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
-                  v-model="styleToUpdate.borderColor"
-                  label="Border Color"
-                  placeholder="Enter Border Color"
+                  v-model="styleToUpdate.lineColor"
+                  label="Line Color"
+                  placeholder="Enter Line Color"
                   variant="outlined"
                   class="mb-2"
                   readonly
@@ -203,7 +159,7 @@
                   <template v-slot:append-inner>
                     <div
                       :style="{
-                        backgroundColor: hexToRgba(styleToUpdate.borderColor),
+                        backgroundColor: hexToRgba(styleToUpdate.lineColor),
                         width: '24px',
                         height: '24px',
                       }"
@@ -213,13 +169,13 @@
               </template>
 
               <v-color-picker
-                v-model="styleToUpdate.borderColor"
+                v-model="styleToUpdate.lineColor"
               ></v-color-picker>
             </v-menu>
 
             <v-slider
-              v-model="styleToUpdate.borderSize"
-              label="Border Size"
+              v-model="styleToUpdate.lineWidth"
+              label="Line Width"
               min="0"
               max="10"
               step="1"
@@ -227,7 +183,16 @@
               class="my-5"
             ></v-slider>
 
-            <v-menu open-on-hover>
+            <v-text-field
+              v-model="styleToUpdate.dashArray"
+              label="Dash Array Line"
+              placeholder="Enter Dash Array"
+              variant="outlined"
+              class="mb-2"
+              v-maska:[dashArray]
+            />
+
+            <v-menu open-on-hover :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.fillColor"
@@ -255,14 +220,56 @@
               ></v-color-picker>
             </v-menu>
 
+            <v-select
+              v-model="styleToUpdate.fillPattern"
+              :items="patterns"
+              item-text="title"
+              item-value="value"
+              :item-props="itemProps"
+              label="Fill Pattern"
+              placeholder="Select Fill Pattern"
+              variant="outlined"
+              class="mb-2"
+              density="compact"
+            >
+              <template v-slot:selection="data">
+                <v-list-item
+                  :title="data.item.title"
+                  :prepend-avatar="'./patterns/' + data.item.value + '.png'"
+                  class="pa-0 pattern"
+                ></v-list-item>
+              </template>
+              <template v-slot:item="{ props, item }">
+                <v-list-item
+                  v-bind="props"
+                  :title="item.title"
+                  :prepend-avatar="'./patterns/' + item.value + '.png'"
+                  class="pa-0 pl-2 pattern"
+                ></v-list-item>
+              </template>
+            </v-select>
+
+            <v-slider
+              v-model="styleToUpdate.fillPatternScale"
+              label="Fill Pattern Scale"
+              min="0"
+              max="10"
+              step="1"
+              thumb-label
+              class="my-5"
+              v-if="styleToUpdate.fillPattern !== 'none'"
+            ></v-slider>
+
             <v-text-field
-              v-model="styleToUpdate.dashArray"
-              label="Dash Array"
-              placeholder="Enter Dash Array"
+              v-model="styleToUpdate.fillPatternOffset"
+              label="Fill Pattern Offset"
+              placeholder="Enter Fill Pattern Offset"
               variant="outlined"
               class="mb-2"
               v-maska:[dashArray]
-            />
+              v-if="styleToUpdate.fillPattern !== 'none'"
+            >
+            </v-text-field>
           </template>
         </v-form>
       </v-card-text>
@@ -280,13 +287,14 @@
 import { vMaska } from "maska";
 
 const defaultStyle = {
-  radius: 1,
-  borderSize: 5,
-  lineWidth: 1,
-  fillColor: "#DF950D", // Default fill color
-  borderColor: "#000000ff", // Default border color
-  lineColor: "#000000ff", // Default line color
+  radius: 6,
+  lineWidth: 5,
+  fillColor: "#DF950D", // Default fill color1
+  lineColor: "#000000ff", // Default Line Color
   dashArray: "0,0", // Default dash array
+  fillPattern: "none", // Default fill pattern
+  fillPatternScale: 1, // Default fill pattern scale
+  fillPatternOffset: [0, 0], // Default fill pattern offset
 };
 
 export default {
@@ -309,6 +317,49 @@ export default {
         mask: "#,#",
         eager: true,
       },
+      patterns: [
+        { title: "None", value: "none" },
+        { title: "Abstract 01", value: "abstract-01" },
+        { title: "Abstract 02", value: "abstract-02" },
+        { title: "Abstract 03", value: "abstract-03" },
+        { title: "Abstract 04", value: "abstract-04" },
+        { title: "Abstract 05", value: "abstract-05" },
+        { title: "Abstract 06", value: "abstract-06" },
+        { title: "Abstract 07", value: "abstract-07" },
+        { title: "Crosshatch 01", value: "crosshatch-01" },
+        { title: "Crosshatch 02", value: "crosshatch-02" },
+        { title: "Crosshatch 03", value: "crosshatch-03" },
+        { title: "Crosshatch 04", value: "crosshatch-04" },
+        { title: "Lines D 01", value: "lines-d-01" },
+        { title: "Lines D 02", value: "lines-d-02" },
+        { title: "Lines D 03", value: "lines-d-03" },
+        { title: "Lines D 04", value: "lines-d-04" },
+        { title: "Lines D 05", value: "lines-d-05" },
+        { title: "Lines D 06", value: "lines-d-06" },
+        { title: "Lines D 07", value: "lines-d-07" },
+        { title: "Lines D 08", value: "lines-d-08" },
+        { title: "Lines D 09", value: "lines-d-09" },
+        { title: "Lines D 10", value: "lines-d-10" },
+        { title: "Lines H 01", value: "lines-h-01" },
+        { title: "Lines H 02", value: "lines-h-02" },
+        { title: "Lines H 03", value: "lines-h-03" },
+        { title: "Lines H 04", value: "lines-h-04" },
+        { title: "Lines V 01", value: "lines-v-01" },
+        { title: "Lines V 02", value: "lines-v-02" },
+        { title: "Lines V 03", value: "lines-v-03" },
+        { title: "Lines V 04", value: "lines-v-04" },
+        { title: "Shapes 01", value: "shapes-01" },
+        { title: "Shapes 02", value: "shapes-02" },
+        { title: "Shapes 03", value: "shapes-03" },
+        { title: "Shapes 04", value: "shapes-04" },
+        { title: "Shapes 05", value: "shapes-05" },
+        { title: "Shapes 06", value: "shapes-06" },
+        { title: "Shapes 07", value: "shapes-07" },
+        { title: "Shapes 08", value: "shapes-08" },
+        { title: "Shapes 09", value: "shapes-09" },
+        { title: "Shapes 10", value: "shapes-10" },
+        { title: "Shapes 11", value: "shapes-11" },
+      ],
     };
   },
   watch: {
@@ -330,7 +381,6 @@ export default {
         return;
       }
 
-      console.log("Updating layer style", this.styleToUpdate);
       await this.layersStoreInstance.updateLayerStyle(this.layerId, {
         ...this.styleToUpdate,
       });
@@ -339,6 +389,7 @@ export default {
     },
     closeDialog() {
       this.dialogVisible = false;
+      this.styleToUpdate = null;
     },
     hexToRgba(hex) {
       if (!hex) return "";
@@ -355,16 +406,31 @@ export default {
 
       return `rgba(${r}, ${g}, ${b}, ${a})`;
     },
+    itemProps(item) {
+      return {
+        title: item.title,
+        subtitle: item.value,
+        "prepend-avatar": "/patterns/" + item.value + ".png",
+      };
+    },
   },
 };
 </script>
 
-<style scoped>
+<style>
 .svg-container {
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 10px;
   background-color: #ebeaea;
+  height: 200px;
+}
+
+.pattern .v-avatar {
+  background-color: #ebeaea;
+  height: 24px;
+  width: 24px;
+  margin-left: 5px;
 }
 </style>
