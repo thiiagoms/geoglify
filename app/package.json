@@ -29,7 +29,9 @@
     "vuetify": "^3.5.1"
   },
   "dependencies": {
+    "@deck.gl/extensions": "^8.9.34",
     "@mdi/font": "^7.4.47",
+    "maska": "^2.1.11",
     "splitpanes": "^3.1.5"
   }
 }

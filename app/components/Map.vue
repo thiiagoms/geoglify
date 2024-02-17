@@ -9,7 +9,11 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, nextTick } from "vue";
 import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
-import { CollisionFilterExtension } from "@deck.gl/extensions";
+import {
+  CollisionFilterExtension,
+  PathStyleExtension,
+  FillStyleExtension,
+} from "@deck.gl/extensions";
 
 const config = useRuntimeConfig();
 
@@ -207,64 +211,11 @@ export default {
         let geojson;
 
         if (layer.type === "point") {
-          geojson = new GeoJsonLayer({
-            id: layer._id,
-            data: [...layer.features],
-            pickable: true,
-            filled: true,
-            getPointRadius: layer.style?.radius || 4,
-            getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
-            getLineWidth: layer.style?.borderSize || 4,
-            lineWidthUnits: "pixels",
-            pointRadiusUnits: "pixels",
-            autoHighlight: true,
-            highlightColor: [255, 234, 0, 125],
-            getFillColor: (f) =>
-              f._id == this.selectedFeature?._id
-                ? [255, 234, 0, 255]
-                : this.hexToRgbaArray(layer.style?.fillColor),
-            onClick: ({ object }) => {
-              this.layersStoreInstance.setSelectedFeature(object);
-            },
-          });
+          geojson = this.getGeoJSONPointLayer(layer);
         } else if (layer.type === "line") {
-          geojson = new GeoJsonLayer({
-            id: layer._id,
-            data: [...layer.features],
-            pickable: true,
-            getLineWidth: layer.style?.lineWidth || 4,
-            lineWidthUnits: "pixels",
-            autoHighlight: true,
-            highlightColor: [255, 234, 0, 125],
-            getLineColor: (f) =>
-              f._id == this.selectedFeature?._id
-                ? [255, 234, 0, 255]
-                : this.hexToRgbaArray(layer.style?.lineColor),
-            onClick: ({ object }) => {
-              this.layersStoreInstance.setSelectedFeature(object);
-            },
-          });
+          geojson = this.getGeoJSONLineLayer(layer);
         } else if (layer.type === "polygon") {
-          geojson = new GeoJsonLayer({
-            id: layer._id,
-            data: [...layer.features],
-            pickable: true,
-            stroked: true,
-            filled: true,
-            extruded: false,
-            autoHighlight: true,
-            highlightColor: [255, 234, 0, 125],
-            getFillColor: (f) =>
-              f._id == this.selectedFeature?._id
-                ? [255, 234, 0, 255]
-                : this.hexToRgbaArray(layer.style?.fillColor),
-            getLineColor: this.hexToRgbaArray(layer.style?.borderColor),
-            getLineWidth: layer.style?.borderSize || 4,
-            lineWidthUnits: "pixels",
-            onClick: ({ object }) => {
-              this.layersStoreInstance.setSelectedFeature(object);
-            },
-          });
+          geojson = this.getGeoJSONPolygonLayer(layer);
         }
 
         if (geojson) {
@@ -281,6 +232,118 @@ export default {
 
       this.activeLayersList.forEach((layer) => {
         this.layersStoreInstance.setStateLoadingLayer(layer._id, false);
+      });
+    },
+
+    getGeoJSONPointLayer(layer) {
+      return new GeoJsonLayer({
+        id: layer._id,
+        data: [...layer.features],
+        pickable: true,
+        filled: true,
+        getPointRadius: layer.style?.radius || 4,
+        getLineColor: this.hexToRgbaArray(layer.style?.lineColor),
+        getLineWidth: layer.style?.lineWidth || 5,
+        lineWidthUnits: "pixels",
+        pointRadiusUnits: "pixels",
+        getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+        autoHighlight: true,
+        highlightColor: [255, 234, 0, 125],
+        getFillColor: (f) =>
+          f._id == this.selectedFeature?._id
+            ? [255, 234, 0, 255]
+            : this.hexToRgbaArray(layer.style?.fillColor),
+        onClick: ({ object }) => {
+          this.layersStoreInstance.setSelectedFeature(object);
+        },
+        updateTriggers: {
+          getPointRadius: layer.style?.radius,
+          getFillColor: [layer.style?.fillColor, this.selectedFeature],
+          getLineColor: layer.style?.lineColor,
+          getLineWidth: layer.style?.lineWidth,
+        },
+      });
+    },
+
+    getGeoJSONLineLayer(layer) {
+      return new GeoJsonLayer({
+        id: layer._id,
+        data: [...layer.features],
+        pickable: true,
+        getLineWidth: layer.style?.lineWidth || 5,
+        lineWidthUnits: "pixels",
+        autoHighlight: true,
+        highlightColor: [255, 234, 0, 125],
+        getLineColor: (f) =>
+          f._id == this.selectedFeature?._id
+            ? [255, 234, 0, 255]
+            : this.hexToRgbaArray(layer.style?.lineColor),
+        onClick: ({ object }) => {
+          this.layersStoreInstance.setSelectedFeature(object);
+        },
+        getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+        dashJustified: true,
+        dashGapPickable: true,
+        extensions: [new PathStyleExtension({ dash: true })],
+        updateTriggers: {
+          getLineColor: [layer.style?.lineColor, this.selectedFeature],
+          getLineWidth: layer.style?.lineWidth,
+          getDashArray: layer.style?.dashArray,
+        },
+      });
+    },
+
+    getGeoJSONPolygonLayer(layer) {
+      return new GeoJsonLayer({
+        id: layer._id,
+        data: [...layer.features],
+        pickable: true,
+        stroked: true,
+        filled: true,
+        extruded: false,
+        autoHighlight: true,
+        highlightColor: [255, 234, 0, 125],
+        getFillColor: (f) =>
+          f._id == this.selectedFeature?._id
+            ? [255, 234, 0, 255]
+            : this.hexToRgbaArray(layer.style?.fillColor),
+        getLineColor: this.hexToRgbaArray(layer.style?.lineColor),
+        getLineWidth: layer.style?.lineWidth || 5,
+        lineWidthUnits: "pixels",
+        onClick: ({ object }) => {
+          this.layersStoreInstance.setSelectedFeature(object);
+        },
+
+        //props added by PathStyleExtension
+        getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+        dashJustified: true,
+        dashGapPickable: true,
+
+        // props added by FillStyleExtension
+        fillPatternAtlas: "./patterns/patterns.png",
+        fillPatternMapping: "./patterns/patterns.json",
+        getFillPattern: (f) => layer.style?.fillPattern,
+        getFillPatternScale: (f) => layer.style?.fillPatternScale || 1,
+        getFillPatternOffset: (f) =>
+          layer.style?.fillPatternOffset.split(",").map(Number) || [0, 0],
+
+        extensions: [
+          new PathStyleExtension({ dash: true }),
+          new FillStyleExtension({
+            pattern:
+              !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
+          }),
+        ],
+
+        updateTriggers: {
+          getFillColor: [layer.style?.fillColor,this.selectedFeature],
+          getLineColor: layer.style?.lineColor,
+          getLineWidth: layer.style?.lineWidth,
+          getDashArray: layer.style?.dashArray,
+          getFillPattern: layer.style?.fillPattern,
+          getFillPatternScale: layer.style?.fillPatternScale,
+          getFillPatternOffset: layer.style?.fillPatternOffset,
+        },
       });
     },
 

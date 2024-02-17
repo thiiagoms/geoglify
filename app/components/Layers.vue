@@ -64,7 +64,7 @@
 
             <v-list density="compact">
               <v-list-item @click="openLayerEditor(item._id, item)">
-                <v-list-item-title>Edit Information</v-list-item-title>
+                <v-list-item-title>Edit Layer</v-list-item-title>
               </v-list-item>
               <v-list-item
                 @click="openLayerStyleEditor(item._id, item.type, item.style)"
