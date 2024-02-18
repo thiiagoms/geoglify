@@ -173,6 +173,17 @@ export const layersStore = defineStore("layersStore", {
       }
     },
 
+    async getFeaturesDetailsByLayer(layerId) {
+      try {
+        const { data } = await useFetch(
+          `${this.getRequestBaseURL()}/layers/${layerId}/features`
+        );
+        return toRaw(data.value).map((feature) => feature.properties);
+      } catch (error) {
+        console.error(`Error fetching features for layer ${layerId}`, error);
+      }
+    },
+
     // Define the clearFeaturesForLayer method
     clearFeaturesForLayer(layerId) {
       const layer = this.layerList.get(layerId);

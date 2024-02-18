@@ -7,7 +7,7 @@
 
       <v-card-text v-if="!!styleToUpdate">
         <v-form ref="form">
-          <div class="svg-container mb-5">
+          <div class="preview-container mb-5">
             <PreviewStyle
               :style.sync="styleToUpdate"
               :type.sync="layerType"
@@ -16,7 +16,7 @@
 
           <!-- Additional fields for point type layers -->
           <template v-if="layerType === 'point'">
-            <v-menu open-on-hover :close-on-content-click="false">
+            <v-menu open-on-click :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.lineColor"
@@ -47,14 +47,14 @@
             <v-slider
               v-model="styleToUpdate.lineWidth"
               label="Line Width"
-              min="0"
+              min="1"
               max="10"
               step="1"
               thumb-label
               class="my-5"
             ></v-slider>
 
-            <v-menu open-on-hover :close-on-content-click="false">
+            <v-menu open-on-click :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.fillColor"
@@ -85,7 +85,7 @@
             <v-slider
               v-model="styleToUpdate.radius"
               label="Radius size"
-              min="0"
+              min="1"
               max="20"
               step="1"
               thumb-label
@@ -95,7 +95,7 @@
 
           <!-- Additional fields for line type layers -->
           <template v-else-if="layerType === 'line'">
-            <v-menu open-on-hover :close-on-content-click="false">
+            <v-menu open-on-click :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.lineColor"
@@ -126,7 +126,7 @@
             <v-slider
               v-model="styleToUpdate.lineWidth"
               label="Line Width"
-              min="0"
+              min="1"
               max="10"
               step="1"
               thumb-label
@@ -145,7 +145,7 @@
 
           <!-- Additional fields for polygon type layers -->
           <template v-else-if="layerType === 'polygon'">
-            <v-menu open-on-hover :close-on-content-click="false">
+            <v-menu open-on-click :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.lineColor"
@@ -176,7 +176,7 @@
             <v-slider
               v-model="styleToUpdate.lineWidth"
               label="Line Width"
-              min="0"
+              min="1"
               max="10"
               step="1"
               thumb-label
@@ -192,7 +192,7 @@
               v-maska:[dashArray]
             />
 
-            <v-menu open-on-hover :close-on-content-click="false">
+            <v-menu open-on-click :close-on-content-click="false">
               <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="styleToUpdate.fillColor"
@@ -248,28 +248,6 @@
                 ></v-list-item>
               </template>
             </v-select>
-
-            <v-slider
-              v-model="styleToUpdate.fillPatternScale"
-              label="Fill Pattern Scale"
-              min="0"
-              max="10"
-              step="1"
-              thumb-label
-              class="my-5"
-              v-if="styleToUpdate.fillPattern !== 'none'"
-            ></v-slider>
-
-            <v-text-field
-              v-model="styleToUpdate.fillPatternOffset"
-              label="Fill Pattern Offset"
-              placeholder="Enter Fill Pattern Offset"
-              variant="outlined"
-              class="mb-2"
-              v-maska:[dashArray]
-              v-if="styleToUpdate.fillPattern !== 'none'"
-            >
-            </v-text-field>
           </template>
         </v-form>
       </v-card-text>
@@ -293,7 +271,7 @@ const defaultStyle = {
   lineColor: "#000000ff", // Default Line Color
   dashArray: "0,0", // Default dash array
   fillPattern: "none", // Default fill pattern
-  fillPatternScale: 1, // Default fill pattern scale
+  fillPatternScale: 100, // Default fill pattern scale
   fillPatternOffset: [0, 0], // Default fill pattern offset
 };
 
@@ -418,7 +396,7 @@ export default {
 </script>
 
 <style>
-.svg-container {
+.preview-container {
   display: flex;
   justify-content: center;
   align-items: center;

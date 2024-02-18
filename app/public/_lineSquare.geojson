@@ -5,15 +5,10 @@
       "type": "Feature",
       "properties": {},
       "geometry": {
-        "type": "Polygon",
+        "type": "LineString",
         "coordinates": [
-          [
-            [-90, -20],
-            [90, -20],
-            [90, 20],
-            [-90, 20],
-            [-90, -20]
-          ]
+          [-2.5, 0],
+          [2.5, 0]
         ]
       }
     }

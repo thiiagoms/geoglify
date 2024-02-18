@@ -42,7 +42,7 @@ app.post("/layers", async (req, res) => {
     lineColor: "#000000ff", // Default Line Color
     dashArray: "0,0", // Default dash array
     fillPattern: "none", // Default fill pattern
-    fillPatternScale: 1, // Default fill pattern scale
+    fillPatternScale: 100, // Default fill pattern scale
     fillPatternOffset: [0, 0], // Default fill pattern offset
   };
 

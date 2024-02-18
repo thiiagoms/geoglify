@@ -30,9 +30,19 @@
     <!-- Render each layer item -->
     <template v-slot:default="{ item }">
       <v-list-item class="layer-item px-2">
-        <v-list-item-title class="font-weight-bold">{{
-          item.name || "N/A"
-        }}</v-list-item-title>
+        <v-list-item-title>
+          <div class="legend-container">
+            <Legend
+              :style.sync="item.style"
+              :type.sync="item.type"
+              :id="item._id"
+            ></Legend>
+          </div>
+
+          <span class="text-subtitle-1 font-weight-bold">{{
+            item.name || "N/A"
+          }}</span>
+        </v-list-item-title>
 
         <v-list-item-subtitle class="text-caption">
           {{ item.description || "N/A" }}
@@ -63,6 +73,9 @@
             </template>
 
             <v-list density="compact">
+              <v-list-item @click="openDatatable(item._id)">
+                <v-list-item-title>Show Data</v-list-item-title>
+              </v-list-item>
               <v-list-item @click="openLayerEditor(item._id, item)">
                 <v-list-item-title>Edit Layer</v-list-item-title>
               </v-list-item>
@@ -106,6 +119,12 @@
     :layerId="layerIdToEditStyle"
     @update:open="updateOpenEditStyleDialogState"
   />
+
+  <DataLayer
+    :open="openDataDialog"
+    :layerId="layerIdToView"
+    @update:open="updateOpenDataDialogState"
+  />
 </template>
 
 <script>
@@ -118,10 +137,12 @@ export default {
       openEditDialog: false,
       openDeleteDialog: false,
       openEditStyleDialog: false,
+      openDataDialog: false,
       layerDataToEdit: null,
       styleDataToEdit: null,
       layerIdToEdit: null,
       layerIdToDelete: null,
+      layerIdToView: null,
       layerTypeToEditStyle: null,
       layerIdToEditStyle: null,
     };
@@ -176,6 +197,11 @@ export default {
       this.openEditStyleDialog = true;
     },
 
+    openDatatable(layerId) {
+      this.layerIdToView = layerId;
+      this.openDataDialog = true;
+    },
+
     updateOpenCreateDialogState(value) {
       this.openCreateDialog = value;
     },
@@ -191,6 +217,10 @@ export default {
     updateOpenEditStyleDialogState(value) {
       this.openEditStyleDialog = value;
     },
+
+    updateOpenDataDialogState(value) {
+      this.openDataDialog = value;
+    },
   },
 };
 </script>
@@ -199,5 +229,18 @@ export default {
 .layer-item {
   border-bottom: 1px solid #e0e0e0;
   min-height: 60px;
+}
+
+.legend-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fdfdfd;
+  border-radius: 50%;
+  height: 30px;
+  width: 30px;
+  float: left;
+  margin-left: -5px;
+  margin-top: -1px;
 }
 </style>

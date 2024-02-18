@@ -1,7 +1,6 @@
 <template>
   <div
-    id="mapPreview"
-    ref="mapPreview"
+    :id="`legend-${this.id}`"
     style="position: relative; width: 100%; height: 100%"
   ></div>
 </template>
@@ -13,14 +12,9 @@ import { PathStyleExtension, FillStyleExtension } from "@deck.gl/extensions";
 
 export default {
   props: {
+    id: String,
     style: Object,
     type: String,
-  },
-
-  setup()
-  {
-    const mapPreview = ref(null);
-    return { mapPreview };
   },
 
   data: () => ({
@@ -28,10 +22,11 @@ export default {
   }),
 
   async mounted() {
+    
     this.deck = new Deck({
       width: "100%",
       height: "100%",
-      parent: this.mapPreview,
+      parent: document.getElementById(`legend-${this.id}`),
       initialViewState: {
         longitude: 0,
         latitude: 0,
@@ -49,8 +44,11 @@ export default {
       deep: true,
     },
   },
+
   methods: {
     render() {
+      this.deck.setProps({ layers: [] });
+
       if (!!this.style) {
         switch (this.type) {
           case "point":
@@ -63,37 +61,35 @@ export default {
             this.renderPolygon();
             break;
         }
-      } else {
-        this.deck.setProps({ layers: [] });
       }
     },
     renderPoint() {
       const layer = new GeoJsonLayer({
-        data: "./_point.geojson",
+        id: "point-layer-" + this.id,
+        data: "./_pointSquare.geojson",
         stroked: true,
         filled: true,
-        getPointRadius: this.style?.radius || 4,
+        getPointRadius: this.style?.pointRadius > 8 ? this.style?.pointRadius : 8,
         getFillColor: this.hexToRgbaArray(this.style?.fillColor),
         getLineColor: this.hexToRgbaArray(this.style?.lineColor),
-        getLineWidth: this.style?.lineWidth || 5,
+        getLineWidth: this.style?.lineWidth > 3 ? 3 : this.style?.lineWidth,
         lineWidthUnits: "pixels",
         pointRadiusUnits: "pixels",
         updateTriggers: {
-          getPointRadius: this.style?.radius,
           getFillColor: this.style?.fillColor,
           getLineColor: this.style?.lineColor,
-          getLineWidth: this.style?.lineWidth
         },
       });
       this.deck.setProps({ layers: [layer] });
     },
     renderLine() {
       const layer = new GeoJsonLayer({
-        data: "./_line.geojson",
+        id: "line-layer-" + this.id,
+        data: "./_lineSquare.geojson",
         stroked: true,
         filled: true,
         getLineColor: this.hexToRgbaArray(this.style?.lineColor),
-        getLineWidth: this.style?.lineWidth || 5,
+        getLineWidth: this.style?.lineWidth > 7 ? 7 : this.style?.lineWidth,
         lineWidthUnits: "pixels",
         getDashArray: this.style?.dashArray?.split(",").map(Number) || [0, 0],
         dashJustified: true,
@@ -111,14 +107,14 @@ export default {
       let layer = null;
 
       if (this.style?.fillPattern != "none") {
-        
         layer = new GeoJsonLayer({
-          data: "./_polygon.geojson",
+          id: "polygon-layer-" + this.id,
+          data: "./_polygonSquare.geojson",
           stroked: true,
           filled: true,
           getFillColor: this.hexToRgbaArray(this.style?.fillColor),
           getLineColor: this.hexToRgbaArray(this.style?.lineColor),
-          getLineWidth: this.style?.lineWidth || 5,
+          getLineWidth: this.style?.lineWidth > 3 ? 3 : this.style?.lineWidth,
           lineWidthUnits: "pixels",
           getDashArray: this.style?.dashArray?.split(",").map(Number) || [0, 0],
           dashJustified: true,
@@ -132,7 +128,9 @@ export default {
           getFillPatternOffset: (f) => [0, 0],
           extensions: [
             new PathStyleExtension({ dash: true }),
-            new FillStyleExtension({ pattern: true }),
+            new FillStyleExtension({
+              pattern: this.style?.fillPattern != "none",
+            }),
           ],
           updateTriggers: {
             getFillColor: this.style?.fillColor,
@@ -146,7 +144,8 @@ export default {
         });
       } else {
         layer = new GeoJsonLayer({
-          data: "./_polygon.geojson",
+          id: "polygon-layer-" + this.id,
+          data: "./_polygonSquare.geojson",
           stroked: true,
           filled: true,
           getFillColor: this.hexToRgbaArray(this.style?.fillColor),
@@ -156,9 +155,7 @@ export default {
           getDashArray: this.style?.dashArray?.split(",").map(Number) || [0, 0],
           dashJustified: true,
           dashGapPickable: true,
-          extensions: [
-            new PathStyleExtension({ dash: true })
-          ],
+          extensions: [new PathStyleExtension({ dash: true })],
           updateTriggers: {
             getFillColor: this.style?.fillColor,
             getLineColor: this.style?.lineColor,

@@ -173,7 +173,7 @@ export default {
         getAngle: (f) => 360 - f.hdg,
         getSize: (f) => f.size,
         getColor: (f) =>
-          f._id == this.selectedFeature?._id ? [255, 234, 0, 255] : f.color,
+          f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.color,
         getCollisionPriority: (f) => f.priority,
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
@@ -323,9 +323,8 @@ export default {
         fillPatternAtlas: "./patterns/patterns.png",
         fillPatternMapping: "./patterns/patterns.json",
         getFillPattern: (f) => layer.style?.fillPattern,
-        getFillPatternScale: (f) => layer.style?.fillPatternScale || 1,
-        getFillPatternOffset: (f) =>
-          layer.style?.fillPatternOffset.split(",").map(Number) || [0, 0],
+        getFillPatternScale: (f) => 100,
+        getFillPatternOffset: (f) => [0, 0],
 
         extensions: [
           new PathStyleExtension({ dash: true }),
@@ -336,7 +335,7 @@ export default {
         ],
 
         updateTriggers: {
-          getFillColor: [layer.style?.fillColor,this.selectedFeature],
+          getFillColor: [layer.style?.fillColor, this.selectedFeature],
           getLineColor: layer.style?.lineColor,
           getLineWidth: layer.style?.lineWidth,
           getDashArray: layer.style?.dashArray,
