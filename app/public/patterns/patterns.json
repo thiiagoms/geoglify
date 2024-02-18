@@ -99,8 +99,7 @@
     "x": 0,
     "y": 512,
     "width": 64,
-    "height": 64,
-	"mask": true
+    "height": 64
   },
   "lines-d-07": {
     "x": 64,

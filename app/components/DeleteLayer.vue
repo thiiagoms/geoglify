@@ -38,9 +38,9 @@ export default {
     return { layersStoreInstance };
   },
   methods: {
-    deleteLayer() {
+    async deleteLayer() {
       // Call store method to delete the layer
-      this.layersStoreInstance.deleteLayer(this.layerId);
+      await this.layersStoreInstance.deleteLayer(this.layerId);
       // Close the confirmation dialog
       this.confirmDelete = false;
     },
