@@ -39,13 +39,26 @@ To set up the development environment, follow the instructions in the [`INSTALL.
 
 Geoglify utilizes the following technology stack:
 
-- Frontend: [Nuxt.js](https://nuxtjs.org/) with [VuetifyJS](https://vuetifyjs.com/en/)
-- Backend: [Node.js](https://nodejs.org/) with [Express](https://expressjs.com/)
-- Database: [MongoDB](https://www.mongodb.com/)
-- AIS Service: [Custom Node.js Service](https://aisstream.io/)
+- **App**: 
+  - Framework: [Nuxt.js](https://nuxtjs.org/) with [Vue3](https://v3.vuejs.org/)
+  - MapTech: [Deck.gl](https://deck.gl/)
+  - UI Framework: [VuetifyJS](https://vuetifyjs.com/en/)
+  - Additional: [socket.io](https://socket.io/) and [pinia](https://pinia.vuejs.org/)
+- **API**: 
+  - Framework: [Node.js](https://nodejs.org/) with [Express](https://expressjs.com/)
+- **Realtime**: 
+  - Framework: [Node.js](https://nodejs.org/) with [socket.io](https://socket.io/)
+- **Database**: 
+  - [MongoDB](https://www.mongodb.com/)
+- **AIS**: 
+  - Framework: [Node.js](https://nodejs.org/)
+- **Providers**: 
+  - AIS: [aisstream.io](https://aisstream.io)
+  - Weather: [api.openweathermap.org](https://api.openweathermap.org)
+  - Base maps: [mapbox.com](https://www.mapbox.com/)
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE) - see the file for details.
 
 Take a look at our code and explore the vast world of Geoglify! We look forward to community contributions and making this project a go-to resource for maritime data analysis and planning in the industry.
