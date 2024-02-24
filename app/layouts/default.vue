@@ -120,7 +120,6 @@
         />
       </v-layout-item>
       <slot />
-
     </v-main>
   </v-app>
 </template>
@@ -202,7 +201,7 @@ export default {
         this.layersStoreInstance.toggleNavigationDrawerState();
       }
     },
-  },
+  }
 };
 </script>
 

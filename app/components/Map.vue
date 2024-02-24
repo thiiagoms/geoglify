@@ -84,6 +84,10 @@ export default {
       this.drawLayers();
     },
 
+    filteredFeatures() {
+      this.drawLayers();
+    },
+
     selectedShip(val) {
       if (val) {
         const longitude = val.location.coordinates[0];
@@ -121,6 +125,12 @@ export default {
     activeLayersList() {
       return this.layersStoreInstance.activeLayersList;
     },
+    filteredFeatures() {
+      return this.layersStoreInstance.filteredFeaturesList;
+    },
+    layerIdToView() {
+      return this.layersStoreInstance.layerIdToView;
+    },
   },
 
   methods: {
@@ -155,8 +165,6 @@ export default {
     },
 
     drawLayers() {
-      // Create and update the visualization layer
-
       // Create a new IconLayer for the AIS data
       const aisLayer = new IconLayer({
         id: "ais-layer",
@@ -210,13 +218,20 @@ export default {
 
       this.activeLayersList.forEach((layer) => {
         let geojson;
+        let data = [...layer.features];
+
+        if (this.layerIdToView == layer._id) {
+          data = data.filter((f) =>
+            this.filteredFeatures.map((x) => x.id).includes(f._id)
+          );
+        }
 
         if (layer.type === "point") {
-          geojson = this.getGeoJSONPointLayer(layer);
+          geojson = this.getGeoJSONPointLayer(layer, data);
         } else if (layer.type === "line") {
-          geojson = this.getGeoJSONLineLayer(layer);
+          geojson = this.getGeoJSONLineLayer(layer, data);
         } else if (layer.type === "polygon") {
-          geojson = this.getGeoJSONPolygonLayer(layer);
+          geojson = this.getGeoJSONPolygonLayer(layer, data);
         }
 
         if (geojson) {
@@ -236,10 +251,10 @@ export default {
       });
     },
 
-    getGeoJSONPointLayer(layer) {
+    getGeoJSONPointLayer(layer, data) {
       return new GeoJsonLayer({
         id: layer._id,
-        data: [...layer.features],
+        data: data,
         pickable: true,
         filled: true,
         getPointRadius: layer.style?.radius || 4,
@@ -266,10 +281,10 @@ export default {
       });
     },
 
-    getGeoJSONLineLayer(layer) {
+    getGeoJSONLineLayer(layer, data) {
       return new GeoJsonLayer({
         id: layer._id,
-        data: [...layer.features],
+        data: data,
         pickable: true,
         getLineWidth: layer.style?.lineWidth || 5,
         lineWidthUnits: "pixels",
@@ -294,10 +309,10 @@ export default {
       });
     },
 
-    getGeoJSONPolygonLayer(layer) {
+    getGeoJSONPolygonLayer(layer, data) {
       return new GeoJsonLayer({
         id: layer._id,
-        data: [...layer.features],
+        data: data,
         pickable: true,
         stroked: true,
         filled: true,
@@ -396,7 +411,7 @@ export default {
       this.socket.on("connect", this.onSocketConnect);
       this.socket.on("disconnect", this.onSocketDisconnect);
       this.bufferInterval = setInterval(this.processMessageBatch, 5000);
-      await nuxtApp.callHook('ships:ready');
+      await nuxtApp.callHook("ships:ready");
     });
 
     await nextTick();

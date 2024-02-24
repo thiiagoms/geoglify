@@ -19,7 +19,7 @@
   </v-toolbar>
 
   <v-text-field
-    v-model="layersStoreInstance.searchText"
+    v-model="search"
     outlined
     clearable
     placeholder="Search layers by name or description"
@@ -119,7 +119,6 @@
     :layerId="layerIdToEditStyle"
     @update:open="updateOpenEditStyleDialogState"
   />
-
 </template>
 
 <script>
@@ -142,8 +141,18 @@ export default {
   },
 
   setup() {
+    function createDebounce() {
+      let timeout = null;
+      return function (fnc, delayMs) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          fnc();
+        }, delayMs || 500);
+      };
+    }
+
     const layersStoreInstance = layersStore();
-    return { layersStoreInstance };
+    return { layersStoreInstance, debounce: createDebounce() };
   },
 
   mounted() {
@@ -156,6 +165,16 @@ export default {
     },
     isNavigationDrawerOpen() {
       return this.layersStoreInstance.isNavigationDrawerOpen;
+    },
+    search: {
+      get() {
+        return this.layersStoreInstance.searchText;
+      },
+      set(value) {
+        this.debounce(() => {
+          this.layersStoreInstance.searchText = value;
+        }, 300);
+      },
     },
   },
 

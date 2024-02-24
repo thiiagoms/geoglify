@@ -5,6 +5,18 @@
       <v-toolbar-title class="font-weight-black text-h6">
         {{ layerName }}
       </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <div style="width: 200px">
+        <v-text-field
+          v-model="search"
+          append-inner-icon="mdi-magnify"
+          label="Search"
+          hide-details
+          variant="outlined"
+          density="compact"
+        ></v-text-field>
+      </div>
+
       <!-- Close button in the toolbar -->
       <v-btn icon @click="closeDialog">
         <v-icon>mdi-close</v-icon>
@@ -14,16 +26,15 @@
     <v-divider></v-divider>
     <v-card-text
       class="pa-0"
-      ref="cardText"
       style="height: calc(100% - 65px); overflow-y: hidden"
     >
       <v-data-table
         :headers="tableHeaders"
-        :items="layerFeatures"
+        :items="filteredFeatures"
         :loading="loading"
         density="compact"
         :fixed-header="true"
-        :height="availableHeight"
+        style="height: calc(100%)"
       >
         <template v-slot:no-data>
           <v-alert :value="true" icon="mdi-alert">
@@ -54,29 +65,31 @@ export default {
     layerId: String,
   },
   setup() {
+    function createDebounce() {
+      let timeout = null;
+      return function (fnc, delayMs) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          fnc();
+        }, delayMs || 500);
+      };
+    }
+
     const layersStoreInstance = layersStore();
-    return { layersStoreInstance };
+    return { layersStoreInstance, debounce: createDebounce() };
   },
   data() {
     return {
       tableHeaders: [],
       layerFeatures: [],
       loading: false,
-      availableHeight: 320, // Default height
     };
-  },
-  mounted() {
-    window.addEventListener("resize", () => {
-      this.getAvailableHeight();
-    });
-    this.getAvailableHeight();
   },
   watch: {
     layerId: {
       immediate: true,
       handler() {
         this.tableHeaders = [];
-        this.layerFeatures = [];
         this.fetchLayerFeatures();
       },
     },
@@ -84,6 +97,19 @@ export default {
   computed: {
     layerName() {
       return this.layersStoreInstance.layerList.get(this.layerId)?.name;
+    },
+    filteredFeatures() {
+      return this.layersStoreInstance.filteredFeaturesList;
+    },
+    search: {
+      get() {
+        return this.layersStoreInstance.searchFeaturesText;
+      },
+      set(value) {
+        this.debounce(() => {
+          this.layersStoreInstance.searchFeaturesText = value;
+        }, 300);
+      },
     },
   },
   methods: {
@@ -93,11 +119,12 @@ export default {
     async fetchLayerFeatures() {
       this.loading = true;
 
-      this.layerFeatures =
-        await this.layersStoreInstance.getFeaturesDetailsByLayer(this.layerId);
+      let features = await this.layersStoreInstance.getFeaturesDetailsByLayer(
+        this.layerId
+      );
 
-      if (this.layerFeatures.length > 0) {
-        this.tableHeaders = Object.keys(this.layerFeatures[0]).map((key) => ({
+      if (features.length > 0) {
+        this.tableHeaders = Object.keys(features[0]).map((key) => ({
           title: key,
           key: key,
           width: 500,
@@ -113,11 +140,6 @@ export default {
       });
 
       this.loading = false;
-    },
-    getAvailableHeight() {
-      setTimeout(() => {
-        this.availableHeight = this.$refs.cardText.$el.clientHeight - 55;
-      }, 500);
     },
   },
 };
