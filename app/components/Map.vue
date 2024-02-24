@@ -3,6 +3,7 @@
 </template>
 
 <script>
+const nuxtApp = useNuxtApp();
 import { io } from "socket.io-client";
 import { Deck, FlyToInterpolator } from "@deck.gl/core";
 import mapboxgl from "mapbox-gl";
@@ -390,11 +391,12 @@ export default {
   },
 
   async mounted() {
-    this.shipsStoreInstance.fetchShips().then(() => {
+    this.shipsStoreInstance.fetchShips().then(async () => {
       this.socket = io(this.$config.public.REALTIME_URL);
       this.socket.on("connect", this.onSocketConnect);
       this.socket.on("disconnect", this.onSocketDisconnect);
       this.bufferInterval = setInterval(this.processMessageBatch, 5000);
+      await nuxtApp.callHook('ships:ready');
     });
 
     await nextTick();

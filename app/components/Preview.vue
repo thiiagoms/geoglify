@@ -7,7 +7,7 @@
     <svg :style="{ width: '100%', height: '100%' }">
       <defs>
         <pattern
-          :id="'legend-' + style.fillPattern"
+          :id="style.fillPattern"
           patternUnits="userSpaceOnUse"
           width="100"
           height="100"
@@ -19,13 +19,12 @@
             width="100"
             height="100"
             :style="{
-              filter: 'url(#legend-colorize)',
+              filter: 'url(#colorize)',
               opacity: 1,
-              scale: 0.3
             }"
           />
         </pattern>
-        <filter id="legend-colorize">
+        <filter id="colorize">
           <feColorMatrix
             color-interpolation-filters="sRGB"
             type="matrix"
@@ -38,7 +37,7 @@
         :style="circleStyle"
         cx="50%"
         cy="50%"
-        :r="Math.min(8, style.radius)"
+        :r="style.radius"
       />
       <line
         v-else-if="type === 'line'"
@@ -51,10 +50,10 @@
       <rect
         v-else-if="type === 'polygon'"
         :style="rectStyle"
-        x="8"
-        y="8"
-        width="15px"
-        height="15px"
+        x="25%"
+        y="25%"
+        width="50%"
+        height="50%"
       />
     </svg>
   </div>
@@ -74,7 +73,7 @@ export default {
       return {
         fill: this.style.fillColor,
         stroke: this.style.lineColor,
-        strokeWidth: Math.min(2, this.style.lineWidth) + "px",
+        strokeWidth: this.style.lineWidth + "px",
         strokeDasharray: this.style.dashArray || "none",
       };
     },
@@ -90,14 +89,14 @@ export default {
         return {
           fill: this.style.fillColor,
           stroke: this.style.lineColor,
-          strokeWidth: Math.min(3, this.style.lineWidth) + "px",
+          strokeWidth: this.style.lineWidth + "px",
           strokeDasharray: this.style.dashArray || "none",
         };
       } else {
         return {
-          fill: 'url("#legend-' + this.style.fillPattern + '")',
+          fill: 'url("#' + this.style.fillPattern + '")',
           stroke: this.style.lineColor,
-          strokeWidth: Math.min(3, this.style.lineWidth) + "px",
+          strokeWidth: this.style.lineWidth + "px",
           strokeDasharray: this.style.dashArray || "none",
         };
       }

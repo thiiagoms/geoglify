@@ -38,27 +38,31 @@ export const shipsStore = defineStore("shipsStore", {
     // Action to fetch ships from MongoDB
     async fetchShips() {
       this.isLoading = true;
-
+    
       try {
         const { data } = await useFetch(
           this.getRequestBaseURL() + "/ais_ships"
         );
-
+    
+        if (!data || !data.value) {
+          throw new Error("API response is invalid");
+        }
+    
         let ships = toRaw(data.value);
-
+    
         ships.forEach((ship) => {
           this.createOrReplaceShip(ship);
         });
-
+    
         this.isLoading = false;
-
-        console.info(`Ships list successfully retrieved`);
+  
+        return ships;
       } catch (error) {
-        console.error(`Error fetching ships list`, error);
-
         this.isLoading = false;
+        throw error;
       }
     },
+    
 
     // Action to create or replace a ship in the list
     createOrReplaceShip(ship) {

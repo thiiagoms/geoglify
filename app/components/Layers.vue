@@ -120,11 +120,6 @@
     @update:open="updateOpenEditStyleDialogState"
   />
 
-  <DataLayer
-    :open="openDataDialog"
-    :layerId="layerIdToView"
-    @update:open="updateOpenDataDialogState"
-  />
 </template>
 
 <script>
@@ -137,12 +132,10 @@ export default {
       openEditDialog: false,
       openDeleteDialog: false,
       openEditStyleDialog: false,
-      openDataDialog: false,
       layerDataToEdit: null,
       styleDataToEdit: null,
       layerIdToEdit: null,
       layerIdToDelete: null,
-      layerIdToView: null,
       layerTypeToEditStyle: null,
       layerIdToEditStyle: null,
     };
@@ -198,8 +191,7 @@ export default {
     },
 
     openDatatable(layerId) {
-      this.layerIdToView = layerId;
-      this.openDataDialog = true;
+      this.layersStoreInstance.setLayerIdToView(layerId);
     },
 
     updateOpenCreateDialogState(value) {
@@ -216,10 +208,6 @@ export default {
 
     updateOpenEditStyleDialogState(value) {
       this.openEditStyleDialog = value;
-    },
-
-    updateOpenDataDialogState(value) {
-      this.openDataDialog = value;
     },
   },
 };

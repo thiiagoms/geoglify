@@ -8,10 +8,10 @@
       <v-card-text v-if="!!styleToUpdate">
         <v-form ref="form">
           <div class="preview-container mb-5">
-            <PreviewStyle
+            <Preview
               :style.sync="styleToUpdate"
               :type.sync="layerType"
-            ></PreviewStyle>
+            ></Preview>
           </div>
 
           <!-- Additional fields for point type layers -->

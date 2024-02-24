@@ -7,6 +7,7 @@ export const layersStore = defineStore("layersStore", {
     isLoading: false,
     searchText: "",
     isNavigationDrawerOpen: false,
+    layerIdToView: null,
   }),
 
   getters: {
@@ -86,6 +87,11 @@ export const layersStore = defineStore("layersStore", {
     // Set navigation drawer state
     setNavigationDrawerState(state) {
       this.isNavigationDrawerOpen = state;
+    },
+
+    // Set the layer features view id
+    setLayerIdToView(layerId) {
+      this.layerIdToView = layerId;
     },
 
     // Toggle navigation drawer state
@@ -178,7 +184,11 @@ export const layersStore = defineStore("layersStore", {
         const { data } = await useFetch(
           `${this.getRequestBaseURL()}/layers/${layerId}/features`
         );
-        return toRaw(data.value).map((feature) => feature.properties);
+        return toRaw(data.value).map((feature) => {
+          let properties = feature.properties;
+          let orderedProperties = { id: feature._id, ...properties };
+          return orderedProperties;
+        });
       } catch (error) {
         console.error(`Error fetching features for layer ${layerId}`, error);
       }

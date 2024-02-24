@@ -1,7 +1,15 @@
 <template>
-  <Map></Map>
+  <div style="height: 100%; width: 100%">
+    <div :style="{ height: !!layerIdToView ? '50%' : '100%', width: '100%' }">
+      <Map></Map>
+    </div>
+    <div style="height: 50%; width: 100%" v-if="layerIdToView">
+      <DataLayer :layerId="layerIdToView"></DataLayer>
+    </div>
+  </div>
 </template>
-<script setup lang="ts">
+
+<script>
 const appName = "Geoglify";
 const appDescription = "You're in the right place";
 
@@ -39,4 +47,17 @@ useHead({
     { property: "og:image", content: "https://geoglify.com/social.png" },
   ],
 });
+
+export default {
+  setup() {
+    const layersStoreInstance = layersStore();
+    return { layersStoreInstance };
+  },
+
+  computed: {
+    layerIdToView() {
+      return this.layersStoreInstance.layerIdToView;
+    },
+  },
+};
 </script>
