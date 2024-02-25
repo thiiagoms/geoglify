@@ -6,13 +6,22 @@
   >
     <v-toolbar-title>
       <v-list-item class="px-0">
-        <v-list-item-title class="text-h6 font-weight-black">Ships</v-list-item-title>
-        <v-list-item-subtitle class="text-caption">({{ filteredShips.length }} / {{ shipsStoreInstance.shipList.size }})</v-list-item-subtitle>
+        <v-list-item-title class="text-h6 font-weight-black"
+          >Ships</v-list-item-title
+        >
+        <v-list-item-subtitle class="text-caption"
+          >({{ filteredShips.length }} /
+          {{ shipsStoreInstance.shipList.size }})</v-list-item-subtitle
+        >
       </v-list-item>
     </v-toolbar-title>
 
     <v-spacer></v-spacer>
-    <v-btn icon @click="shipsStoreInstance.setNavigationDrawerState(false)" density="compact">
+    <v-btn
+      icon
+      @click="shipsStoreInstance.setNavigationDrawerState(false)"
+      density="compact"
+    >
       <v-icon>mdi-close</v-icon>
     </v-btn>
   </v-toolbar>
@@ -20,7 +29,7 @@
   <div>
     <!-- Search input field -->
     <v-text-field
-      v-model="shipsStoreInstance.searchText"
+      v-model="search"
       outlined
       clearable
       placeholder="Search ships by name or MMSI"
@@ -73,14 +82,33 @@ import { shipsStore } from "~/stores/shipsStore";
 
 export default {
   setup() {
+    function createDebounce() {
+      let timeout = null;
+      return function (fnc, delayMs) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          fnc();
+        }, delayMs || 500);
+      };
+    }
+
     const shipsStoreInstance = shipsStore();
-    const filteredShips = shipsStoreInstance.filteredShipsList;
-    return { shipsStoreInstance, filteredShips };
+    return { shipsStoreInstance, debounce: createDebounce() };
   },
 
   computed: {
     filteredShips() {
       return [...this.shipsStoreInstance.filteredList.values()];
+    },
+    search: {
+      get() {
+        return this.shipsStoreInstance.searchText;
+      },
+      set(value) {
+        this.debounce(() => {
+          this.shipsStoreInstance.searchText = value;
+        }, 300);
+      },
     },
   },
 

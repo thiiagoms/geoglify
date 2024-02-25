@@ -63,7 +63,6 @@
         <v-icon icon="mdi-water-percent" size="x-small" class="ml-3" />
         <span class="ms-1">{{ weather.main.humidity }} %</span>
       </div>
-    
     </v-system-bar>
 
     <v-navigation-drawer
@@ -202,7 +201,7 @@ export default {
         this.layersStoreInstance.toggleNavigationDrawerState();
       }
     },
-  },
+  }
 };
 </script>
 

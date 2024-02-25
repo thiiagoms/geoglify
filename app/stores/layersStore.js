@@ -7,6 +7,9 @@ export const layersStore = defineStore("layersStore", {
     isLoading: false,
     searchText: "",
     isNavigationDrawerOpen: false,
+    layerIdToView: null,
+    featuresList: [],
+    searchFeaturesText: "",
   }),
 
   getters: {
@@ -43,6 +46,23 @@ export const layersStore = defineStore("layersStore", {
       });
 
       return formattedList;
+    },
+
+    // Getter to get a list of active layers with specific properties
+    filteredFeaturesList(state) {
+      const list = Array.from(state.featuresList.values()).filter((feature) => {
+        const searchTextLower = state.searchFeaturesText
+          ? state.searchFeaturesText.toLowerCase()
+          : "";
+
+        return Object.values(feature)
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTextLower);
+      });
+
+      // Return a list with the filtered features
+      return list;
     },
   },
 
@@ -86,6 +106,11 @@ export const layersStore = defineStore("layersStore", {
     // Set navigation drawer state
     setNavigationDrawerState(state) {
       this.isNavigationDrawerOpen = state;
+    },
+
+    // Set the layer features view id
+    setLayerIdToView(layerId) {
+      this.layerIdToView = layerId;
     },
 
     // Toggle navigation drawer state
@@ -178,7 +203,12 @@ export const layersStore = defineStore("layersStore", {
         const { data } = await useFetch(
           `${this.getRequestBaseURL()}/layers/${layerId}/features`
         );
-        return toRaw(data.value).map((feature) => feature.properties);
+        this.featuresList = toRaw(data.value).map((feature) => {
+          let properties = feature.properties;
+          let orderedProperties = { id: feature._id, ...properties };
+          return orderedProperties;
+        });
+        return this.featuresList;
       } catch (error) {
         console.error(`Error fetching features for layer ${layerId}`, error);
       }

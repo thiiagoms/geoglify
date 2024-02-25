@@ -49,9 +49,9 @@ async function connectWithRetry() {
 async function run() {
   try {
 
-    // Connect to the "geoglify" database and the "ais" collection
+    // Connect to the "geoglify" database and the "realtime" collection
     const database = client.db('geoglify');
-    const aisMessagesCollection = database.collection('ais');
+    const realtimeMessagesCollection = database.collection('realtime');
 
     io.on('connection', (socket) => {
       clients.set(socket.id, socket);
@@ -59,9 +59,9 @@ async function run() {
     });
 
     const options = { fullDocument: 'updateLookup' };
-    const changeStream = aisMessagesCollection.watch([], options);
+    const changeStream = realtimeMessagesCollection.watch([], options);
 
-    // Listen for changes on the "ais" collection
+    // Listen for changes on the "realtime" collection
     changeStream.on('change', async (change) => {
       let ship = change.fullDocument;
       messages.set(ship.mmsi, ship);
