@@ -19,6 +19,39 @@ app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
 
+app.get("/ship_types", async (_, res) => {
+  try {
+    const shipTypes = await client
+      .db("geoglify")
+      .collection("ships")
+      .aggregate([
+        {
+          $group: {
+            _id: {
+              ship_type_code: "$ship_type_code",
+              ship_type_description: "$ship_type_description",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ship_type_code: "$_id.ship_type_code",
+            ship_type_description: "$_id.ship_type_description",
+          },
+        },
+      ])
+      .toArray();
+
+    res.json(shipTypes);
+  } catch (error) {
+    console.error("Error fetching ship types:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching ship types." });
+  }
+});
+
 app.get("/ais_ships", async (_, res) => {
   const ais_ships = await getAISShips();
   res.json(ais_ships);
@@ -152,8 +185,8 @@ async function getAISShips() {
     .find()
     .toArray();
 
-    return results;
-    /*
+  return results;
+  /*
   // Convert each ship's point to a polygon
   const shipPolygons = results.map((ship) => {
     const { coordinates } = ship.location; // Assuming 'location' is a GeoJSON point

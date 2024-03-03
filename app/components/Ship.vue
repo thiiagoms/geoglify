@@ -10,7 +10,7 @@
               <v-avatar size="30">
                 <v-img
                   :src="`https://hatscripts.github.io/circle-flags/flags/${(
-                    shipDetails?.Flag || 'xx'
+                    this.shipsStoreInstance?.selectedShip?.flag_country_code || 'xx'
                   ).toLowerCase()}.svg`"
                 ></v-img>
               </v-avatar>
@@ -55,10 +55,9 @@
             <!-- Display label in bold -->
             <td class="font-weight-bold">{{ label }}</td>
             <!-- Conditionally format and display ship information -->
-            <td v-if="label === 'eta'">{{ formatDate(value) || "N/A" }}</td>
-            <td v-else>
-              {{ value != null ? formatWithUnit(value, label) : "N/A" }}
-            </td>
+            <td v-if="label === 'ETA'">{{ formatDate(value) || 'N/A' }}</td>
+            <td v-else-if="label === 'LOA' || label === 'LBP' || label === 'Deadweight' || label === 'Breadth Moulded' || label === 'Hull Beam' || label === 'GT' || label === 'NT' || label === 'Maximum Draught'">{{ formatWithUnit(value, label) || 'N/A' }}</td>
+            <td v-else>{{ value || 'N/A' }}</td>
           </tr>
         </tbody>
       </v-table>
@@ -96,19 +95,23 @@ export default {
             MMSI: selectedShip.mmsi,
             IMO: selectedShip.imo,
             Name: selectedShip.name,
-            Cargo: selectedShip.cargo,
-            "Cargo Code": selectedShip.cargo_code,
-            Flag: selectedShip.country_code,
-            Country: selectedShip.country_name,
-            Destination: selectedShip.destination,
+            LOA: selectedShip.loa,
+            LBP: selectedShip.lbp,
+            Deadweight: selectedShip.deadweight,
+            "Breadth Moulded": selectedShip.breadth_moulded,
+            "Hull Beam": selectedShip.hull_beam,
+            GT: selectedShip.gt,
+            NT: selectedShip.nt,
             "Call Sign": selectedShip.call_sign,
-            Length: selectedShip.length,
-            Breadth: selectedShip.breadth,
-            Draught: selectedShip.draught,
-            SOG: selectedShip.sog,
-            HDG: selectedShip.hdg,
-            COG: selectedShip.cog,
-            ETA: selectedShip.eta,
+            "Construction Date": selectedShip.construction_date,
+            "Maximum Draught": selectedShip.maximum_draught,
+            "Ship Type": selectedShip.ship_type_description,
+            "Registry Country": selectedShip.registry_country_name,
+            "Flag Country": selectedShip.flag_country_name,
+            "Ship Group": selectedShip.ship_group_description,
+            "Ship Owner": selectedShip.ship_owner_name,
+            "Management Company": selectedShip.management_company_name,
+            "ETA": selectedShip.eta,
             "Latest Report": selectedShip.time_utc,
           }
         : null;
@@ -126,12 +129,14 @@ export default {
     // Helper method to get SI units based on label and format with the unit
     formatWithUnit(value, label) {
       const units = {
-        Length: " m",
-        Breadth: " m",
-        Draught: " m",
-        SOG: " º",
-        HDG: " º",
-        COG: " º",
+        "LOA": " m",
+        "LBP": " m",
+        "Deadweight": " metric tons",
+        "Breadth Moulded": " m",
+        "Hull Beam": " m",
+        "GT": " GT",
+        "NT": " NT",
+        "Maximum Draught": " m",
       };
       const unit = units[label] || "";
       return value + unit;

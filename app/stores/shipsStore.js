@@ -16,18 +16,20 @@ export const shipsStore = defineStore("shipsStore", {
   getters: {
     filteredList(state) {
       const list = Array.from(state.shipList.values()).filter((ship) => {
-        const { name, mmsi, cargo } = ship;
-        const searchTextLower = state.searchText
-          ? state.searchText.toLowerCase()
-          : "";
-
+        const { name, mmsi, flag_country_name, ship_type_description, ...rest } = ship;
+        const searchTextLower = state.searchText ? state.searchText.toLowerCase() : "";
+    
+        const restValues = Object.values(rest).map(value => value && value.toString().toLowerCase());
+        
         return (
           (name && name.toLowerCase().includes(searchTextLower)) ||
           (mmsi && mmsi.toString().includes(searchTextLower)) ||
-          (cargo && cargo.toString().includes(searchTextLower))
+          (flag_country_name && flag_country_name.toLowerCase().includes(searchTextLower)) ||
+          (ship_type_description && ship_type_description.toLowerCase().includes(searchTextLower)) ||
+          restValues.some(value => value && value.includes(searchTextLower))
         );
       });
-
+    
       // return list with the filtered ships
       return new Map(list.map((ship) => [ship._id, ship]));
     },
@@ -78,7 +80,7 @@ export const shipsStore = defineStore("shipsStore", {
     // Action to process ship data
     processShipData(ship) {
       // Extract relevant properties from the ship object
-      const { hdg, cargo_code } = ship;
+      const { hdg, ship_type_code } = ship;
 
       // Check if heading is valid
       const isHeadingValid = !!(hdg && hdg !== 511);
@@ -91,9 +93,8 @@ export const shipsStore = defineStore("shipsStore", {
       ship.height = isHeadingValid ? 96 : 20;
 
       // Get ship type from configs based on cargo type
-      const shipType = configs.getShipType(cargo_code);
-      if (!ship.cargo) ship.cargo = shipType.name;
-
+      const shipType = configs.getShipType(ship_type_code);
+      
       // Set ship color, type, and update priority
       ship.color = configs.hexToRgb(shipType.color);
       ship.priority += shipType.priority ?? 0;

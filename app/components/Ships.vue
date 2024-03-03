@@ -50,19 +50,20 @@
             item.name || "N/A"
           }}</v-list-item-title>
 
-          <!-- Ship details: MMSI, Cargo, Updated At -->
+          <!-- Ship details: IMO, MMSI, Flag, Call Sign, Updated At, Flag Country Name, Ship Type Description -->
           <v-list-item-subtitle class="text-caption">
+            <p><b>IMO:</b> {{ item.imo || "N/A" }}</p>
             <p><b>MMSI:</b> {{ item.mmsi || "N/A" }}</p>
-            <p><b>CARGO:</b> {{ item.cargo || "N/A" }}</p>
-            <p><b>UPDATED AT:</b> {{ formatDate(item.time_utc) || "N/A" }}</p>
+            <p><b>Name:</b> {{ item.name || "N/A" }}</p>
+            <p><b>Updated At:</b> {{ formatDate(item.time_utc) || "N/A" }}</p>
           </v-list-item-subtitle>
 
           <!-- Flag image in the prepend slot -->
           <template v-slot:prepend>
             <v-avatar size="30">
               <v-img
-                v-if="item?.country_code"
-                :src="`https://hatscripts.github.io/circle-flags/flags/${item.country_code.toLowerCase()}.svg`"
+                v-if="item?.flag_country_code"
+                :src="`https://hatscripts.github.io/circle-flags/flags/${item.flag_country_code.toLowerCase()}.svg`"
                 @error="handleImageError"
               ></v-img>
               <v-img
