@@ -37,6 +37,10 @@ services:
       - ./mongodb-seed:/mongodb-seed
     command:
       /mongodb-seed/_import.sh
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: 'no'
 
   ais:
     build: ./ais

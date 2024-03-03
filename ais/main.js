@@ -111,8 +111,7 @@ async function run() {
               aisMessage.MetaData.latitude,
             ],
           },
-          message_type: aisMessage.MessageType,
-          //expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
+          expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
         };
       } else if (aisMessage.MessageType == "ShipStaticData") {
         let etaObj = aisMessage.Message.ShipStaticData.Eta;
@@ -132,11 +131,7 @@ async function run() {
           dimension: aisMessage.Message.ShipStaticData.Dimension,
           eta: eta,
           imo: aisMessage.Message.ShipStaticData.ImoNumber,
-          cargo_code: aisMessage.Message.ShipStaticData.Type,
-          call_sign: aisMessage.Message.ShipStaticData.CallSign,
           destination: aisMessage.Message.ShipStaticData.Destination,
-          draught: aisMessage.Message.ShipStaticData.MaximumStaticDraught,
-          dimensions: aisMessage.Message.ShipStaticData.Dimension,
           location: {
             type: "Point",
             coordinates: [
@@ -144,8 +139,7 @@ async function run() {
               aisMessage.MetaData.latitude,
             ],
           },
-          message_type: aisMessage.MessageType,
-          //expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
+          expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
         };
       } else {
         message = {
@@ -159,8 +153,7 @@ async function run() {
               aisMessage.MetaData.latitude,
             ],
           },
-          message_type: aisMessage.MessageType,
-          //expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
+          expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
         };
       }
 
