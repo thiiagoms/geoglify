@@ -1,11 +1,11 @@
-require('dotenv').config();
+require("dotenv").config();
 
 // Import the necessary libraries
 const { MongoClient } = require("mongodb");
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const cors = require("cors");
 
 // Create a MongoDB client instance using the connection string provided in the environment variables
 const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
@@ -13,7 +13,9 @@ const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
 // Create an Express app and a HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origins: [process.env.SOCKET_CORS_ORIGIN] } });
+const io = socketIo(server, {
+  cors: { origins: [process.env.SOCKET_CORS_ORIGIN] },
+});
 
 // Create a route to handle the root URL
 const clients = new Map();
@@ -25,22 +27,30 @@ let dispatchTimeout = null;
 
 app.use(cors());
 
-app.get('/', (_, res) => {
-  res.json('Geoglify Realtime API');
+app.get("/", (_, res) => {
+  res.json("Geoglify Realtime API");
 });
 
 server.listen(8080, () => {
-  console.log('Listening on *:8080');
+  console.log("Listening on *:8080");
 });
 
 // Define the connectWithRetry function
 async function connectWithRetry() {
   try {
     await client.connect();
-    console.info('[' + new Date().toLocaleString("en-GB", { timeZone: "UTC" }) + '] MongoDB Connected');
+    console.info(
+      "[" +
+        new Date().toLocaleString("en-GB", { timeZone: "UTC" }) +
+        "] MongoDB Connected"
+    );
     await run();
   } catch (err) {
-    console.info('[' + new Date().toLocaleString("en-GB", { timeZone: "UTC" }) + '] Failed to connect to MongoDB, retrying...');
+    console.info(
+      "[" +
+        new Date().toLocaleString("en-GB", { timeZone: "UTC" }) +
+        "] Failed to connect to MongoDB, retrying..."
+    );
     setTimeout(connectWithRetry, 5000);
   }
 }
@@ -48,26 +58,39 @@ async function connectWithRetry() {
 // Define the run function
 async function run() {
   try {
-
     // Connect to the "geoglify" database and the "realtime" collection
-    const database = client.db('geoglify');
-    const realtimeMessagesCollection = database.collection('realtime');
+    const database = client.db("geoglify");
+    const realtimeMessagesCollection = database.collection("realtime");
 
-    io.on('connection', (socket) => {
+    io.on("connection", (socket) => {
       clients.set(socket.id, socket);
-      socket.on('disconnect', () => clients.delete(socket.id));
+      socket.on("disconnect", () => clients.delete(socket.id));
     });
 
-    const options = { fullDocument: 'updateLookup' };
+    const options = { fullDocument: "updateLookup" };
     const changeStream = realtimeMessagesCollection.watch([], options);
 
     // Listen for changes on the "realtime" collection
-    changeStream.on('change', async (change) => {
+    changeStream.on("change", async (change) => {
       let ship = change.fullDocument;
-      messages.set(ship.mmsi, ship);
+      
+      let message = {
+        _id: ship._id,
+        mmsi: ship.mmsi,
+        name: ship.name,
+        flag_country_name: ship.flag_country_name,
+        flag_country_code: ship.flag_country_code,
+        cargo_type_code: ship.cargo_type_code,
+        hdg: ship.hdg,
+        location: ship.location,
+        time_utc: ship.time_utc,
+        eta: ship.eta,
+      };
 
-      if (ship && !messageQueue.includes(ship.mmsi)) {
-        messageQueue.push(ship.mmsi);
+      messages.set(ship.mmsi, message);
+
+      if (message && !messageQueue.includes(message.mmsi)) {
+        messageQueue.push(message.mmsi);
       }
     });
 
@@ -87,7 +110,16 @@ async function startDispatchLoop() {
   let current_length = messageQueue.length;
   let chunk = messageQueue.splice(0, NUMBER_OF_EMITS);
 
-  console.info('[' + new Date().toLocaleString("en-GB", { timeZone: "UTC" }) + '] ' + `Dispatch ` + chunk.length + " of " + current_length + " messages");
+  console.info(
+    "[" +
+      new Date().toLocaleString("en-GB", { timeZone: "UTC" }) +
+      "] " +
+      `Dispatch ` +
+      chunk.length +
+      " of " +
+      current_length +
+      " messages"
+  );
 
   // Dispatch the messages
   for (let i = 0; i < chunk.length; i++) {
@@ -104,7 +136,7 @@ async function startDispatchLoop() {
 // Define the emitMessage function
 function emitMessage(msg) {
   return new Promise((resolve) => {
-    io.sockets.emit('message', msg, () => {
+    io.sockets.emit("message", msg, () => {
       resolve();
     });
   });

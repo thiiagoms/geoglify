@@ -10,7 +10,8 @@
               <v-avatar size="30">
                 <v-img
                   :src="`https://hatscripts.github.io/circle-flags/flags/${(
-                    this.shipsStoreInstance?.selectedShip?.flag_country_code || 'xx'
+                    this.shipsStoreInstance?.selectedShip?.flag_country_code ||
+                    'xx'
                   ).toLowerCase()}.svg`"
                 ></v-img>
               </v-avatar>
@@ -51,14 +52,23 @@
       <v-table density="compact">
         <tbody>
           <!-- Use v-for to loop through ship information -->
-          <tr v-for="(value, label) in shipDetails" :key="label">
-            <!-- Display label in bold -->
-            <td class="font-weight-bold">{{ label }}</td>
-            <!-- Conditionally format and display ship information -->
-            <td v-if="label === 'ETA'">{{ formatDate(value) || 'N/A' }}</td>
-            <td v-else-if="label === 'LOA' || label === 'LBP' || label === 'Deadweight' || label === 'Breadth Moulded' || label === 'Hull Beam' || label === 'GT' || label === 'NT' || label === 'Maximum Draught'">{{ formatWithUnit(value, label) || 'N/A' }}</td>
-            <td v-else>{{ value || 'N/A' }}</td>
-          </tr>
+          <template v-for="(value, label) in shipDetails">
+            <template
+              v-if="value !== null && value !== undefined && value !== ''"
+            >
+              <tr :key="label">
+                <!-- Display label in bold -->
+                <td class="font-weight-bold">{{ label }}</td>
+                <!-- Conditionally format and display ship information -->
+                <template v-if="label === 'ETA' || label === 'Latest Report'">
+                  <td>{{ formatDate(value) }}</td>
+                </template>
+                <template v-else>
+                  <td>{{ value }}</td>
+                </template>
+              </tr>
+            </template>
+          </template>
         </tbody>
       </v-table>
     </v-card-text>
@@ -66,9 +76,6 @@
 </template>
 
 <script>
-// Import the shipsStore
-import { shipsStore } from "~/stores/shipsStore";
-
 export default {
   setup() {
     // Use shipsStore to get ship data
@@ -86,35 +93,10 @@ export default {
         this.shipsStoreInstance.selectedShip = value;
       },
     },
-
-    // Computed property for selected ship details
-    shipDetails() {
-      const selectedShip = this.shipsStoreInstance?.selectedShip;
-      return selectedShip
-        ? {
-            MMSI: selectedShip.mmsi,
-            IMO: selectedShip.imo,
-            Name: selectedShip.name,
-            LOA: selectedShip.loa,
-            LBP: selectedShip.lbp,
-            Deadweight: selectedShip.deadweight,
-            "Breadth Moulded": selectedShip.breadth_moulded,
-            "Hull Beam": selectedShip.hull_beam,
-            GT: selectedShip.gt,
-            NT: selectedShip.nt,
-            "Call Sign": selectedShip.call_sign,
-            "Construction Date": selectedShip.construction_date,
-            "Maximum Draught": selectedShip.maximum_draught,
-            "Ship Type": selectedShip.ship_type_description,
-            "Registry Country": selectedShip.registry_country_name,
-            "Flag Country": selectedShip.flag_country_name,
-            "Ship Group": selectedShip.ship_group_description,
-            "Ship Owner": selectedShip.ship_owner_name,
-            "Management Company": selectedShip.management_company_name,
-            "ETA": selectedShip.eta,
-            "Latest Report": selectedShip.time_utc,
-          }
-        : null;
+    shipDetails: {
+      get() {
+        return this.shipsStoreInstance?.selectedShipDetails;
+      },
     },
   },
 
@@ -124,22 +106,6 @@ export default {
       return date
         ? new Date(date).toLocaleString("en-GB", { timeZone: "UTC" })
         : "";
-    },
-
-    // Helper method to get SI units based on label and format with the unit
-    formatWithUnit(value, label) {
-      const units = {
-        "LOA": " m",
-        "LBP": " m",
-        "Deadweight": " metric tons",
-        "Breadth Moulded": " m",
-        "Hull Beam": " m",
-        "GT": " GT",
-        "NT": " NT",
-        "Maximum Draught": " m",
-      };
-      const unit = units[label] || "";
-      return value + unit;
     },
   },
 };

@@ -1,69 +1,83 @@
 const CARGOS = [
-  { code: 523, name: "Bulk Carrier / Cement", color: "#D3D3D3" },
-  { code: "B0", name: "Barge", color: "#8B4513" },
-  { code: 764, name: "Research Vessel", color: "#ADD8E6" },
-  { code: 73, name: "Pusher Tug", color: "#556B2F" },
-  { code: 78, name: "Floating Structure", color: "#A9A9A9" },
-  { code: 551, name: "Tanker / Bitumen and Asphalt", color: "#000000" },
-  { code: 516, name: "Chemical Tanker", color: "#FFFF00" },
-  { code: 50, name: "General Cargo", color: "#F5F5DC" },
-  { code: 518, name: "Special Purpose Ship", color: "#000080" },
-  { code: 519, name: "Ro-Ro / Container Ship", color: "#FFA500" },
-  { code: 57, name: "General Cargo / Passenger", color: "#20B2AA" },
-  { code: 515, name: "Barge Carrier", color: "#D2B48C" },
-  { code: 761, name: "Fishing Vessel", color: "#87CEEB" },
-  { code: 517, name: "Radioactive Material Ship", color: "#FF0000" },
-  { code: 721, name: "Supply Ship", color: "#90EE90" },
-  { code: 592, name: "Ferry", color: "#40E0D0" },
-  { code: 501, name: "Bulk Carrier / Grain", color: "#F5DEB3" },
-  { code: 603, name: "Salvage Ship", color: "#FFA07A" },
-  { code: 543, name: "Tanker / LNG and LPG", color: "#C0C0C0" },
-  { code: 80, name: "Pleasure Craft", color: "#000080" },
-  { code: 593, name: "Passenger Ship", color: "#FFFFFF" },
-  { code: 531, name: "Tanker / Oil Products", color: "#808080" },
-  { code: 502, name: "General Cargo / Forest Products", color: "#8B4513" },
-  { code: 513, name: "Vehicle Carrier", color: "#808080" },
-  { code: 514, name: "Livestock Carrier", color: "#8B4513" },
-  { code: 75, name: "Fishing Vessel", color: "#00008B" },
-  { code: 512, name: "Ro-Ro Ship", color: "#FFFF00" },
-  { code: 505, name: "General Cargo / Containers", color: "#D3D3D3" },
-  { code: "B03", name: "Dry Cargo Barge", color: "#D2B48C" },
-  { code: 74, name: "Dredger", color: "#808080" },
-  { code: 753, name: "Fish Factory Ship", color: "#0000FF" },
-  { code: 77, name: "Warship", color: "#A9A9A9" },
-  { code: 591, name: "Cruise Ship", color: "#FFC0CB" },
-  { code: 601, name: "Tug (no towing)", color: "#FF6347" },
-  { code: 533, name: "Tanker / Chemical Tanker (Inland)", color: "#32CD32" },
-  { code: 602, name: "Tug (with tow)", color: "#FF0000" },
-  { code: 70, name: "Other (unspecified)", color: "#A9A9A9" },
-  { code: 51, name: "Unitized Cargo", color: "#B0C4DE" },
-  { code: 83, name: "Yacht", color: "#000080" },
-  { code: 724, name: "Pontoon", color: "#ADFF2F" },
-  { code: 541, name: "Tanker / LPG Carrier", color: "#C0C0C0" },
-  { code: "B02", name: "Covered Dry Cargo Barge", color: "#D2B48C" },
-  { code: 506, name: "Refrigerated Cargo", color: "#FFFFFF" },
-  { code: 90, name: "Ship (unspecified)", color: "#A9A9A9" },
-  { code: 711, name: "Pilot Vessel", color: "#8B0000" },
-  { code: 594, name: "Passenger / Sailing Vessel", color: "#FFFFFF" },
-  { code: "B01", name: "Open Dry Cargo Barge", color: "#A52A2A" },
-  { code: "B04", name: "Deck Barge", color: "#8B4513" },
-  { code: 511, name: "Container Ship", color: "#000080" },
-  { code: 53, name: "Tanker", color: "#C0C0C0" },
-  { code: 52, name: "Bulk Carrier", color: "#F5DEB3" },
-  { code: "", name: "", color: "#D3D3D3" },
-  { code: 54, name: "Tanker / Liquefied Gas", color: "#C0C0C0" },
+  { "code": 0, "name": "Not available (default)", "color": "#C0C0C0", "priority": -1 },
+  { "code": 20, "name": "Wing in ground (WIG), all ships of this type", "color": "#FFFF00", "priority": 5 },
+  { "code": 21, "name": "Wing in ground (WIG), Hazardous category A", "color": "#FFFF00", "priority": 6 },
+  { "code": 22, "name": "Wing in ground (WIG), Hazardous category B", "color": "#FFFF00", "priority": 6 },
+  { "code": 23, "name": "Wing in ground (WIG), Hazardous category C", "color": "#FFFF00", "priority": 6 },
+  { "code": 24, "name": "Wing in ground (WIG), Hazardous category D", "color": "#FFFF00", "priority": 6 },
+  { "code": 30, "name": "Fishing", "color": "#008000", "priority": 3 },
+  { "code": 31, "name": "Towing", "color": "#800080", "priority": 4 },
+  { "code": 32, "name": "Towing, length exceeds 200m or breadth exceeds 25m", "color": "#800080", "priority": 4 },
+  { "code": 33, "name": "Dredging or underwater ops", "color": "#FF0000", "priority": 4 },
+  { "code": 34, "name": "Diving ops", "color": "#FF0000", "priority": 4 },
+  { "code": 35, "name": "Military ops", "color": "#000000", "priority": 5 },
+  { "code": 36, "name": "Sailing", "color": "#FFA500", "priority": 2 },
+  { "code": 37, "name": "Pleasure Craft", "color": "#FFFF00", "priority": 2 },
+  { "code": 40, "name": "High speed craft (HSC), all ships of this type", "color": "#0000FF", "priority": 3 },
+  { "code": 41, "name": "High speed craft (HSC), Hazardous category A", "color": "#0000FF", "priority": 4 },
+  { "code": 42, "name": "High speed craft (HSC), Hazardous category B", "color": "#0000FF", "priority": 4 },
+  { "code": 43, "name": "High speed craft (HSC), Hazardous category C", "color": "#0000FF", "priority": 4 },
+  { "code": 44, "name": "High speed craft (HSC), Hazardous category D", "color": "#0000FF", "priority": 4 },
+  { "code": 50, "name": "Pilot Vessel", "color": "#808080", "priority": 3 },
+  { "code": 51, "name": "Search and Rescue vessel", "color": "#FF0000", "priority": 3 },
+  { "code": 52, "name": "Tug", "color": "#808080", "priority": 4 },
+  { "code": 53, "name": "Port Tender", "color": "#FFA500", "priority": 3 },
+  { "code": 54, "name": "Anti-pollution equipment", "color": "#FFA500", "priority": 3 },
+  { "code": 55, "name": "Law Enforcement", "color": "#0000FF", "priority": 5 },
+  { "code": 58, "name": "Medical Transport", "color": "#808080", "priority": 4 },
+  { "code": 60, "name": "Passenger, all ships of this type", "color": "#ff00b0", "priority": 2 },
+  { "code": 61, "name": "Passenger, Hazardous category A", "color": "#ff00b0", "priority": 3 },
+  { "code": 62, "name": "Passenger, Hazardous category B", "color": "#ff00b0", "priority": 3 },
+  { "code": 63, "name": "Passenger, Hazardous category C", "color": "#ff00b0", "priority": 3 },
+  { "code": 64, "name": "Passenger, Hazardous category D", "color": "#ff00b0", "priority": 3 },
+  { "code": 70, "name": "Cargo, all ships of this type", "color": "#000000", "priority": 4 },
+  { "code": 71, "name": "Cargo, Hazardous category A", "color": "#000000", "priority": 5 },
+  { "code": 72, "name": "Cargo, Hazardous category B", "color": "#000000", "priority": 5 },
+  { "code": 73, "name": "Cargo, Hazardous category C", "color": "#000000", "priority": 5 },
+  { "code": 74, "name": "Cargo, Hazardous category D", "color": "#000000", "priority": 5 },
+  { "code": 80, "name": "Tanker, all ships of this type", "color": "#800000", "priority": 5 },
+  { "code": 81, "name": "Tanker, Hazardous category A", "color": "#800000", "priority": 6 },
+  { "code": 82, "name": "Tanker, Hazardous category B", "color": "#800000", "priority": 6 },
+  { "code": 83, "name": "Tanker, Hazardous category C", "color": "#800000", "priority": 6 },
+  { "code": 84, "name": "Tanker, Hazardous category D", "color": "#800000", "priority": 6 },
+  { "code": 90, "name": "Other Type, all ships of this type", "color": "#A52A2A", "priority": 1  },
+  { "code": 91, "name": "Other Type, Hazardous category A", "color": "#A52A2A", "priority": 1  },
+  { "code": 92, "name": "Other Type, Hazardous category B", "color": "#A52A2A", "priority": 1  },
+  { "code": 93, "name": "Other Type, Hazardous category C", "color": "#A52A2A", "priority": 1  },
+  { "code": 94, "name": "Other Type, Hazardous category D", "color": "#A52A2A", "priority": 1  }
 ];
-
 export default {
-  getShipType(code) {
-    if (!code) return CARGOS[CARGOS.length - 1];
 
-    for (let i = 0; i < CARGOS.length; i++) {
-      const shipClassification = CARGOS[i];
-      if (shipClassification.code == code) return shipClassification;
-    }
+  getCategories() {
+    const categorizedCargos = new Map();
+  
+    CARGOS.forEach((cargo) => {
+      const category = cargo.name.split(',')[0].trim();
+      if (!categorizedCargos.has(category)) {
+        categorizedCargos.set(category, {
+          color: cargo.color,
+          name: category,
+          cargos: [],
+          isActive: true
+        });
+      }
+      categorizedCargos.get(category).cargos.push(cargo);
+      categorizedCargos.get(category).priority = Math.max(
+        categorizedCargos.get(category).priority || 0,
+        cargo.priority
+      );
+    });
+  
+    return categorizedCargos;
+  },
 
-    return CARGOS[CARGOS.length - 1];
+  getCargos()
+  {
+    return CARGOS;
+  },
+
+  getCargoType(code) {
+    return CARGOS.find((cargo) => cargo.code === code) || CARGOS[0];
   },
 
   hexToRgb(hex) {

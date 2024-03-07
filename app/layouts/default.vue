@@ -75,6 +75,7 @@
     >
       <Layers v-if="isNavigationLayersDrawerOpen"></Layers>
       <Ships v-if="isNavigationShipsDrawerOpen"></Ships>
+      <Cargos v-if="isNavigationCargosDrawerOpen"></Cargos>
     </v-navigation-drawer>
 
     <v-navigation-drawer
@@ -118,6 +119,18 @@
           class="float-left pointer-events-initial"
           style="position: absolute; top: 70px; left: 10px"
         />
+
+        <v-btn
+          icon="mdi-label-multiple"
+          color="white"
+          dark
+          elevation="0"
+          rounded="lg"
+          :active="isNavigationCargosDrawerOpen"
+          @click="toggleNavigation('cargos')"
+          class="float-left pointer-events-initial"
+          style="position: absolute; top: 130px; left: 10px"
+        />
       </v-layout-item>
       <slot />
     </v-main>
@@ -129,7 +142,8 @@ export default {
   setup() {
     const layersStoreInstance = layersStore();
     const shipsStoreInstance = shipsStore();
-    return { layersStoreInstance, shipsStoreInstance };
+    const cargosStoreInstance = cargosStore();
+    return { layersStoreInstance, shipsStoreInstance, cargosStoreInstance };
   },
 
   data() {
@@ -145,6 +159,9 @@ export default {
     isNavigationShipsDrawerOpen() {
       return this.shipsStoreInstance.isNavigationDrawerOpen;
     },
+    isNavigationCargosDrawerOpen() {
+      return this.cargosStoreInstance.isNavigationDrawerOpen;
+    },
     isSelectedShipDrawerOpen() {
       return !!this.shipsStoreInstance.selectedShip;
     },
@@ -152,12 +169,13 @@ export default {
       return !!this.layersStoreInstance.selectedFeature;
     },
     combinedNavigationRightState() {
-      return this.isSelectedFeatureDrawerOpen || this.isSelectedShipDrawerOpen;
+      return this.isSelectedFeatureDrawerOpen || this.isSelectedShipDrawerOpen
     },
     combinedNavigationLeftState() {
       return (
         this.layersStoreInstance.isNavigationDrawerOpen ||
-        this.shipsStoreInstance.isNavigationDrawerOpen
+        this.shipsStoreInstance.isNavigationDrawerOpen || 
+        this.cargosStoreInstance.isNavigationDrawerOpen
       );
     },
   },
@@ -195,10 +213,16 @@ export default {
     toggleNavigation(drawer) {
       if (drawer === "ships") {
         this.layersStoreInstance.setNavigationDrawerState(false);
-        this.shipsStoreInstance.toggleNavigationDrawerState();
+        this.cargosStoreInstance.setNavigationDrawerState(false);
+        this.shipsStoreInstance.toggleNavigationDrawerState();        
       } else if (drawer === "layers") {
         this.shipsStoreInstance.setNavigationDrawerState(false);
+        this.cargosStoreInstance.setNavigationDrawerState(false);
         this.layersStoreInstance.toggleNavigationDrawerState();
+      } else if (drawer === "cargos") {
+        this.shipsStoreInstance.setNavigationDrawerState(false);
+        this.layersStoreInstance.setNavigationDrawerState(false);
+        this.cargosStoreInstance.toggleNavigationDrawerState();
       }
     },
   }

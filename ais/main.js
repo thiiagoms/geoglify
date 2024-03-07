@@ -66,6 +66,7 @@ async function connectWithRetry() {
 async function run() {
   const database = client.db("geoglify");
   const realtimeMessagesCollection = database.collection("realtime");
+  const shipsCollection = database.collection("ships");
   const messagesCollection = database.collection("messages");
 
   shipsListDB = await getAllShipsToMap();
@@ -77,13 +78,18 @@ async function run() {
     logInfo("WebSocket Connected");
     let subscriptionMessage = {
       Apikey: process.env.AISSTREAM_TOKEN,
-      //BoundingBoxes: [[[180, -90], [-180, 90]]], // World bounding box
       BoundingBoxes: [
+        [
+          [180, -90],
+          [-180, 90],
+        ],
+      ], // World bounding box
+      /*BoundingBoxes: [
         [
           [27.955591, -40.012207],
           [44.574817, 1.801758],
         ],
-      ],
+      ],*/
     };
     socket.send(JSON.stringify(subscriptionMessage));
   };
@@ -132,6 +138,7 @@ async function run() {
           eta: eta,
           imo: aisMessage.Message.ShipStaticData.ImoNumber,
           destination: aisMessage.Message.ShipStaticData.Destination,
+          cargo_type_code: aisMessage.Message.ShipStaticData.Type,
           location: {
             type: "Point",
             coordinates: [
@@ -171,21 +178,33 @@ async function run() {
       }
 
       messageDB.set(mmsi, message);
-      messageBuffer.push(mmsi);
+
+      if (!messageBuffer.includes(mmsi)) messageBuffer.push(mmsi);
     }
   };
 
-  // Function to process and save messages to MongoDB
+  // Function to process and save messages in the database
   async function processAndSaveMessages() {
-    if (!isProcessing) {
+    if (!isProcessing && messageBuffer.length > 0) {
+      // Add a check to ensure there are messages in the buffer
       logInfo("Processing...");
       isProcessing = true;
 
       const bulkOperations = [];
-      const bulkInserts = [];
+      const bulkOperationsShips = [];
+      let max = 0;
 
-      for (const mmsi of messageBuffer) {
-        let message = messageDB.get(mmsi);
+      // Limit the size of bulk operations to the current buffer size
+      const bufferSize = Math.min(messageBuffer.length, 200); // Limit to 200 or the current buffer size
+
+      for (let i = 0; i < bufferSize; i++) {
+        max++;
+
+        const mmsi = messageBuffer[i];
+        const message = messageDB.get(mmsi);
+
+        //delete prop _id from message
+        delete message._id;
 
         bulkOperations.push({
           updateOne: {
@@ -195,40 +214,60 @@ async function run() {
           },
         });
 
-        // Extract necessary fields for messagesCollection
-        bulkInserts.push({
-          mmsi: message.mmsi,
-          time_utc: message.time_utc,
-          location: message.location,
-        });
+        // new bulk to update the ships collection if it's not already there
+
+        /*bulkOperationsShips.push({
+          updateOne: {
+            filter: { mmsi: mmsi },
+            update: {
+              $set: {
+                name: message.name,
+                imo: message.imo,
+                mmsi: message.mmsi,
+                dimension: message.dimension,
+                cargo_type_code: message.cargo_type_code,
+              },
+            },
+            upsert: true,
+          },
+        });*/
       }
 
-      if (bulkOperations.length) {
+      try {
         logInfo(
-          `Inserting or Updating ${bulkOperations.length} operations into the database...`
+          `Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`
         );
 
-        // Insert or Update the bulk operations into the database realtime collection
+        // Use promises to ensure bulk operations are completed before continuing
         await realtimeMessagesCollection.bulkWrite(bulkOperations, {
           ordered: false,
         });
-        logInfo(
-          `Bulk write completed with ${bulkOperations.length} operations`
-        );
 
-        // Insert into messagesCollection
-        if (bulkInserts.length) {
-          await messagesCollection.insertMany(bulkInserts);
-          logInfo(
-            `Inserted ${bulkInserts.length} entries into messagesCollection`
-          );
-        }
-
-        messageBuffer.splice(0, bulkOperations.length);
+        messageBuffer.splice(0, bufferSize); // Remove only the number of processed messages
         logInfo(`Remaining in messageBuffer: ${messageBuffer.length}`);
+      } catch (error) {
+        logError("Error while processing bulk operations", error);
       }
 
+      /*
+      if (bulkOperationsShips.length > 0) {
+        logInfo(
+          `Inserting or Updating ${bulkOperationsShips.length} operations into the ships collection...`
+        );
+
+        try {
+          // Use promises to ensure bulk operations are completed before continuing
+          await shipsCollection.bulkWrite(bulkOperationsShips, {
+            ordered: false,
+          });
+        } catch (error) {
+          logError("Error while processing bulk operations for ships", error);
+        }
+      }*/
+
       isProcessing = false;
+    } else {
+      logInfo("No messages to process or already processing...");
     }
   }
 

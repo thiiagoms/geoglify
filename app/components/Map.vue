@@ -105,6 +105,7 @@ export default {
           },
         });
       }
+      this.drawLayers();
     },
   },
 
@@ -114,7 +115,7 @@ export default {
 
   computed: {
     filteredShips() {
-      return [...this.shipsStoreInstance.filteredList.values()];
+      return this.shipsStoreInstance.filteredList;
     },
     selectedShip() {
       return this.shipsStoreInstance.selectedShip;
@@ -153,9 +154,7 @@ export default {
 
     processMessageBatch() {
       // Process each message in the buffer and update ships data
-      this.messageBuffer.forEach((msg) => {
-        this.shipsStoreInstance.createOrReplaceShip(msg);
-      });
+      this.shipsStoreInstance.createOrReplaceShips(this.messageBuffer);
       this.messageBuffer = [];
     },
 
@@ -165,6 +164,7 @@ export default {
     },
 
     drawLayers() {
+
       // Create a new IconLayer for the AIS data
       const aisLayer = new IconLayer({
         id: "ais-layer",
@@ -213,6 +213,7 @@ export default {
         visible: true, // Add visibility condition based on your logic
       });
 
+      
       // foreach active layyer, get all features and create a GeoJsonLayer
       const geojsonLayers = [];
 
@@ -239,11 +240,11 @@ export default {
         }
       });
 
-      let layers = Object.freeze(geojsonLayers.concat([aisLayer, legendLayer]));
+      let layers = geojsonLayers.concat([aisLayer, legendLayer]);
 
       if (this.deck)
         this.deck.setProps({
-          layers,
+          layers: layers
         });
 
       this.activeLayersList.forEach((layer) => {

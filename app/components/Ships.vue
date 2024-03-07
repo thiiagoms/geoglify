@@ -11,7 +11,7 @@
         >
         <v-list-item-subtitle class="text-caption"
           >({{ filteredShips.length }} /
-          {{ shipsStoreInstance.shipList.size }})</v-list-item-subtitle
+          {{ shipsStoreInstance.shipList.length }})</v-list-item-subtitle
         >
       </v-list-item>
     </v-toolbar-title>
@@ -79,8 +79,6 @@
 </template>
 
 <script>
-import { shipsStore } from "~/stores/shipsStore";
-
 export default {
   setup() {
     function createDebounce() {
@@ -99,7 +97,7 @@ export default {
 
   computed: {
     filteredShips() {
-      return [...this.shipsStoreInstance.filteredList.values()];
+      return this.shipsStoreInstance.filteredList;
     },
     search: {
       get() {
