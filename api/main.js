@@ -19,9 +19,51 @@ app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
 
+app.get("/ship_types", async (_, res) => {
+  try {
+    const shipTypes = await client
+      .db("geoglify")
+      .collection("ships")
+      .aggregate([
+        {
+          $group: {
+            _id: {
+              ship_type_code: "$ship_type_code",
+              ship_type_description: "$ship_type_description",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            ship_type_code: "$_id.ship_type_code",
+            ship_type_description: "$_id.ship_type_description",
+          },
+        },
+      ])
+      .toArray();
+
+    res.json(shipTypes);
+  } catch (error) {
+    console.error("Error fetching ship types:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while fetching ship types." });
+  }
+});
+
 app.get("/ais_ships", async (_, res) => {
   const ais_ships = await getAISShips();
   res.json(ais_ships);
+});
+
+app.get("/ais_ships/:id", async (req, res) => {
+  const _id = req.params.id;
+  const ais_ship = await client
+    .db("geoglify")
+    .collection("realtime")
+    .findOne({ _id: new ObjectId(_id) });
+  res.json(ais_ship);
 });
 
 app.get("/layers", async (_, res) => {
@@ -149,61 +191,27 @@ async function getAISShips() {
   const results = await client
     .db("geoglify")
     .collection("realtime")
-    .find()
+    .find(
+      {},
+      {
+        projection: {
+          _id: 1,
+          mmsi: 1,
+          name: 1,
+          flag_country_name: 1,
+          flag_country_code: 1,
+          cargo_type_code: 1,
+          hdg: 1,
+          location: 1,
+          time_utc: 1,
+          eta: 1,
+        },
+      }
+    )
+    .limit(10000)
     .toArray();
 
-    return results;
-    /*
-  // Convert each ship's point to a polygon
-  const shipPolygons = results.map((ship) => {
-    const { coordinates } = ship.location; // Assuming 'location' is a GeoJSON point
-    const [lon, lat] = coordinates;
-    const a = 100; // Example dimension a (meters)
-    const b = 50; // Example dimension b (meters)
-    const c = 100; // Example dimension c (meters)
-    const d = 50; // Example dimension d (meters)
-
-    // Create ship properties dynamically
-    const shipProperties = {};
-    for (const key in ship) {
-      if (key !== "location") {
-        // Exclude 'location' field from properties
-        shipProperties[key] = ship[key];
-      }
-    }
-
-    // Convert point to polygon
-    const shipPolygon = createShipPolygon(lat, lon, a, b, c, d, shipProperties);
-    return shipPolygon;
-  });
-
-  return shipPolygons;*/
-}
-
-// Function to create the ship's polygon
-function createShipPolygon(lat, lon, a, b, c, d, properties) {
-  // Convert ship dimensions to polygon dimensions in latitude and longitude
-  const metersToDegreesLat = (meters) => meters / (111.32 * 1000); // 1 degree latitude is approximately 111.32 kilometers (at equator)
-
-  const metersToDegreesLon = (meters, lat) =>
-    meters / (111.32 * 1000 * Math.cos(lat * (Math.PI / 180))); // 1 degree longitude is approximately 111.32 kilometers at the equator, and varies with latitude
-
-  // Calculate polygon vertices
-  const metersToLat = metersToDegreesLat(a); // Convert meters to degrees of latitude
-  const metersToLon = metersToDegreesLon(b, lat); // Convert meters to degrees of longitude
-
-  const coordinates = [
-    [lon - metersToLon / 2, lat - metersToLat / 2], // A
-    [lon + metersToLon / 2, lat - metersToLat / 2], // B
-    [lon + metersToLon / 2, lat + metersToLat / 2], // C
-    [lon - metersToLon / 2, lat + metersToLat / 2], // D
-    [lon - metersToLon / 2, lat - metersToLat / 2], // A (to close the polygon)
-  ];
-
-  // Create the polygon using Turf.js
-  const polygon = turf.polygon([coordinates], properties);
-
-  return polygon;
+  return results;
 }
 
 async function getLayers() {

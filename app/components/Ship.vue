@@ -10,7 +10,8 @@
               <v-avatar size="30">
                 <v-img
                   :src="`https://hatscripts.github.io/circle-flags/flags/${(
-                    shipDetails?.Flag || 'xx'
+                    this.shipsStoreInstance?.selectedShip?.flag_country_code ||
+                    'xx'
                   ).toLowerCase()}.svg`"
                 ></v-img>
               </v-avatar>
@@ -51,15 +52,23 @@
       <v-table density="compact">
         <tbody>
           <!-- Use v-for to loop through ship information -->
-          <tr v-for="(value, label) in shipDetails" :key="label">
-            <!-- Display label in bold -->
-            <td class="font-weight-bold">{{ label }}</td>
-            <!-- Conditionally format and display ship information -->
-            <td v-if="label === 'eta'">{{ formatDate(value) || "N/A" }}</td>
-            <td v-else>
-              {{ value != null ? formatWithUnit(value, label) : "N/A" }}
-            </td>
-          </tr>
+          <template v-for="(value, label) in shipDetails">
+            <template
+              v-if="value !== null && value !== undefined && value !== ''"
+            >
+              <tr :key="label">
+                <!-- Display label in bold -->
+                <td class="font-weight-bold">{{ label }}</td>
+                <!-- Conditionally format and display ship information -->
+                <template v-if="label === 'ETA' || label === 'Latest Report'">
+                  <td>{{ formatDate(value) }}</td>
+                </template>
+                <template v-else>
+                  <td>{{ value }}</td>
+                </template>
+              </tr>
+            </template>
+          </template>
         </tbody>
       </v-table>
     </v-card-text>
@@ -67,9 +76,6 @@
 </template>
 
 <script>
-// Import the shipsStore
-import { shipsStore } from "~/stores/shipsStore";
-
 export default {
   setup() {
     // Use shipsStore to get ship data
@@ -87,31 +93,10 @@ export default {
         this.shipsStoreInstance.selectedShip = value;
       },
     },
-
-    // Computed property for selected ship details
-    shipDetails() {
-      const selectedShip = this.shipsStoreInstance?.selectedShip;
-      return selectedShip
-        ? {
-            MMSI: selectedShip.mmsi,
-            IMO: selectedShip.imo,
-            Name: selectedShip.name,
-            Cargo: selectedShip.cargo,
-            "Cargo Code": selectedShip.cargo_code,
-            Flag: selectedShip.country_code,
-            Country: selectedShip.country_name,
-            Destination: selectedShip.destination,
-            "Call Sign": selectedShip.call_sign,
-            Length: selectedShip.length,
-            Breadth: selectedShip.breadth,
-            Draught: selectedShip.draught,
-            SOG: selectedShip.sog,
-            HDG: selectedShip.hdg,
-            COG: selectedShip.cog,
-            ETA: selectedShip.eta,
-            "Latest Report": selectedShip.time_utc,
-          }
-        : null;
+    shipDetails: {
+      get() {
+        return this.shipsStoreInstance?.selectedShipDetails;
+      },
     },
   },
 
@@ -121,20 +106,6 @@ export default {
       return date
         ? new Date(date).toLocaleString("en-GB", { timeZone: "UTC" })
         : "";
-    },
-
-    // Helper method to get SI units based on label and format with the unit
-    formatWithUnit(value, label) {
-      const units = {
-        Length: " m",
-        Breadth: " m",
-        Draught: " m",
-        SOG: " º",
-        HDG: " º",
-        COG: " º",
-      };
-      const unit = units[label] || "";
-      return value + unit;
     },
   },
 };

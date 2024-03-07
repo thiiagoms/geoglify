@@ -29,7 +29,7 @@
   <v-virtual-scroll :items="filteredLayers" style="height: calc(100vh - 195px)">
     <!-- Render each layer item -->
     <template v-slot:default="{ item }">
-      <v-list-item class="layer-item px-2">
+      <v-list-item class="layer-item px-1">
         <v-list-item-title>
           <div class="legend-container">
             <Legend
@@ -122,8 +122,6 @@
 </template>
 
 <script>
-import { layersStore } from "~/stores/layersStore";
-
 export default {
   data() {
     return {
