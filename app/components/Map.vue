@@ -10,6 +10,8 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, nextTick } from "vue";
 import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
+import { _WMSLayer as WMSLayer } from "@deck.gl/geo-layers";
+
 import {
   CollisionFilterExtension,
   PathStyleExtension,
@@ -60,6 +62,7 @@ export default {
     const mapRef = ref(null);
     const shipsStoreInstance = shipsStore();
     const layersStoreInstance = layersStore();
+    const wmsLayersStoreInstance = wmsLayersStore();
 
     return {
       currentViewState,
@@ -67,6 +70,7 @@ export default {
       mapRef,
       shipsStoreInstance,
       layersStoreInstance,
+      wmsLayersStoreInstance,
     };
   },
 
@@ -77,6 +81,10 @@ export default {
     },
 
     activeLayersList() {
+      this.drawLayers();
+    },
+
+    activeWmsLayersList() {
       this.drawLayers();
     },
 
@@ -126,6 +134,9 @@ export default {
     activeLayersList() {
       return this.layersStoreInstance.activeLayersList;
     },
+    activeWmsLayersList() {
+      return this.wmsLayersStoreInstance.activeLayersList;
+    },
     filteredFeatures() {
       return this.layersStoreInstance.filteredFeaturesList;
     },
@@ -164,7 +175,6 @@ export default {
     },
 
     drawLayers() {
-
       // Create a new IconLayer for the AIS data
       const aisLayer = new IconLayer({
         id: "ais-layer",
@@ -199,21 +209,21 @@ export default {
         fontFamily: "Monaco, monospace",
         getPosition: (f) => f.location.coordinates,
         getText: (f) => "   " + f.name.trim(),
-        getSize: (f) => 70,
-        sizeMaxPixels: "12",
+        getSize: (f) => 120,
+        sizeMaxPixels: "18",
         opacity: 1,
         getTextAnchor: "start",
         sizeUnits: "meters",
         getAlignmentBaseline: "center",
         fontWeight: "bold",
         radiusUnits: "pixels",
-        getColor: [255, 255, 255],
+        //getColor: [255, 255, 255],
+        getColor: [0,0,0],
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
         visible: true, // Add visibility condition based on your logic
       });
 
-      
       // foreach active layyer, get all features and create a GeoJsonLayer
       const geojsonLayers = [];
 
@@ -242,13 +252,28 @@ export default {
 
       let layers = geojsonLayers.concat([aisLayer, legendLayer]);
 
+      this.activeWmsLayersList.forEach((wms_layer) => {
+        const wms = new WMSLayer({
+          data: wms_layer.url + "&WIDTH={width}&HEIGHT={height}&BBOX={bbox}",
+          serviceType: "template",
+          layers: wms_layer.layers.split(","),
+          opacity: 0.5
+        });
+
+        layers.unshift(wms);
+      });
+
       if (this.deck)
         this.deck.setProps({
-          layers: layers
+          layers: layers,
         });
 
       this.activeLayersList.forEach((layer) => {
         this.layersStoreInstance.setStateLoadingLayer(layer._id, false);
+      });
+
+      this.activeWmsLayersList.forEach((layer) => {
+        this.wmsLayersStoreInstance.setStateLoadingLayer(layer._id, false);
       });
     },
 

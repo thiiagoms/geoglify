@@ -74,6 +74,7 @@
       permanent
     >
       <Layers v-if="isNavigationLayersDrawerOpen"></Layers>
+      <WmsLayers v-if="isNavigationWmsLayersDrawerOpen"></WmsLayers>
       <Ships v-if="isNavigationShipsDrawerOpen"></Ships>
       <Cargos v-if="isNavigationCargosDrawerOpen"></Cargos>
     </v-navigation-drawer>
@@ -131,6 +132,19 @@
           class="float-left pointer-events-initial"
           style="position: absolute; top: 130px; left: 10px"
         />
+
+        <v-btn
+          icon="mdi-earth-box"
+          color="white"
+          dark
+          elevation="0"
+          rounded="lg"
+          :active="isNavigationWmsLayersDrawerOpen"
+          @click="toggleNavigation('wmsLayers')"
+          class="float-left pointer-events-initial"
+          style="position: absolute; top: 190px; left: 10px"
+        />
+    
       </v-layout-item>
       <slot />
     </v-main>
@@ -141,9 +155,10 @@
 export default {
   setup() {
     const layersStoreInstance = layersStore();
+    const wmsLayersStoreInstance = wmsLayersStore();
     const shipsStoreInstance = shipsStore();
     const cargosStoreInstance = cargosStore();
-    return { layersStoreInstance, shipsStoreInstance, cargosStoreInstance };
+    return { layersStoreInstance, shipsStoreInstance, cargosStoreInstance, wmsLayersStoreInstance };
   },
 
   data() {
@@ -162,6 +177,9 @@ export default {
     isNavigationCargosDrawerOpen() {
       return this.cargosStoreInstance.isNavigationDrawerOpen;
     },
+    isNavigationWmsLayersDrawerOpen() {
+      return this.wmsLayersStoreInstance.isNavigationDrawerOpen;
+    },
     isSelectedShipDrawerOpen() {
       return !!this.shipsStoreInstance.selectedShip;
     },
@@ -175,7 +193,8 @@ export default {
       return (
         this.layersStoreInstance.isNavigationDrawerOpen ||
         this.shipsStoreInstance.isNavigationDrawerOpen || 
-        this.cargosStoreInstance.isNavigationDrawerOpen
+        this.cargosStoreInstance.isNavigationDrawerOpen ||
+        this.wmsLayersStoreInstance.isNavigationDrawerOpen
       );
     },
   },
@@ -214,15 +233,23 @@ export default {
       if (drawer === "ships") {
         this.layersStoreInstance.setNavigationDrawerState(false);
         this.cargosStoreInstance.setNavigationDrawerState(false);
+        this.wmsLayersStoreInstance.setNavigationDrawerState(false);
         this.shipsStoreInstance.toggleNavigationDrawerState();        
       } else if (drawer === "layers") {
         this.shipsStoreInstance.setNavigationDrawerState(false);
         this.cargosStoreInstance.setNavigationDrawerState(false);
+        this.wmsLayersStoreInstance.setNavigationDrawerState(false);
         this.layersStoreInstance.toggleNavigationDrawerState();
       } else if (drawer === "cargos") {
         this.shipsStoreInstance.setNavigationDrawerState(false);
         this.layersStoreInstance.setNavigationDrawerState(false);
+        this.wmsLayersStoreInstance.setNavigationDrawerState(false);
         this.cargosStoreInstance.toggleNavigationDrawerState();
+      } else if (drawer === "wmsLayers") {
+        this.shipsStoreInstance.setNavigationDrawerState(false);
+        this.layersStoreInstance.setNavigationDrawerState(false);
+        this.cargosStoreInstance.setNavigationDrawerState(false);
+        this.wmsLayersStoreInstance.toggleNavigationDrawerState();
       }
     },
   }
