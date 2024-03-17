@@ -29,6 +29,11 @@ app.get("/ais_ships", async (_, res) => {
   res.json(ais_ships);
 });
 
+app.get("/ais_ships_full", async (_, res) => {
+  const ais_ships = await getAISShipsFull();
+  res.json(ais_ships);
+});
+
 app.get("/ais_ships/:id", async (req, res) => {
   const _id = req.params.id;
   const ais_ship = await client
@@ -98,7 +103,10 @@ app.put("/layers/:id", async (req, res) => {
 
   // Clear all features for the layer and insert the new ones only if features are present in the request and has a length greater than 0
   if (updatedLayer && features && features.length > 0) {
-    await client.db("geoglify").collection("features").deleteMany({ layer_id: new ObjectId(layerId) });
+    await client
+      .db("geoglify")
+      .collection("features")
+      .deleteMany({ layer_id: new ObjectId(layerId) });
     await Promise.all(
       features.map(async (feature) => {
         return await insertFeature(layerId, feature);
@@ -150,7 +158,13 @@ app.get("/wmslayers/:id", async (req, res) => {
 app.put("/wmslayers/:id", async (req, res) => {
   const layerId = req.params.id;
   const { code, name, description, url, layers } = req.body;
-  const updatedLayer = await updateWmsLayer(layerId, { code, name, description, url, layers });
+  const updatedLayer = await updateWmsLayer(layerId, {
+    code,
+    name,
+    description,
+    url,
+    layers,
+  });
   res.json(updatedLayer);
 });
 
@@ -200,6 +214,55 @@ async function getAISShips() {
     )
     .limit(10000)
     .toArray();
+
+  return results;
+}
+
+async function getAISShipsFull() {
+  const results = await client
+    .db("geoglify")
+    .collection("realtime")
+    .find({})
+    .limit(10000)
+    .toArray();
+
+  results.forEach((ship) => {
+    const [x, y] = ship.location.coordinates;
+    const length = ship?.dimension?.C + ship?.dimension?.D || 50; // Length of the ship
+    const width = ship?.dimension?.A + ship?.dimension?.B || 20; // Width of the ship
+
+    // Calculate the offsets in degrees
+    const xOffset = turf.lengthToDegrees(width / 2, 'meters');
+    const yOffset = turf.lengthToDegrees(length / 2, 'meters');
+
+    let geometry = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [x - xOffset, y - yOffset],
+          [x + xOffset, y - yOffset],
+          [x + xOffset, y + yOffset],
+          [x - xOffset, y + yOffset],
+          [x - xOffset, y - yOffset],
+        ],
+      ],
+    };
+
+    ship.geojson = {
+      type: "Feature",
+      properties: {
+        mmsi: ship.mmsi,
+        name: ship.name,
+        flag_country_name: ship.flag_country_name,
+        flag_country_code: ship.flag_country_code,
+        cargo_type_code: ship.cargo_type_code,
+        hdg: ship.hdg,
+        time_utc: ship.time_utc,
+        eta: ship.eta,
+      },
+      geometry: geometry,
+    };
+  });
 
   return results;
 }

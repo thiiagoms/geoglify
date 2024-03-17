@@ -175,8 +175,20 @@ export default {
     },
 
     drawLayers() {
+
+      // create a new GeojsonLayer for the AIS data
+      const aisLayer = new GeoJsonLayer({
+        id: "ais-layer",
+        data: this.filteredShips.map((v) => v.geojson),
+        pickable: true,
+        filled: true,
+        getFillColor: (f) =>
+          f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.color,
+        getLineColor: [0, 0, 0],
+      })
+
       // Create a new IconLayer for the AIS data
-      const aisLayer = new IconLayer({
+      /*const aisLayer = new IconLayer({
         id: "ais-layer",
         data: this.filteredShips,
         billboard: false,
@@ -200,7 +212,7 @@ export default {
         onClick: ({ object }) =>
           this.shipsStoreInstance.setSelectedShip(object),
         visible: true, // Add visibility condition based on your logic
-      });
+      });*/
 
       // Create a new TextLayer for the ship names
       const legendLayer = new TextLayer({

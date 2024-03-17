@@ -46,7 +46,7 @@ export const shipsStore = defineStore("shipsStore", {
     async fetchShips() {
       this.isLoading = true;
 
-      const { data } = await useFetch(this.getRequestBaseURL() + "/ais_ships");
+      const { data } = await useFetch(this.getRequestBaseURL() + "/ais_ships_full");
 
       if (data.value) {
         let ships = data.value;
