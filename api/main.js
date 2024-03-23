@@ -228,39 +228,72 @@ async function getAISShipsFull() {
 
   results.forEach((ship) => {
     const [x, y] = ship.location.coordinates;
-    const length = ship?.dimension?.C + ship?.dimension?.D || 50; // Length of the ship
-    const width = ship?.dimension?.A + ship?.dimension?.B || 20; // Width of the ship
+    const hdg = ship?.hdg; // Heading of the ship
 
-    // Calculate the offsets in degrees
-    const xOffset = turf.lengthToDegrees(width / 2, 'meters');
-    const yOffset = turf.lengthToDegrees(length / 2, 'meters');
+    let geojson;
 
-    let geometry = {
-      type: "Polygon",
-      coordinates: [
+    if (!hdg || hdg === 511) {
+      const length =
+        ship?.dimension?.A + ship?.dimension?.B || ship.loa || ship.lbp || 20; // Length of the ship
+      const width =
+        ship?.dimension?.C + ship?.dimension?.D ||
+        ship.hull_beam ||
+        ship.breadth_moulded ||
+        20; // Width of the ship
+
+      // Draw a circle if hdg is null or 511
+      const radius = Math.max(width, length) / 2;
+      geojson = turf.circle([x, y], radius, { units: "meters" });
+    } else {
+      const length = ship.loa || ship.lbp || 50; // Length of the ship
+      const width = ship.hull_beam || ship.breadth_moulded || 20; // Width of the ship
+
+      // Calculate the offsets in degrees
+      const xOffsetA = ship?.dimension?.A || length / 2;
+      const xOffsetB = -(ship?.dimension?.B || length / 2);
+      const yOffsetC = -(ship?.dimension?.C || width / 2);
+      const yOffsetD = ship?.dimension?.D || width / 2;
+
+      const yOffsetAux = (ship?.dimension?.A || length / 2) * 0.8;
+
+      // Create a polygon with a "beak" and rotate it according to the heading
+      const polygon = turf.polygon([
         [
-          [x - xOffset, y - yOffset],
-          [x + xOffset, y - yOffset],
-          [x + xOffset, y + yOffset],
-          [x - xOffset, y + yOffset],
-          [x - xOffset, y - yOffset],
+          [yOffsetC, xOffsetB],
+          [yOffsetC, yOffsetAux],
+          [(yOffsetC + yOffsetD) / 2, xOffsetA],
+          [yOffsetD, yOffsetAux],
+          [yOffsetD, xOffsetB],
+          [yOffsetC, xOffsetB],
         ],
-      ],
-    };
+      ]);
+
+      geojson = turf.toWgs84(polygon);
+
+      let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, {
+        units: "meters",
+      });
+
+      let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
+
+      geojson = turf.transformTranslate(geojson, distance, bearing, {
+        units: "meters",
+      });
+
+      geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), {
+        pivot: ship.location.coordinates,
+      });
+      
+    }
 
     ship.geojson = {
       type: "Feature",
       properties: {
-        mmsi: ship.mmsi,
-        name: ship.name,
-        flag_country_name: ship.flag_country_name,
-        flag_country_code: ship.flag_country_code,
-        cargo_type_code: ship.cargo_type_code,
-        hdg: ship.hdg,
-        time_utc: ship.time_utc,
-        eta: ship.eta,
+        _id: ship._id,
+        location: ship.location,
+        ...ship,
       },
-      geometry: geometry,
+      geometry: geojson.geometry,
     };
   });
 

@@ -92,60 +92,63 @@
     </v-navigation-drawer>
 
     <v-main class="main-content">
-      <v-layout-item
-        model-value
-        class="float-left pointer-events-none"
-        height="0"
-      >
-        <v-btn
-          icon="mdi-ferry"
-          color="white"
-          dark
-          elevation="0"
-          rounded="lg"
-          :active="isNavigationShipsDrawerOpen"
-          @click="toggleNavigation('ships')"
-          class="float-left pointer-events-initial"
-          style="position: absolute; top: 10px; left: 10px"
-        />
 
-        <v-btn
-          icon="mdi-layers"
-          color="white"
-          dark
-          elevation="0"
-          rounded="lg"
-          :active="isNavigationLayersDrawerOpen"
-          @click="toggleNavigation('layers')"
-          class="float-left pointer-events-initial"
-          style="position: absolute; top: 70px; left: 10px"
-        />
+      <v-btn
+        icon="mdi-ferry"
+        color="white"
+        dark
+        elevation="0"
+        rounded="lg"
+        position="fixed"
+        location="bottom right"
+        :active="isNavigationShipsDrawerOpen"
+        @click="toggleNavigation('ships')"
+        class="float-left pointer-events-initial"
+        style="position: absolute; top: 90px; left: 10px; z-index: 1000;"
+      />
 
-        <v-btn
-          icon="mdi-label-multiple"
-          color="white"
-          dark
-          elevation="0"
-          rounded="lg"
-          :active="isNavigationCargosDrawerOpen"
-          @click="toggleNavigation('cargos')"
-          class="float-left pointer-events-initial"
-          style="position: absolute; top: 130px; left: 10px"
-        />
+      <v-btn
+        icon="mdi-layers"
+        color="white"
+        dark
+        elevation="0"
+        rounded="lg"
+        position="fixed"
+        location="bottom right"
+        :active="isNavigationLayersDrawerOpen"
+        @click="toggleNavigation('layers')"
+        class="float-left pointer-events-initial"
+        style="position: absolute; top: 150px; left: 10px; z-index: 1000;"
+      />
 
-        <v-btn
-          icon="mdi-earth-box"
-          color="white"
-          dark
-          elevation="0"
-          rounded="lg"
-          :active="isNavigationWmsLayersDrawerOpen"
-          @click="toggleNavigation('wmsLayers')"
-          class="float-left pointer-events-initial"
-          style="position: absolute; top: 190px; left: 10px"
-        />
-    
-      </v-layout-item>
+      <v-btn
+        icon="mdi-label-multiple"
+        color="white"
+        dark
+        elevation="0"
+        rounded="lg"
+        position="fixed"
+        location="bottom right"
+        :active="isNavigationCargosDrawerOpen"
+        @click="toggleNavigation('cargos')"
+        class="float-left pointer-events-initial"
+        style="position: absolute; top: 210px; left: 10px; z-index: 1000;"
+      />
+
+      <v-btn
+        icon="mdi-earth-box"
+        color="white"
+        dark
+        elevation="0"
+        rounded="lg"
+        position="fixed"
+        location="bottom right"
+        :active="isNavigationWmsLayersDrawerOpen"
+        @click="toggleNavigation('wmsLayers')"
+        class="float-left pointer-events-initial"
+        style="position: absolute; top: 270px; left: 10px; z-index: 1000;"
+      />
+
       <slot />
     </v-main>
   </v-app>
@@ -158,7 +161,12 @@ export default {
     const wmsLayersStoreInstance = wmsLayersStore();
     const shipsStoreInstance = shipsStore();
     const cargosStoreInstance = cargosStore();
-    return { layersStoreInstance, shipsStoreInstance, cargosStoreInstance, wmsLayersStoreInstance };
+    return {
+      layersStoreInstance,
+      shipsStoreInstance,
+      cargosStoreInstance,
+      wmsLayersStoreInstance,
+    };
   },
 
   data() {
@@ -167,6 +175,13 @@ export default {
       weather: null,
     };
   },
+
+  mounted() {
+    this.updateTime();
+    this.fetchWeatherData();
+    setInterval(this.updateTime, 1000 * 60);
+  },
+
   computed: {
     isNavigationLayersDrawerOpen() {
       return this.layersStoreInstance.isNavigationDrawerOpen;
@@ -187,21 +202,16 @@ export default {
       return !!this.layersStoreInstance.selectedFeature;
     },
     combinedNavigationRightState() {
-      return this.isSelectedFeatureDrawerOpen || this.isSelectedShipDrawerOpen
+      return this.isSelectedFeatureDrawerOpen || this.isSelectedShipDrawerOpen;
     },
     combinedNavigationLeftState() {
       return (
         this.layersStoreInstance.isNavigationDrawerOpen ||
-        this.shipsStoreInstance.isNavigationDrawerOpen || 
+        this.shipsStoreInstance.isNavigationDrawerOpen ||
         this.cargosStoreInstance.isNavigationDrawerOpen ||
         this.wmsLayersStoreInstance.isNavigationDrawerOpen
       );
     },
-  },
-  async created() {
-    await this.updateTime();
-    setInterval(() => this.updateTime(), 1000);
-    await this.fetchWeatherData();
   },
   methods: {
     dispatchResize() {
@@ -218,6 +228,7 @@ export default {
     },
     async fetchWeatherData() {
       try {
+        
         const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY;
         const position = await this.getCurrentPosition();
         const { latitude: lat, longitude: lon } = position.coords;
@@ -234,7 +245,7 @@ export default {
         this.layersStoreInstance.setNavigationDrawerState(false);
         this.cargosStoreInstance.setNavigationDrawerState(false);
         this.wmsLayersStoreInstance.setNavigationDrawerState(false);
-        this.shipsStoreInstance.toggleNavigationDrawerState();        
+        this.shipsStoreInstance.toggleNavigationDrawerState();
       } else if (drawer === "layers") {
         this.shipsStoreInstance.setNavigationDrawerState(false);
         this.cargosStoreInstance.setNavigationDrawerState(false);
@@ -252,7 +263,7 @@ export default {
         this.wmsLayersStoreInstance.toggleNavigationDrawerState();
       }
     },
-  }
+  },
 };
 </script>
 

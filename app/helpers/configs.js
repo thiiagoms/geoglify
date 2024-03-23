@@ -1,5 +1,5 @@
 const CARGOS = [
-  { "code": 0, "name": "Not available (default)", "color": "#FFFFFF", "priority": -1 },
+  { "code": 0, "name": "Not available (default)", "color": "#A52A2A", "priority": -1 },
   { "code": 20, "name": "Wing in ground (WIG), all ships of this type", "color": "#FFFF00", "priority": 5 },
   { "code": 21, "name": "Wing in ground (WIG), Hazardous category A", "color": "#FFFF00", "priority": 6 },
   { "code": 22, "name": "Wing in ground (WIG), Hazardous category B", "color": "#FFFF00", "priority": 6 },

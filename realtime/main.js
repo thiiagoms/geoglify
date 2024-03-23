@@ -6,6 +6,7 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
+const turf = require("@turf/turf");
 
 // Create a MongoDB client instance using the connection string provided in the environment variables
 const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
@@ -73,7 +74,7 @@ async function run() {
     // Listen for changes on the "realtime" collection
     changeStream.on("change", async (change) => {
       let ship = change.fullDocument;
-      
+
       let message = {
         _id: ship._id,
         mmsi: ship.mmsi,
@@ -125,12 +126,58 @@ async function startDispatchLoop() {
   for (let i = 0; i < chunk.length; i++) {
     let key = chunk[i];
     let message = messages.get(key);
+    if(!message) continue;
+    message = processShipData(message);
     await emitMessage(message);
     messages.delete(key);
   }
 
   // Schedule the next dispatch loop
   dispatchTimeout = setTimeout(startDispatchLoop.bind(this), TIMEOUT_LOOP);
+}
+
+function processShipData(ship) {
+  const [x, y] = ship.location.coordinates;
+  const length = ship?.dimension?.A + ship?.dimension?.B || ship.loa || 50; // Length of the ship
+  const width = ship?.dimension?.C + ship?.dimension?.D || ship.beam || 20; // Width of the ship
+  const hdg = ship?.hdg; // Heading of the ship
+
+  let geojson;
+
+  if (!hdg || hdg === 511) {
+    // Draw a circle if hdg is null or 511
+    const radius = Math.max(width, length) / 2;
+    geojson = turf.circle([x, y], radius, { units: "meters" });
+  } else {
+    // Calculate the offsets in degrees
+    const xOffset = turf.lengthToDegrees(length / 2, "meters");
+    const yOffset = turf.lengthToDegrees(width / 2, "meters");
+    const frontOffset = turf.lengthToDegrees((length / 2) * 0.75, "meters"); // 10% of the length
+
+    // Create a polygon with a "beak" and rotate it according to the heading
+    const polygon = turf.polygon([
+      [
+        [x - xOffset, y - yOffset],
+        [x + frontOffset, y - yOffset],
+        [x + xOffset, y],
+        [x + frontOffset, y + yOffset],
+        [x - xOffset, y + yOffset],
+        [x - xOffset, y - yOffset],
+      ],
+    ]);
+
+    geojson = turf.transformRotate(polygon, hdg - 90);
+  }
+
+  ship.geojson = {
+    type: "Feature",
+    properties: {
+      _id: ship._id,
+    },
+    geometry: geojson.geometry,
+  };
+
+  return ship;
 }
 
 // Define the emitMessage function

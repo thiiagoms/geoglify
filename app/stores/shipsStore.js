@@ -46,7 +46,9 @@ export const shipsStore = defineStore("shipsStore", {
     async fetchShips() {
       this.isLoading = true;
 
-      const { data } = await useFetch(this.getRequestBaseURL() + "/ais_ships_full");
+      const { data } = await useFetch(
+        this.getRequestBaseURL() + "/ais_ships_full"
+      );
 
       if (data.value) {
         let ships = data.value;
@@ -145,7 +147,7 @@ export const shipsStore = defineStore("shipsStore", {
     // Action to process ship data
     processShipData(ship) {
       // Extract relevant properties from the ship object
-      const { hdg, cargo_type_code, dimension } = ship;
+      const { hdg, cargo_type_code } = ship;
 
       // Check if heading is valid
       const isHeadingValid = !!(hdg && hdg !== 511);
@@ -175,6 +177,19 @@ export const shipsStore = defineStore("shipsStore", {
 
       //invert signal priority
       ship.priority = -ship.priority;
+
+      //update geojson properties too
+      if (ship.geojson && ship.geojson.properties)
+        ship.geojson.properties = {
+          name: ship.name,
+          mmsi: ship.mmsi,
+          flag_country_name: ship.flag_country_name,
+          cargo_name: ship.cargo_name,
+          priority: ship.priority,
+          color: ship.color,
+          location: ship.location,
+          _id: ship._id,
+        };
       return ship;
     },
 
