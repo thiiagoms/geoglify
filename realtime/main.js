@@ -137,47 +137,76 @@ async function startDispatchLoop() {
 }
 
 function processShipData(ship) {
-  const [x, y] = ship.location.coordinates;
-  const length = ship?.dimension?.A + ship?.dimension?.B || ship.loa || 50; // Length of the ship
-  const width = ship?.dimension?.C + ship?.dimension?.D || ship.beam || 20; // Width of the ship
-  const hdg = ship?.hdg; // Heading of the ship
+    const [x, y] = ship.location.coordinates;
+    const hdg = ship?.hdg; // Heading of the ship
 
-  let geojson;
+    let geojson;
 
-  if (!hdg || hdg === 511) {
-    // Draw a circle if hdg is null or 511
-    const radius = Math.max(width, length) / 2;
-    geojson = turf.circle([x, y], radius, { units: "meters" });
-  } else {
-    // Calculate the offsets in degrees
-    const xOffset = turf.lengthToDegrees(length / 2, "meters");
-    const yOffset = turf.lengthToDegrees(width / 2, "meters");
-    const frontOffset = turf.lengthToDegrees((length / 2) * 0.75, "meters"); // 10% of the length
+    if (!hdg || hdg === 511) {
+      const length =
+        ship?.dimension?.A + ship?.dimension?.B || ship.loa || ship.lbp || 20; // Length of the ship
+      const width =
+        ship?.dimension?.C + ship?.dimension?.D ||
+        ship.hull_beam ||
+        ship.breadth_moulded ||
+        20; // Width of the ship
 
-    // Create a polygon with a "beak" and rotate it according to the heading
-    const polygon = turf.polygon([
-      [
-        [x - xOffset, y - yOffset],
-        [x + frontOffset, y - yOffset],
-        [x + xOffset, y],
-        [x + frontOffset, y + yOffset],
-        [x - xOffset, y + yOffset],
-        [x - xOffset, y - yOffset],
-      ],
-    ]);
+      // Draw a circle if hdg is null or 511
+      const radius = Math.max(width, length) / 2;
+      geojson = turf.circle([x, y], radius, { units: "meters" });
+    } else {
+      const length = ship.loa || ship.lbp || 50; // Length of the ship
+      const width = ship.hull_beam || ship.breadth_moulded || 20; // Width of the ship
 
-    geojson = turf.transformRotate(polygon, hdg - 90);
-  }
+      // Calculate the offsets in degrees
+      const xOffsetA = ship?.dimension?.A || length / 2; 100
+      const xOffsetB = -(ship?.dimension?.B || length / 2);
+      const yOffsetC = -(ship?.dimension?.C || width / 2);
+      const yOffsetD = ship?.dimension?.D || width / 2;
 
-  ship.geojson = {
-    type: "Feature",
-    properties: {
-      _id: ship._id,
-    },
-    geometry: geojson.geometry,
-  };
+      const yOffsetAux = (xOffsetA * 0.9);
 
-  return ship;
+      // Create a polygon with a "beak" and rotate it according to the heading
+      const polygon = turf.polygon([
+        [
+          [yOffsetC, xOffsetB],
+          [yOffsetC, yOffsetAux],
+          [(yOffsetC + yOffsetD) / 2, xOffsetA],
+          [yOffsetD, yOffsetAux],
+          [yOffsetD, xOffsetB],
+          [yOffsetC, xOffsetB],
+        ],
+      ]);
+
+      geojson = turf.toWgs84(polygon);
+
+      let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, {
+        units: "meters",
+      });
+
+      let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
+
+      geojson = turf.transformTranslate(geojson, distance, bearing, {
+        units: "meters",
+      });
+
+      geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), {
+        pivot: ship.location.coordinates,
+      });
+      
+    }
+
+    ship.geojson = {
+      type: "Feature",
+      properties: {
+        _id: ship._id,
+        location: ship.location,
+        ...ship,
+      },
+      geometry: geojson.geometry,
+    };
+  
+    return ship;
 }
 
 // Define the emitMessage function

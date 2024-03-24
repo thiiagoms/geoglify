@@ -303,7 +303,7 @@ export default {
         antennaLayer,
         aisLayer,
         legendLayer,
-        ruler,
+        //ruler,
       ]);
 
       this.activeWmsLayersList.forEach((wms_layer) => {

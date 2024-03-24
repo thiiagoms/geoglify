@@ -92,63 +92,27 @@
     </v-navigation-drawer>
 
     <v-main class="main-content">
-
       <v-btn
-        icon="mdi-ferry"
+        v-for="(button, index) in buttons"
+        :key="index"
+        :icon="button.icon"
         color="white"
         dark
         elevation="0"
         rounded="lg"
         position="fixed"
         location="bottom right"
-        :active="isNavigationShipsDrawerOpen"
-        @click="toggleNavigation('ships')"
+        :active="button.isActive"
+        @click="toggleNavigation(button.drawerName)"
         class="float-left pointer-events-initial"
-        style="position: absolute; top: 90px; left: 10px; z-index: 1000;"
+        :style="{
+          position: 'absolute',
+          top: button.top,
+          left: button.dynamicLeft,
+          transition: 'left 0.5s',
+        }"
+        style="z-index: 1000"
       />
-
-      <v-btn
-        icon="mdi-layers"
-        color="white"
-        dark
-        elevation="0"
-        rounded="lg"
-        position="fixed"
-        location="bottom right"
-        :active="isNavigationLayersDrawerOpen"
-        @click="toggleNavigation('layers')"
-        class="float-left pointer-events-initial"
-        style="position: absolute; top: 150px; left: 10px; z-index: 1000;"
-      />
-
-      <v-btn
-        icon="mdi-label-multiple"
-        color="white"
-        dark
-        elevation="0"
-        rounded="lg"
-        position="fixed"
-        location="bottom right"
-        :active="isNavigationCargosDrawerOpen"
-        @click="toggleNavigation('cargos')"
-        class="float-left pointer-events-initial"
-        style="position: absolute; top: 210px; left: 10px; z-index: 1000;"
-      />
-
-      <v-btn
-        icon="mdi-earth-box"
-        color="white"
-        dark
-        elevation="0"
-        rounded="lg"
-        position="fixed"
-        location="bottom right"
-        :active="isNavigationWmsLayersDrawerOpen"
-        @click="toggleNavigation('wmsLayers')"
-        class="float-left pointer-events-initial"
-        style="position: absolute; top: 270px; left: 10px; z-index: 1000;"
-      />
-
       <slot />
     </v-main>
   </v-app>
@@ -173,6 +137,36 @@ export default {
     return {
       currentTime: "",
       weather: null,
+      buttons: [
+        {
+          icon: "mdi-ferry",
+          isActive: this.isNavigationShipsDrawerOpen,
+          drawerName: "ships",
+          top: "80px",
+          dynamicLeft: "10px",
+        },
+        {
+          icon: "mdi-layers",
+          isActive: this.isNavigationLayersDrawerOpen,
+          drawerName: "layers",
+          top: "140px",
+          dynamicLeft: "10px",
+        },
+        {
+          icon: "mdi-label-multiple",
+          isActive: this.isNavigationCargosDrawerOpen,
+          drawerName: "cargos",
+          top: "200px",
+          dynamicLeft: "10px",
+        },
+        {
+          icon: "mdi-earth-box",
+          isActive: this.isNavigationWmsLayersDrawerOpen,
+          drawerName: "wmsLayers",
+          top: "260px",
+          dynamicLeft: "10px",
+        },
+      ],
     };
   },
 
@@ -228,7 +222,6 @@ export default {
     },
     async fetchWeatherData() {
       try {
-        
         const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY;
         const position = await this.getCurrentPosition();
         const { latitude: lat, longitude: lon } = position.coords;
@@ -262,6 +255,22 @@ export default {
         this.cargosStoreInstance.setNavigationDrawerState(false);
         this.wmsLayersStoreInstance.toggleNavigationDrawerState();
       }
+    },
+  },
+  watch: {
+    combinedNavigationLeftState: {
+      immediate: true,
+      handler(value) {
+        if (value) {
+          this.buttons.forEach((button) => {
+            button.dynamicLeft = "410px"; // 400px + 10px
+          });
+        } else {
+          this.buttons.forEach((button) => {
+            button.dynamicLeft = "10px";
+          });
+        }
+      },
     },
   },
 };
