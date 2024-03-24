@@ -29,6 +29,11 @@ app.get("/ais_ships", async (_, res) => {
   res.json(ais_ships);
 });
 
+app.get("/ais_ships_full", async (_, res) => {
+  const ais_ships = await getAISShipsFull();
+  res.json(ais_ships);
+});
+
 app.get("/ais_ships/:id", async (req, res) => {
   const _id = req.params.id;
   const ais_ship = await client
@@ -98,7 +103,10 @@ app.put("/layers/:id", async (req, res) => {
 
   // Clear all features for the layer and insert the new ones only if features are present in the request and has a length greater than 0
   if (updatedLayer && features && features.length > 0) {
-    await client.db("geoglify").collection("features").deleteMany({ layer_id: new ObjectId(layerId) });
+    await client
+      .db("geoglify")
+      .collection("features")
+      .deleteMany({ layer_id: new ObjectId(layerId) });
     await Promise.all(
       features.map(async (feature) => {
         return await insertFeature(layerId, feature);
@@ -150,7 +158,13 @@ app.get("/wmslayers/:id", async (req, res) => {
 app.put("/wmslayers/:id", async (req, res) => {
   const layerId = req.params.id;
   const { code, name, description, url, layers } = req.body;
-  const updatedLayer = await updateWmsLayer(layerId, { code, name, description, url, layers });
+  const updatedLayer = await updateWmsLayer(layerId, {
+    code,
+    name,
+    description,
+    url,
+    layers,
+  });
   res.json(updatedLayer);
 });
 
@@ -202,6 +216,92 @@ async function getAISShips() {
     .toArray();
 
   return results;
+}
+
+async function getAISShipsFull() {
+  const results = await client
+    .db("geoglify")
+    .collection("realtime")
+    .find({})
+    .limit(10000)
+    .toArray();
+
+  const processedResults = results.map((ship) => processShipData(ship));
+
+  return processedResults;
+}
+
+function processShipData(ship) {
+  const [x, y] = ship.location.coordinates;
+  const hdg = ship?.hdg; // Heading of the ship
+
+  let geojson;
+
+  if (!hdg || hdg === 511) {
+    const length =
+      ship?.dimension?.A + ship?.dimension?.B || ship.loa || ship.lbp || 20; // Length of the ship
+    const width =
+      ship?.dimension?.C + ship?.dimension?.D ||
+      ship.hull_beam ||
+      ship.breadth_moulded ||
+      20; // Width of the ship
+
+    // Draw a circle if hdg is null or 511
+    const radius = Math.max(width, length) / 2;
+    geojson = turf.circle([x, y], radius, { units: "meters" });
+  } else {
+    const length = ship.loa || ship.lbp || 50; // Length of the ship
+    const width = ship.hull_beam || ship.breadth_moulded || 20; // Width of the ship
+
+    // Calculate the offsets in degrees
+    const xOffsetA = ship?.dimension?.A || length / 2; 100
+    const xOffsetB = -(ship?.dimension?.B || length / 2);
+    const yOffsetC = -(ship?.dimension?.C || width / 2);
+    const yOffsetD = ship?.dimension?.D || width / 2;
+
+    const yOffsetAux = (xOffsetA * 0.9);
+
+    // Create a polygon with a "beak" and rotate it according to the heading
+    const polygon = turf.polygon([
+      [
+        [yOffsetC, xOffsetB],
+        [yOffsetC, yOffsetAux],
+        [(yOffsetC + yOffsetD) / 2, xOffsetA],
+        [yOffsetD, yOffsetAux],
+        [yOffsetD, xOffsetB],
+        [yOffsetC, xOffsetB],
+      ],
+    ]);
+
+    geojson = turf.toWgs84(polygon);
+
+    let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, {
+      units: "meters",
+    });
+
+    let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
+
+    geojson = turf.transformTranslate(geojson, distance, bearing, {
+      units: "meters",
+    });
+
+    geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), {
+      pivot: ship.location.coordinates,
+    });
+    
+  }
+
+  ship.geojson = {
+    type: "Feature",
+    properties: {
+      _id: ship._id,
+      location: ship.location,
+      ...ship,
+    },
+    geometry: geojson.geometry,
+  };
+
+  return ship;
 }
 
 async function getLayers() {

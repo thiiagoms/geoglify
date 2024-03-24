@@ -5,11 +5,20 @@
 <script>
 const nuxtApp = useNuxtApp();
 import { io } from "socket.io-client";
-import { Deck, FlyToInterpolator } from "@deck.gl/core";
+import { Deck, MapView, FlyToInterpolator } from "@deck.gl/core";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { ref, nextTick } from "vue";
-import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
+import {
+  IconLayer,
+  TextLayer,
+  GeoJsonLayer,
+  ScatterplotLayer,
+} from "@deck.gl/layers";
+
+import { EditableGeoJsonLayer } from "@nebula.gl/layers";
+import { MeasureDistanceMode } from "@nebula.gl/edit-modes";
+
 import { _WMSLayer as WMSLayer } from "@deck.gl/geo-layers";
 
 import {
@@ -28,6 +37,7 @@ const DEFAULT_MAP_CENTER = [-5.5636312, 39.8814199];
 const DEFAULT_MAP_BEARING = 0;
 const DEFAULT_MAP_ZOOM = 4;
 const DEFAULT_MAP_PITCH = 0;
+const ZOOM_AIS_THRESHOLD = 14;
 
 // Initial view state for the map
 const INITIAL_VIEW_STATE = {
@@ -76,8 +86,11 @@ export default {
 
   watch: {
     // Watch for changes in the ships list and active layers list
-    filteredShips() {
-      this.drawLayers();
+    filteredShips: {
+      handler(val, oldVal) {
+        if (val != oldVal) this.drawLayers();
+      },
+      deep: true,
     },
 
     activeLayersList() {
@@ -113,6 +126,7 @@ export default {
           },
         });
       }
+
       this.drawLayers();
     },
   },
@@ -165,8 +179,10 @@ export default {
 
     processMessageBatch() {
       // Process each message in the buffer and update ships data
-      this.shipsStoreInstance.createOrReplaceShips(this.messageBuffer);
-      this.messageBuffer = [];
+      if (this.messageBuffer.length > 0) {
+        this.shipsStoreInstance.createOrReplaceShips(this.messageBuffer);
+        this.messageBuffer = [];
+      }
     },
 
     log(message) {
@@ -175,6 +191,39 @@ export default {
     },
 
     drawLayers() {
+      // create a new GeojsonLayer for the AIS data
+      const aisGeoJSONLayer = new GeoJsonLayer({
+        id: "aisgeojson-layer",
+        data: this.filteredShips.map((v) => v.geojson),
+        pickable: true,
+        filled: true,
+        getFillColor: (f) => f.properties.color,
+        lineJointRounded: true,
+        lineCapRounded: true,
+        visible: this.mapRef.getZoom() > ZOOM_AIS_THRESHOLD,
+        autoHighlight: true,
+        highlightColor: [255, 234, 0],
+        onClick: ({ object }) => {
+          console.log(object.properties);
+          this.shipsStoreInstance.setSelectedShip(object.properties);
+        },
+      });
+
+      const antennaLayer = new ScatterplotLayer({
+        id: "antenna-layer",
+        data: this.filteredShips,
+        pickable: true,
+        opacity: 0.8,
+        stroked: true,
+        filled: false,
+        lineWidthMinPixels: 4,
+        getPosition: (f) => f.location.coordinates,
+        sizeUnits: "meters",
+        getRadius: (d) => 1,
+        getLineColor: (d) => [255, 255, 255],
+        visible: this.mapRef.getZoom() > ZOOM_AIS_THRESHOLD,
+      });
+
       // Create a new IconLayer for the AIS data
       const aisLayer = new IconLayer({
         id: "ais-layer",
@@ -197,31 +246,30 @@ export default {
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
         pickable: true,
+        visible: this.mapRef.getZoom() <= ZOOM_AIS_THRESHOLD,
         onClick: ({ object }) =>
           this.shipsStoreInstance.setSelectedShip(object),
-        visible: true, // Add visibility condition based on your logic
+      });
+
+      let ruler = new EditableGeoJsonLayer({
+        id: "editable-geojson",
+        data: [],
+        mode: MeasureDistanceMode,
       });
 
       // Create a new TextLayer for the ship names
       const legendLayer = new TextLayer({
-        id: "text-layer",
+        id: "aislegend-layer",
         data: this.filteredShips,
-        fontFamily: "Monaco, monospace",
+        fontFamily: "Nunito",
         getPosition: (f) => f.location.coordinates,
-        getText: (f) => "   " + f.name.trim(),
-        getSize: (f) => 120,
-        sizeMaxPixels: "18",
-        opacity: 1,
+        getText: (f) => f.name.trim(),
+        getColor: [255, 255, 255, 255],
+        getSize: 12,
         getTextAnchor: "start",
-        sizeUnits: "meters",
-        getAlignmentBaseline: "center",
+        getPixelOffset: [15, 0],
+        getAngle: (f) => 0,
         fontWeight: "bold",
-        radiusUnits: "pixels",
-        //getColor: [255, 255, 255],
-        getColor: [0,0,0],
-        extensions: [new CollisionFilterExtension()],
-        collisionGroup: "visualization",
-        visible: true, // Add visibility condition based on your logic
       });
 
       // foreach active layyer, get all features and create a GeoJsonLayer
@@ -250,23 +298,31 @@ export default {
         }
       });
 
-      let layers = geojsonLayers.concat([aisLayer, legendLayer]);
+      let layers = geojsonLayers.concat([
+        aisGeoJSONLayer,
+        antennaLayer,
+        aisLayer,
+        legendLayer,
+        //ruler,
+      ]);
 
       this.activeWmsLayersList.forEach((wms_layer) => {
         const wms = new WMSLayer({
           data: wms_layer.url + "&WIDTH={width}&HEIGHT={height}&BBOX={bbox}",
           serviceType: "template",
           layers: wms_layer.layers.split(","),
-          opacity: 0.5
+          opacity: 0.5,
         });
 
         layers.unshift(wms);
       });
 
-      if (this.deck)
+      if (this.deck) {
         this.deck.setProps({
           layers: layers,
         });
+        this.toggleLayerVisibilty();
+      }
 
       this.activeLayersList.forEach((layer) => {
         this.layersStoreInstance.setStateLoadingLayer(layer._id, false);
@@ -390,6 +446,12 @@ export default {
 
     initializeDeck() {
       this.deck = new Deck({
+        views: new MapView({
+          repeat: true,
+          // nearZMultiplier: 0.1,
+          // farZMultiplier: 1.01,
+          // orthographic: false,
+        }),
         width: "100%",
         height: "100%",
         parent: document.getElementById("map"),
@@ -407,11 +469,55 @@ export default {
             bearing: viewState.bearing,
             pitch: viewState.pitch,
           });
+
+          this.toggleLayerVisibilty();
         },
         controller: true,
       });
     },
 
+    toggleLayerVisibilty() {
+      //@todo: add a check if zoom level is changed between 11 and 13
+      let layers = this.deck.props.layers.map((layer) => {
+        if (this.mapRef.getZoom() > ZOOM_AIS_THRESHOLD) {
+          if (layer.id === "ais-layer") {
+            layer = layer.clone({ visible: false });
+          }
+
+          if (layer.id === "aisgeojson-layer") {
+            layer = layer.clone({ visible: true });
+          }
+
+          if (layer.id === "antenna-layer") {
+            layer = layer.clone({ visible: true });
+          }
+
+          if (layer.id === "aislegend-layer") {
+            layer = layer.clone({ visible: true });
+          }
+        } else {
+          if (layer.id === "ais-layer") {
+            layer = layer.clone({ visible: true });
+          }
+
+          if (layer.id === "aisgeojson-layer") {
+            layer = layer.clone({ visible: false });
+          }
+
+          if (layer.id === "antenna-layer") {
+            layer = layer.clone({ visible: false });
+          }
+
+          if (layer.id === "aislegend-layer") {
+            layer = layer.clone({ visible: false });
+          }
+        }
+
+        return layer;
+      });
+
+      this.deck.setProps({ layers: layers });
+    },
     hexToRgbaArray(hex) {
       if (!hex) return [223, 149, 13, 255]; // Return orange with alpha 255 if no color is defined
 

@@ -1,5 +1,4 @@
 <template>
-  <VitePwaManifest />
   <div class="h-screen">
     <NuxtLayout>
       <NuxtPage />
@@ -11,5 +10,9 @@
 body,
 html {
   overflow: hidden;
+}
+
+.v-toolbar__content > .v-toolbar-title {
+  margin-left: 5px !important;
 }
 </style>
