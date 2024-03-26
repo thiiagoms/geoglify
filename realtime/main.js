@@ -164,7 +164,7 @@ function processShipData(ship) {
       const yOffsetC = -(ship?.dimension?.C || width / 2);
       const yOffsetD = ship?.dimension?.D || width / 2;
 
-      const yOffsetAux = (xOffsetA * 0.9);
+      const yOffsetAux = (xOffsetA - 10);
 
       // Create a polygon with a "beak" and rotate it according to the heading
       const polygon = turf.polygon([
