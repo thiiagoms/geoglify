@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const { log } = require("console");
 
 // MongoDB client
 const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
@@ -57,6 +58,7 @@ async function connectWithRetry() {
     logInfo("MongoDB Connected");
     await run();
   } catch (err) {
+    logError("Failed to connect to MongoDB", err);
     logInfo("Failed to connect to MongoDB, retrying...");
     setTimeout(connectWithRetry, 5000);
   }
@@ -70,6 +72,28 @@ async function run() {
   const messagesCollection = database.collection("messages");
 
   shipsListDB = await getAllShipsToMap();
+
+  logInfo("Creating indexes...");
+  
+  // define your Atlas Search index
+  const index1 = {
+    name: "ships_index",
+    type: "vectorSearch",
+    definition: {
+      fields: [
+        {
+          path: "embedding",
+          numDimensions: 1536,
+          similarity: "cosine",
+          type: "vector",
+        },
+      ],
+    },
+  };
+
+  await shipsCollection.createSearchIndex(index1);
+
+  logInfo("Atlas Search index created");
 
   const socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
@@ -281,6 +305,7 @@ async function run() {
       { expire_at: 1 },
       { expireAfterSeconds: 0 }
     );
+
     isIndexCreated = true;
   }
 }

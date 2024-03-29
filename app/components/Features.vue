@@ -37,7 +37,7 @@
         style="height: calc(100%)"
       >
         <template v-slot:no-data>
-          <v-alert :value="true" icon="mdi-alert">
+          <v-alert :value="true" icon="mdi-alert" class="mt-5">
             No features found for this layer
           </v-alert>
         </template>
