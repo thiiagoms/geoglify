@@ -10,24 +10,19 @@ services:
     depends_on:
       - realtime
       - api
-
+      
   mongodb:
     container_name: mongodb
     restart: always
-    build:
-      context: ./mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-    ports:
-      - '27017:27017'
+    image: mongodb/atlas
+    privileged: true
+    command: |
+      /bin/bash -c "atlas deployments setup --type local --port 27778 --bindIpAll --username root --password root --force && tail -f /dev/null"
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - mongodb_data:/data/db
-    healthcheck:
-      test: |
-        test $$(mongosh --quiet -u root -p root --eval "try { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb' }] }).ok } catch (_) { rs.status().ok }") -eq 1
-      interval: 10s
-      start_period: 30s
+    ports:
+      - 27778:27778
 
   mongodb-seed:
     container_name: mongodb-seed
@@ -39,9 +34,6 @@ services:
       - ./mongodb-seed:/mongodb-seed
     command:
       /mongodb-seed/_import.sh
-    depends_on:
-      mongodb:
-        condition: service_healthy
     restart: 'no'
 
   ais:
@@ -81,5 +73,29 @@ services:
     depends_on:
       - mongodb
 
+  ollama:
+    volumes:
+      - ollama:/root/.ollama
+    ports:
+      - 11434:11434
+    container_name: ollama
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    image: ollama/ollama:latest
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=https://localhost:11434
+    volumes:
+      - open-webui:/app/backend/data
+    restart: always
+
 volumes:
   mongodb_data:
+  ollama:
+  open-webui:
