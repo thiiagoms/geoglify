@@ -1,6 +1,5 @@
 /api/node_modules
 /app/node_modules
 /realtime/node_modules
-/_deploy
-/nginx/
+/bot/node_modules
 /mongodb-seed

@@ -113,6 +113,34 @@
         }"
         style="z-index: 1000"
       />
+
+      <v-responsive
+        class="mx-auto"
+        max-width="300"
+        width="100%"
+        style="position: absolute; top: 80px; right: 10px; z-index: 1000"
+      >
+        <v-text-field
+          v-model="question"
+          :loading="loading"
+          label="Search"
+          append-inner-icon="mdi-magic-staff"
+          density="compact"
+          variant="solo"
+          hide-details
+          single-line
+          @click:append-inner="search"
+          :disabled="loading"
+        >
+        </v-text-field>
+        <v-card class="mt-2" v-if="loading || !!searchResult">
+          <v-card-text>
+            <v-skeleton-loader :loading="!searchResult" type="list-item-three-line">
+              {{ searchResult }}
+            </v-skeleton-loader>
+          </v-card-text>
+        </v-card>
+      </v-responsive>
       <slot />
     </v-main>
   </v-app>
@@ -167,6 +195,9 @@ export default {
           dynamicLeft: "10px",
         },
       ],
+      question: "",
+      loading: false,
+      searchResult: "",
     };
   },
 
@@ -255,6 +286,38 @@ export default {
         this.cargosStoreInstance.setNavigationDrawerState(false);
         this.wmsLayersStoreInstance.toggleNavigationDrawerState();
       }
+    },
+
+    async search() {
+      this.loading = true;
+      this.searchResult = "";
+
+      await fetch(`http://localhost:8082/invoke?text=${this.question}`)
+        .then((response) => {
+          const reader = response.body.getReader();
+          let data = [];
+          const decoder = new TextDecoder("utf-8"); // Create a TextDecoder instance
+
+          const read = (result) => {
+            // Define the read function
+            if (result.done) {
+              return data;
+            }
+
+            const text = decoder.decode(result.value); // Decode the data into a string
+            data.push(text); // Append the result to data
+            this.searchResult += text; // Append the result to searchResult
+
+            return reader.read().then(read);
+          };
+
+          return reader.read().then(read); // Pass the result to the read function
+        })
+        .then((data) => {
+          // Do whatever you want with your data
+          this.searchResult = data.join("");
+          this.loading = false;
+        });
     },
   },
   watch: {
