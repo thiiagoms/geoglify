@@ -8,17 +8,9 @@ Welcome to Geoglify, an innovative open-source project dedicated to exploring th
 
 The primary goal of Geoglify is to provide a centralized platform for the analysis and visualization of data related to the sea. We aim to offer valuable insights into the shipping industry, maritime planning, and associated statistics, promoting a comprehensive understanding of the marine environment.
 
-## Key Features (Future Objectives)
+## Geoglify's architecture
 
-Our vision for Geoglify includes the implementation of the following key features:
-
-1. **Maritime Data Visualization**: Future plans to develop interactive visualizations showcasing data on ships, maritime routes, oceanic conditions, and more.
-
-2. **Enhanced Maritime Planning**: Ongoing efforts to build tools that will assist in efficient route planning, fleet management, and resource optimization in the naval industry.
-
-3. **Comprehensive Industry Statistics**: Future development to provide up-to-date statistics on maritime traffic, types of vessels, weather patterns, and other relevant factors.
-
-4. **Extended Maritime Data APIs**: Plans for seamless integration with APIs that will offer real-time data on sea conditions, ship locations, and other crucial information.
+![geoglify](https://github.com/geoglify/geoglify/assets/4217810/05b30701-a8cd-4e6a-8cd3-b150621b4a9a)
 
 ## How to Contribute
 
@@ -34,28 +26,6 @@ We welcome contributions from the community! If you're interested in contributin
 ## Environment Setup
 
 To set up the development environment, follow the instructions in the [`INSTALL.md`](INSTALL.md) file.
-
-## Technology Stack
-
-Geoglify utilizes the following technology stack:
-
-- **App**: 
-  - Framework: [Nuxt.js](https://nuxtjs.org/) with [Vue3](https://v3.vuejs.org/)
-  - MapTech: [Deck.gl](https://deck.gl/)
-  - UI Framework: [VuetifyJS](https://vuetifyjs.com/en/)
-  - Additional: [socket.io](https://socket.io/) and [pinia](https://pinia.vuejs.org/)
-- **API**: 
-  - Framework: [Node.js](https://nodejs.org/) with [Express](https://expressjs.com/)
-- **Realtime**: 
-  - Framework: [Node.js](https://nodejs.org/) with [socket.io](https://socket.io/)
-- **Database**: 
-  - [MongoDB](https://www.mongodb.com/)
-- **AIS**: 
-  - Framework: [Node.js](https://nodejs.org/)
-- **Providers**: 
-  - AIS: [aisstream.io](https://aisstream.io)
-  - Weather: [api.openweathermap.org](https://api.openweathermap.org)
-  - Base maps: [mapbox.com](https://www.mapbox.com/)
 
 ## License
 
