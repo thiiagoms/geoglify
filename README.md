@@ -2,15 +2,15 @@
 
 Welcome to Geoglify, an innovative open-source project dedicated to exploring the vast realm of ships, maritime data, planning, and related statistics. Explore a universe of geospatial tools and resources crafted to unlock the mysteries of the maritime domain.
 
-![Captura de ecrã 2024-02-03 171218](https://github.com/geoglify/geoglify/assets/4217810/a0fea097-cf8a-4281-b04f-e6e2f9e742a0)
+## Geoglify's architecture
+
+![geoglify](https://github.com/geoglify/geoglify/assets/4217810/05b30701-a8cd-4e6a-8cd3-b150621b4a9a)
 
 ## Objective
 
 The primary goal of Geoglify is to provide a centralized platform for the analysis and visualization of data related to the sea. We aim to offer valuable insights into the shipping industry, maritime planning, and associated statistics, promoting a comprehensive understanding of the marine environment.
 
-## Geoglify's architecture
-
-![geoglify](https://github.com/geoglify/geoglify/assets/4217810/05b30701-a8cd-4e6a-8cd3-b150621b4a9a)
+![Captura de ecrã 2024-02-03 171218](https://github.com/geoglify/geoglify/assets/4217810/a0fea097-cf8a-4281-b04f-e6e2f9e742a0)
 
 ## How to Contribute
 
