@@ -1,3 +1,4 @@
+const { log } = require("console");
 const { MongoClient } = require("mongodb");
 const net = require("net");
 const WebSocket = require("ws");
@@ -18,28 +19,32 @@ let isProcessing = false;
 
 // Logging function for information messages
 function logInfo(message) {
-  console.info(
-    `[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}] ${message}`
+  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
   );
 }
 
 // Logging function for error messages
 function logError(message) {
-  console.error(
-    `[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}] ${message}`
+  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
   );
 }
 
 // Logging function for success messages
 function logSuccess(message) {
-  console.info(
-    `[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}] ${message}`
+  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
+  );
+}
+
+// Loggin function for warning messages
+function logWarning(message) {
+  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
   );
 }
 
 // Function to connect to MongoDB with retry mechanism
 async function connectToMongoDBWithRetry() {
   try {
+    logWarning("Connecting to MongoDB...");
     await mongoClient.connect();
     logSuccess("MongoDB Connected");
   } catch (err) {
@@ -112,11 +117,13 @@ async function startProcessing() {
 // Function to connect to AIS stream with retry mechanism
 async function connectToAisStreamWithRetry() {
   try {
+
+    logWarning("Connecting to AIS stream...\n");
     const socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
     // WebSocket event handlers
     socket.onopen = function (_) {
-      logInfo("WebSocket Connected");
+      logInfo("Connected to AIS stream");
       let subscriptionMessage = {
         Apikey: AISSTREAM_API_KEY,
         BoundingBoxes: [
@@ -162,7 +169,7 @@ function decodeStreamMessage(message) {
   let now = new Date();
   message.expire_at = new Date(now.getTime() + 30 * 60 * 1000); // Set expiration time to 30 minutes in the future
 
-  logInfo("Decoded AIS Stream [Ship MMSI]: " + message.MetaData.MMSI);
+  logSuccess("Decoded AIS message MMSI: \x1b[32m" + message.MetaData.MMSI + "\n\x1b[0m");
   
   let ship = {
     immsi: parseInt(message.MetaData.MMSI),
