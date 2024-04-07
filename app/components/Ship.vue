@@ -4,23 +4,24 @@
     <v-toolbar color="white" dark>
       <v-toolbar-title class="font-weight-black text-h6">
         <v-list density="compact">
-          <v-list-item class="pa-0 ma-0">
+          <v-list-item class="pa-2 ma-0">
             <template v-slot:prepend>
               <!-- Display ship flag -->
               <v-avatar size="30">
                 <v-img
                   :src="`https://hatscripts.github.io/circle-flags/flags/${(
-                    this.shipsStoreInstance?.selectedShip?.flag_country_code ||
-                    'xx'
+                    shipDetails?.countrycode || 'xx'
                   ).toLowerCase()}.svg`"
                 ></v-img>
               </v-avatar>
             </template>
             <!-- Display ship name and MMSI -->
             <v-list-item-title class="font-weight-black">
-              {{ shipDetails?.Name }}
+              {{ shipDetails?.mmsi ?? "N/A" }}
             </v-list-item-title>
-            <v-list-item-subtitle>{{ shipDetails?.MMSI }}</v-list-item-subtitle>
+            <v-list-item-subtitle>{{
+              shipDetails?.shipname ?? "N/A"
+            }}</v-list-item-subtitle>
           </v-list-item>
         </v-list>
       </v-toolbar-title>
@@ -38,8 +39,8 @@
       <!-- Display ship icon -->
       <v-img
         :src="
-          'https://photos.marinetraffic.com/ais/showphoto.aspx?imo=' +
-          shipDetails.IMO
+          'https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=' +
+          shipDetails.mmsi
         "
       >
         <template v-slot:error>
@@ -54,17 +55,19 @@
           <!-- Use v-for to loop through ship information -->
           <template v-for="(value, label) in shipDetails">
             <template
-              v-if="value !== null && value !== undefined && value !== ''"
+              v-if="value !== null && value !== undefined && value !== '' && label != '_id' && label != 'countrycode'"
             >
               <tr :key="label">
                 <!-- Display label in bold -->
-                <td class="font-weight-bold">{{ label }}</td>
+                <td class="font-weight-bold text-uppercase">{{ label }}</td>
                 <!-- Conditionally format and display ship information -->
-                <template v-if="label === 'ETA' || label === 'Latest Report'">
-                  <td>{{ formatDate(value) }}</td>
+                <template v-if="label === 'eta' || label === 'utc'">
+                  <td class="px-0 text-uppercase">
+                    {{ formatDate(value) }}
+                  </td>
                 </template>
                 <template v-else>
-                  <td>{{ value }}</td>
+                  <td class="px-0 text-uppercase">{{ value }}</td>
                 </template>
               </tr>
             </template>

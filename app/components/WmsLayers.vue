@@ -1,7 +1,13 @@
 <template>
-  <v-toolbar dark class="fixed-bar" v-if="isNavigationDrawerOpen">
+  <v-toolbar
+    class="fixed-bar"
+    color="white"
+    dark
+    style="border-bottom: 1px solid #ccc"
+    v-if="isNavigationDrawerOpen"
+  >
     <v-toolbar-title>
-      <v-list-item class="px-0">
+      <v-list-item class="px-3">
         <v-list-item-title class="text-h6 font-weight-black"
           >WMS Layers</v-list-item-title
         >

@@ -63,6 +63,7 @@ export default {
       socket: null,
       messageBuffer: [],
       bufferInterval: null,
+      last: 0,
     };
   },
 
@@ -106,27 +107,6 @@ export default {
     },
 
     filteredFeatures() {
-      this.drawLayers();
-    },
-
-    selectedShip(val) {
-      if (val) {
-        const longitude = val.location.coordinates[0];
-        const latitude = val.location.coordinates[1];
-        const zoom = 16;
-
-        this.deck.setProps({
-          viewState: {
-            ...this.currentViewState,
-            longitude,
-            latitude,
-            zoom,
-            transitionDuration: 500,
-            transitionInterpolator: new FlyToInterpolator(),
-          },
-        });
-      }
-
       this.drawLayers();
     },
   },
@@ -204,7 +184,6 @@ export default {
         autoHighlight: true,
         highlightColor: [255, 234, 0],
         onClick: ({ object }) => {
-          console.log(object.properties);
           this.shipsStoreInstance.setSelectedShip(object.properties);
         },
       });
@@ -238,23 +217,19 @@ export default {
           mask: true,
         }),
         getPosition: (f) => f.location.coordinates,
-        getAngle: (f) => 360 - f.hdg,
+        getAngle: (f) => 360 - f.geojson.properties.hdg,
         getSize: (f) => f.size,
         getColor: (f) =>
-          f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.color,
-        getCollisionPriority: (f) => f.priority,
+          f._id == this.selectedShip?._id
+            ? [255, 234, 0, 255]
+            : f.geojson.properties.color,
+        getCollisionPriority: (f) => f.geojson.properties.priority,
         extensions: [new CollisionFilterExtension()],
         collisionGroup: "visualization",
         pickable: true,
         visible: this.mapRef.getZoom() <= ZOOM_AIS_THRESHOLD,
         onClick: ({ object }) =>
-          this.shipsStoreInstance.setSelectedShip(object),
-      });
-
-      let ruler = new EditableGeoJsonLayer({
-        id: "editable-geojson",
-        data: [],
-        mode: MeasureDistanceMode,
+          this.shipsStoreInstance.setSelectedShip(object.geojson.properties),
       });
 
       // Create a new TextLayer for the ship names
@@ -263,7 +238,10 @@ export default {
         data: this.filteredShips,
         fontFamily: "Nunito",
         getPosition: (f) => f.location.coordinates,
-        getText: (f) => f.name.trim(),
+        getText: (f) =>
+          !!f.geojson?.properties?.shipname
+            ? f.geojson.properties.shipname.trim()
+            : "N/A",
         getColor: [255, 255, 255, 255],
         getSize: 12,
         getTextAnchor: "start",

@@ -1,11 +1,12 @@
 <template>
   <v-toolbar
-    dark
     class="fixed-bar"
+    color="white" dark
+    style="border-bottom: 1px solid #ccc;"
     v-if="cargosStoreInstance.isNavigationDrawerOpen"
   >
-    <v-toolbar-title>
-      <v-list-item class="px-0">
+    <v-toolbar-title >
+      <v-list-item class="px-3">
         <v-list-item-title class="text-h6 font-weight-black">
           Ship Types</v-list-item-title
         >
