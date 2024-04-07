@@ -69,10 +69,11 @@ services:
     restart: always
     container_name: realtime
     working_dir: /opt/realtime
-    ports:
-      - "8080:8080"
     environment:
       - NODE_ENV=production
+      - MONGODB_CONNECTION_STRING=mongodb://root:root@mongodb:27778/?directConnection=true&authMechanism=DEFAULT
+    ports:
+      - "8080:8080"
     command: "node main.js"
     depends_on:
       - mongodb
@@ -101,16 +102,16 @@ services:
     restart: unless-stopped
     image: ollama/ollama:latest
 
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
-    ports:
-      - "3000:8080"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    volumes:
-      - open-webui:/app/backend/data
-    restart: always
+  #open-webui:
+  #  image: ghcr.io/open-webui/open-webui:main
+  #  container_name: open-webui
+  #  ports:
+  #    - "3000:8080"
+  #  extra_hosts:
+  #    - "host.docker.internal:host-gateway"
+  #  volumes:
+  #    - open-webui:/app/backend/data
+  #  restart: always
 
 volumes:
   mongodb_data:

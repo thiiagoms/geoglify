@@ -1,11 +1,13 @@
 <template>
   <v-toolbar
-    dark
     class="fixed-bar"
+    color="white"
+    dark
+    style="border-bottom: 1px solid #ccc"
     v-if="shipsStoreInstance.isNavigationDrawerOpen"
   >
     <v-toolbar-title>
-      <v-list-item class="px-0">
+      <v-list-item class="px-3">
         <v-list-item-title class="text-h6 font-weight-black"
           >Ships</v-list-item-title
         >
@@ -47,28 +49,23 @@
         <v-list-item class="ship-item" @click="selectShip(item)">
           <!-- Ship name -->
           <v-list-item-title class="font-weight-bold">{{
-            item.name || "N/A"
+            item?.geojson?.properties?.shipname ||
+            item?.geojson?.properties?.mmsi ||
+            "N/A"
           }}</v-list-item-title>
 
           <!-- Ship details: IMO, MMSI, Flag, Call Sign, Updated At, Flag Country Name, Ship Type Description -->
           <v-list-item-subtitle class="text-caption">
-            <p><b>IMO:</b> {{ item.imo || "N/A" }}</p>
-            <p><b>MMSI:</b> {{ item.mmsi || "N/A" }}</p>
-            <p><b>Name:</b> {{ item.name || "N/A" }}</p>
-            <p><b>Updated At:</b> {{ formatDate(item.time_utc) || "N/A" }}</p>
+            <p>{{ formatDate(item?.geojson?.properties?.utc) || "N/A" }}</p>
           </v-list-item-subtitle>
 
           <!-- Flag image in the prepend slot -->
           <template v-slot:prepend>
             <v-avatar size="30">
               <v-img
-                v-if="item?.flag_country_code"
-                :src="`https://hatscripts.github.io/circle-flags/flags/${item.flag_country_code.toLowerCase()}.svg`"
-                @error="handleImageError"
-              ></v-img>
-              <v-img
-                v-else
-                src="https://hatscripts.github.io/circle-flags/flags/xx.svg"
+                :src="`https://hatscripts.github.io/circle-flags/flags/${(
+                  item?.countrycode || 'xx'
+                ).toLowerCase()}.svg`"
               ></v-img>
             </v-avatar>
           </template>
@@ -112,11 +109,6 @@ export default {
   },
 
   methods: {
-    // Handle image loading errors
-    handleImageError(e) {
-      e.target.src = "https://hatscripts.github.io/circle-flags/flags/xx.svg";
-    },
-
     // Helper method to format date
     formatDate(date) {
       return date

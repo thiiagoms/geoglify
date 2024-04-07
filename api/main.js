@@ -5,16 +5,54 @@ const http = require("http");
 const cors = require("cors");
 const { ObjectId } = require("mongodb");
 const turf = require("@turf/turf");
-require("dotenv").config();
 
 // MongoDB Client
-const client = new MongoClient(process.env.MONGODB_CONNECTION_STRING);
+const MONGODB_CONNECTION_STRING =
+  process.env.MONGODB_CONNECTION_STRING ||
+  "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
+const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 
 // Express App Setup
 const app = express();
 const server = http.createServer(app);
 app.use(express.json({ limit: "100mb" }));
 app.use(cors());
+
+// Logging function for information messages
+function logInfo(message) {
+  console.info(
+    `\x1b[33m[${new Date().toLocaleString("en-GB", {
+      timeZone: "UTC",
+    })}]\x1b[0m ${message}`
+  );
+}
+
+// Logging function for error messages
+function logError(message) {
+  console.error(
+    `\x1b[31m[${new Date().toLocaleString("en-GB", {
+      timeZone: "UTC",
+    })}]\x1b[0m ${message}`
+  );
+}
+
+// Logging function for success messages
+function logSuccess(message) {
+  console.info(
+    `\x1b[32m[${new Date().toLocaleString("en-GB", {
+      timeZone: "UTC",
+    })}]\x1b[0m ${message}`
+  );
+}
+
+// Logging function for warning messages
+function logWarning(message) {
+  console.info(
+    `\x1b[90m[${new Date().toLocaleString("en-GB", {
+      timeZone: "UTC",
+    })}]\x1b[0m ${message}`
+  );
+}
 
 // Routes
 
@@ -23,23 +61,42 @@ app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
 
-// AIS Ships Routes
 app.get("/ais_ships", async (_, res) => {
   const ais_ships = await getAISShips();
   res.json(ais_ships);
 });
 
-app.get("/ais_ships_full", async (_, res) => {
-  const ais_ships = await getAISShipsFull();
-  res.json(ais_ships);
-});
-
 app.get("/ais_ships/:id", async (req, res) => {
   const _id = req.params.id;
-  const ais_ship = await client
+  const ais_ship = await mongoClient
     .db("geoglify")
     .collection("realtime")
-    .findOne({ _id: new ObjectId(_id) });
+    .findOne(
+      { _id: new ObjectId(_id) },
+      {
+        projection: {
+          _id: 1,
+          mmsi: 1,
+          ais_server_host: 1,
+          aistype: 1,
+          callsign: 1,
+          cargo: 1,
+          channel: 1,
+          class: 1,
+          dimA: 1,
+          dimB: 1,
+          dimC: 1,
+          dimD: 1,
+          length: 1,
+          utc: 1,
+          width: 1,
+          cog: 1,
+          hdg: 1,
+          sog: 1,
+          shipname: 1,
+        },
+      }
+    );
   res.json(ais_ship);
 });
 
@@ -174,25 +231,9 @@ app.delete("/wmslayers/:id", async (req, res) => {
   res.json(result);
 });
 
-// Server Start
-async function startServer() {
-  try {
-    await client.connect();
-    console.log("Connected to MongoDB");
-    server.listen(8081, () => {
-      console.log("Listening on *:8081");
-    });
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-  }
-}
-
-startServer();
-
 // Database Operations Functions
-
 async function getAISShips() {
-  const results = await client
+  const results = await mongoClient
     .db("geoglify")
     .collection("realtime")
     .find(
@@ -201,34 +242,18 @@ async function getAISShips() {
         projection: {
           _id: 1,
           mmsi: 1,
-          name: 1,
-          flag_country_name: 1,
-          flag_country_code: 1,
-          cargo_type_code: 1,
+          shipname: 1,
+          cargo: 1,
           hdg: 1,
           location: 1,
-          time_utc: 1,
-          eta: 1,
+          utc: 1
         },
       }
     )
     .limit(10000)
     .toArray();
 
-  return results;
-}
-
-async function getAISShipsFull() {
-  const results = await client
-    .db("geoglify")
-    .collection("realtime")
-    .find({})
-    .limit(10000)
-    .toArray();
-
-  const processedResults = results.map((ship) => processShipData(ship));
-
-  return processedResults;
+  return results.map((ship) => processShipData(ship));
 }
 
 function processShipData(ship) {
@@ -238,28 +263,24 @@ function processShipData(ship) {
   let geojson;
 
   if (!hdg || hdg === 511) {
-    const length =
-      ship?.dimension?.A + ship?.dimension?.B || ship.loa || ship.lbp || 20; // Length of the ship
-    const width =
-      ship?.dimension?.C + ship?.dimension?.D ||
-      ship.hull_beam ||
-      ship.breadth_moulded ||
-      20; // Width of the ship
+    const length = ship?.dimA + ship?.dimB || ship.length || 20; // Length of the ship
+    const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
 
     // Draw a circle if hdg is null or 511
     const radius = Math.max(width, length) / 2;
     geojson = turf.circle([x, y], radius, { units: "meters" });
   } else {
-    const length = ship.loa || ship.lbp || 50; // Length of the ship
-    const width = ship.hull_beam || ship.breadth_moulded || 20; // Width of the ship
+    const length = ship?.dimA + ship?.dimB || ship.length || 50; // Length of the ship
+    const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
 
     // Calculate the offsets in degrees
-    const xOffsetA = ship?.dimension?.A || length / 2; 100
-    const xOffsetB = -(ship?.dimension?.B || length / 2);
-    const yOffsetC = -(ship?.dimension?.C || width / 2);
-    const yOffsetD = ship?.dimension?.D || width / 2;
+    const xOffsetA = ship?.dimA || length / 2;
+    100;
+    const xOffsetB = -(ship?.dimB || length / 2);
+    const yOffsetC = -(ship?.dimC || width / 2);
+    const yOffsetD = ship?.dimD || width / 2;
 
-    const yOffsetAux = (xOffsetA - 10);
+    const yOffsetAux = xOffsetA - 10;
 
     // Create a polygon with a "beak" and rotate it according to the heading
     const polygon = turf.polygon([
@@ -288,24 +309,29 @@ function processShipData(ship) {
     geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), {
       pivot: ship.location.coordinates,
     });
-    
   }
 
-  ship.geojson = {
+  var options = { tolerance: 0.000001, highQuality: true };
+  var simplified = turf.simplify(geojson, options);
+
+  let result = {
     type: "Feature",
     properties: {
       _id: ship._id,
-      location: ship.location,
-      ...ship,
+      mmsi: ship.mmsi,
+      shipname: ship.shipname,
+      cargo: ship.cargo,
+      hdg: ship.hdg,
+      utc: ship.utc
     },
-    geometry: geojson.geometry,
+    geometry: simplified.geometry,
   };
 
-  return ship;
+  return { _id: ship._id, location: ship.location, geojson: result };
 }
 
 async function getLayers() {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .find()
@@ -314,14 +340,14 @@ async function getLayers() {
 }
 
 async function insertLayer(layer) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .insertOne(layer);
 
   const insertedId = result.insertedId;
 
-  const insertedLayer = await client
+  const insertedLayer = await mongoClient
     .db("geoglify")
     .collection("layers")
     .findOne({ _id: insertedId });
@@ -330,7 +356,7 @@ async function insertLayer(layer) {
 }
 
 async function getLayerById(layerId) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .findOne({ _id: new ObjectId(layerId) });
@@ -338,12 +364,12 @@ async function getLayerById(layerId) {
 }
 
 async function updateLayer(layerId, updatedLayer) {
-  await client
+  await mongoClient
     .db("geoglify")
     .collection("layers")
     .updateOne({ _id: new ObjectId(layerId) }, { $set: updatedLayer });
 
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .findOne({ _id: new ObjectId(layerId) });
@@ -352,7 +378,7 @@ async function updateLayer(layerId, updatedLayer) {
 }
 
 async function deleteLayer(layerId) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .deleteOne({ _id: new ObjectId(layerId) });
@@ -360,7 +386,7 @@ async function deleteLayer(layerId) {
 }
 
 async function getFeaturesByLayerId(layerId) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("features")
     .find({ layer_id: new ObjectId(layerId) })
@@ -370,7 +396,7 @@ async function getFeaturesByLayerId(layerId) {
 
 async function insertFeature(layerId, feature) {
   feature.layer_id = layerId;
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("features")
     .insertOne(feature);
@@ -379,7 +405,7 @@ async function insertFeature(layerId, feature) {
 }
 
 async function updateLayerStyle(layerId, newStyle) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("layers")
     .updateOne({ _id: new ObjectId(layerId) }, { $set: { style: newStyle } });
@@ -387,7 +413,7 @@ async function updateLayerStyle(layerId, newStyle) {
 }
 
 async function getWmsLayers() {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .find()
@@ -396,14 +422,14 @@ async function getWmsLayers() {
 }
 
 async function insertWmsLayer(layer) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .insertOne(layer);
 
   const insertedId = result.insertedId;
 
-  const insertedLayer = await client
+  const insertedLayer = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .findOne({ _id: insertedId });
@@ -412,7 +438,7 @@ async function insertWmsLayer(layer) {
 }
 
 async function getWmsLayerById(layerId) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .findOne({ _id: new ObjectId(layerId) });
@@ -420,12 +446,12 @@ async function getWmsLayerById(layerId) {
 }
 
 async function updateWmsLayer(layerId, updatedLayer) {
-  await client
+  await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .updateOne({ _id: new ObjectId(layerId) }, { $set: updatedLayer });
 
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .findOne({ _id: new ObjectId(layerId) });
@@ -434,9 +460,26 @@ async function updateWmsLayer(layerId, updatedLayer) {
 }
 
 async function deleteWmsLayer(layerId) {
-  const result = await client
+  const result = await mongoClient
     .db("geoglify")
     .collection("wmslayers")
     .deleteOne({ _id: new ObjectId(layerId) });
   return result.deletedCount;
 }
+
+// Server Start
+async function connectToMongoDBWithRetry() {
+  try {
+    logWarning("Connecting to MongoDB...");
+    await mongoClient.connect();
+    logSuccess("MongoDB Connected");
+    server.listen(8081, () => {
+      logSuccess("Server running on port 8081");
+    });
+  } catch (err) {
+    logError("Failed to connect to MongoDB, retrying...");
+    setTimeout(connectToMongoDBWithRetry, 5000);
+  }
+}
+
+connectToMongoDBWithRetry();

@@ -73,6 +73,13 @@ async function startProcessing() {
 
         delete message._id;
 
+        // Iterate through each attribute and delete if empty or null
+        for (const key in message) {
+          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === '')) {
+              delete message[key];
+          }
+        }
+
         bulkOperations.push({
           updateOne: {
             filter: { mmsi: mmsi },

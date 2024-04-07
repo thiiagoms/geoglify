@@ -1,6 +1,7 @@
-const { log } = require("console");
+const readline = require("readline");
 const { MongoClient } = require("mongodb");
 const net = require("net");
+const { log } = require("console");
 const AisDecode = require("ggencoder").AisDecode;
 
 // Configurations
@@ -70,17 +71,25 @@ async function startProcessing() {
       for (let i = 0; i < bufferSize; i++) {
         const mmsi = aisMessageBuffer[i];
         const message = aisMessageDB.get(mmsi);
-
+    
         delete message._id;
-
+    
+        // Iterate through each attribute and delete if empty or null
+        for (const key in message) {
+          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === '')) {
+              delete message[key];
+          }
+        }
+    
+        // Push update operation to bulk operations array
         bulkOperations.push({
-          updateOne: {
-            filter: { mmsi: mmsi },
-            update: { $set: message },
-            upsert: true,
-          },
+            updateOne: {
+                filter: { mmsi: mmsi },
+                update: { $set: message }, // Update only the attributes with new values
+                upsert: true,
+            },
         });
-      }
+    }
 
       try {
         logInfo(
@@ -125,24 +134,25 @@ async function connectToAisServerWithRetry() {
       startProcessing();
     });
 
-    aisSocket.on("data", function (data) {
-      const regex = /\\([^\\]+)\\/g;
-      const inputString = data.toString();
-      const outputString = inputString.replace(regex, "");
+    var lineReader = readline.createInterface({
+      input: aisSocket,
+      output: aisSocket,
+      terminal: false,
+    });
 
-      const messages = outputString.split("\n");
-      for (const message of messages) {
-        if (message.trim() !== "") {
-          logInfo("Received data from AIS server: \x1b[35m" + message.trim() + "\x1b[0m");
-          processAisMessage(message.trim());
-        }
-      }
+    lineReader.on("line", function (message) {
+      const regex = /\\([^\\]+)\\/g;
+      const inputString = message.toString();
+      const outputString = inputString.replace(regex, "");
+      logInfo("Received AIS message: " + outputString);
+      processAisMessage(outputString);
     });
 
     aisSocket.on("error", function (err) {
       logError("Error while connecting to AIS server: " + err);
       setTimeout(connectToAisServerWithRetry, 5000);
     });
+
   } catch (err) {
     logError("Failed to connect to AIS server, retrying...");
     setTimeout(connectToAisServerWithRetry, 5000);
