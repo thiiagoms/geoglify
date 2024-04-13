@@ -119,6 +119,7 @@
         max-width="300"
         width="100%"
         style="position: absolute; top: 80px; right: 10px; z-index: 1000"
+        v-if="false"
       >
         <v-text-field
           v-model="question"
@@ -173,13 +174,13 @@ export default {
           top: "80px",
           dynamicLeft: "10px",
         },
-        {
+        /*{
           icon: "mdi-layers",
           isActive: this.isNavigationLayersDrawerOpen,
           drawerName: "layers",
           top: "140px",
           dynamicLeft: "10px",
-        },
+        },*/
         {
           icon: "mdi-label-multiple",
           isActive: this.isNavigationCargosDrawerOpen,
@@ -187,13 +188,13 @@ export default {
           top: "200px",
           dynamicLeft: "10px",
         },
-        {
+        /*{
           icon: "mdi-earth-box",
           isActive: this.isNavigationWmsLayersDrawerOpen,
           drawerName: "wmsLayers",
           top: "260px",
           dynamicLeft: "10px",
-        },
+        },*/
       ],
       question: "",
       loading: false,

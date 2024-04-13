@@ -33,9 +33,9 @@ const config = useRuntimeConfig();
 mapboxgl.accessToken = config.public.MAPBOX_TOKEN;
 
 // Default map parameters
-const DEFAULT_MAP_CENTER = [-5.5636312, 39.8814199];
+const DEFAULT_MAP_CENTER = [0, 0];
 const DEFAULT_MAP_BEARING = 0;
-const DEFAULT_MAP_ZOOM = 4;
+const DEFAULT_MAP_ZOOM = 1;
 const DEFAULT_MAP_PITCH = 0;
 const ZOOM_AIS_THRESHOLD = 14;
 

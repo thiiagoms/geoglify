@@ -1,7 +1,7 @@
 FROM node:18-slim
 
-RUN mkdir -p /app
-WORKDIR /app
+RUN mkdir -p /opt/app
+WORKDIR /opt/app
 
 COPY .env.example .env
 COPY . .

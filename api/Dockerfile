@@ -10,4 +10,4 @@ COPY . /opt/api
 
 RUN npm install
 
-EXPOSE 3001
+EXPOSE 8081
