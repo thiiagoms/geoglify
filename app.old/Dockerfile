@@ -3,6 +3,7 @@ FROM node:18-slim
 RUN mkdir -p /opt/app
 WORKDIR /opt/app
 
+COPY .env.example .env
 COPY . .
 
 RUN npm ci && npm cache clean --force

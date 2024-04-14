@@ -1,18 +1,7 @@
 <template>
-  <div class="h-screen">
-    <NuxtLayout>
+  <NuxtLayout>
+    <v-app>
       <NuxtPage />
-    </NuxtLayout>
-  </div>
+    </v-app>
+  </NuxtLayout>
 </template>
-
-<style>
-body,
-html {
-  overflow: hidden;
-}
-
-.v-toolbar__content > .v-toolbar-title {
-  margin-left: 5px !important;
-}
-</style>
