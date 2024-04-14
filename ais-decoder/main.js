@@ -3,6 +3,7 @@ const { MongoClient } = require("mongodb");
 const net = require("net");
 const { log } = require("console");
 const AisDecode = require("ggencoder").AisDecode;
+const session = {};
 
 // Configurations
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
@@ -20,26 +21,22 @@ let isProcessing = false;
 
 // Logging function for information messages
 function logInfo(message) {
-  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for error messages
 function logError(message) {
-  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for success messages
 function logSuccess(message) {
-  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Loggin function for warning messages
 function logWarning(message) {
-  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Function to connect to MongoDB with retry mechanism
@@ -71,34 +68,36 @@ async function startProcessing() {
       for (let i = 0; i < bufferSize; i++) {
         const mmsi = aisMessageBuffer[i];
         const message = aisMessageDB.get(mmsi);
-    
+
         delete message._id;
-    
+
         // Iterate through each attribute and delete if empty or null
         for (const key in message) {
-          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === '')) {
-              delete message[key];
+          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === "")) {
+            delete message[key];
+          }
+
+          if (key === "location" && message.location.coordinates[0] === null && message.location.coordinates[1] === null) {
+            delete message.location;
           }
         }
-    
+
         // Push update operation to bulk operations array
         bulkOperations.push({
-            updateOne: {
-                filter: { mmsi: mmsi },
-                update: { $set: message }, // Update only the attributes with new values
-                upsert: true,
-            },
+          updateOne: {
+            filter: { mmsi: mmsi },
+            update: { $set: message }, // Update only the attributes with new values
+            upsert: true,
+          },
         });
-    }
+      }
+
+      aisMessageBuffer.splice(0, bufferSize);
 
       try {
-        logInfo(
-          `Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`
-        );
-        await realtimeMessagesCollection.bulkWrite(bulkOperations, {
-          ordered: false,
-        });
-        aisMessageBuffer.splice(0, bufferSize);
+        logInfo(`Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`);
+        await realtimeMessagesCollection.bulkWrite(bulkOperations);
+        
         logInfo(`Remaining in aisMessageBuffer: ${aisMessageBuffer.length}`);
       } catch (error) {
         logError("Error while processing bulk operations");
@@ -115,10 +114,7 @@ async function startProcessing() {
 
   // Create an index for expire_at field if not already created
   if (!isIndexCreated) {
-    realtimeMessagesCollection.createIndex(
-      { expire_at: 1 },
-      { expireAfterSeconds: 0 }
-    );
+    realtimeMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
     isIndexCreated = true;
   }
 }
@@ -152,7 +148,6 @@ async function connectToAisServerWithRetry() {
       logError("Error while connecting to AIS server: " + err);
       setTimeout(connectToAisServerWithRetry, 5000);
     });
-
   } catch (err) {
     logError("Failed to connect to AIS server, retrying...");
     setTimeout(connectToAisServerWithRetry, 5000);
@@ -161,8 +156,8 @@ async function connectToAisServerWithRetry() {
 
 // Function to process AIS and NMEA messages
 function processAisMessage(message) {
-  var decMsg = new AisDecode(message, {});
-  if (decMsg.valid) logSuccess("Decoded AIS message \x1b[32m MMSI: " + decMsg.mmsi +  ", Lat: " + decMsg?.lat + ", Lon: " + decMsg?.lon + "\n\x1b[0m");
+  var decMsg = new AisDecode(message, session);
+  if (decMsg.valid) logSuccess("Decoded AIS message \x1b[32m MMSI: " + decMsg.mmsi + ", Lat: " + decMsg?.lat + ", Lon: " + decMsg?.lon + "\n\x1b[0m");
 
   if (decMsg.valid) {
     let now = new Date();
@@ -181,15 +176,11 @@ function processAisMessage(message) {
     delete message.bitarray;
     delete message.valid;
     delete message.payload;
-    delete message.lon;
-    delete message.lat;
     delete message.mmsikey;
 
-    //console.log(decMsg);
     aisMessageDB.set(message.mmsi, message);
 
-    if (!aisMessageBuffer.includes(message.mmsi))
-      aisMessageBuffer.push(message.mmsi);
+    if (!aisMessageBuffer.includes(message.mmsi)) aisMessageBuffer.push(message.mmsi);
   }
 }
 

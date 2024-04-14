@@ -9,25 +9,6 @@ export default defineNuxtConfig({
   experimental: {
     watcher: "chokidar",
   },
-  nitro: {
-    devProxy: {
-      "/api": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        prependPath: true,
-      },
-      "/realtime": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        ws: true,
-      },
-      "/socket.io": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        ws: true,
-      },
-    },
-  },
   runtimeConfig: {
     public: {
       REALTIME_URL: process.env.REALTIME_URL,
@@ -37,7 +18,6 @@ export default defineNuxtConfig({
     },
   },
   modules: [
-    "nuxt-gtag",
     "@nuxtjs/google-fonts",
     ["@pinia/nuxt", { disableVuex: false }],
     (_options, nuxt) => {
@@ -47,9 +27,6 @@ export default defineNuxtConfig({
       });
     },
   ],
-  gtag: {
-    id: "G-DX7RJHR1G4",
-  },
   ssr: false,
   vite: {
     vue: {
@@ -58,6 +35,7 @@ export default defineNuxtConfig({
       },
     },
   },
+  css: ["vue-circle-flags/dist/vue-circle-flags.css"],
   googleFonts: {
     families: {
       Nunito: {
@@ -69,5 +47,5 @@ export default defineNuxtConfig({
   },
   pinia: {
     storesDirs: ["./stores/**"],
-  },
+  }
 });

@@ -15,7 +15,7 @@ const MONGODB_CONNECTION_STRING =
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 
 // Socket CORS origin
-const SOCKET_CORS_ORIGIN = process.env.SOCKET_CORS_ORIGIN || "*";
+const SOCKET_CORS_ORIGIN = ["http://localhost", "http://geoglify.com", "https://localhost", "https://geoglify.com"];
 const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 25;
 const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 
@@ -23,7 +23,7 @@ const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origins: [SOCKET_CORS_ORIGIN] },
+  cors: { origins: SOCKET_CORS_ORIGIN },
 });
 
 // Create a route to handle the root URL
