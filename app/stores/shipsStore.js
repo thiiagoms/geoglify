@@ -88,6 +88,11 @@ export const shipsStore = defineStore("shipsStore", {
     createOrReplaceShips(ships) {
       return new Promise((resolve, reject) => {
         try {
+
+          if (!ships || !Array.isArray(ships)) {
+            resolve(); // Resolves the promise if ships is invalid
+          }
+
           const processedShips = ships
             .map((newShip) => {
               // Check if the ship object is valid
@@ -181,7 +186,7 @@ export const shipsStore = defineStore("shipsStore", {
     },
 
     getRequestBaseURL() {
-      return useRuntimeConfig().public.API_URL;
+      return useRuntimeConfig().public.API_URL + "/api"
     },
   },
 });
