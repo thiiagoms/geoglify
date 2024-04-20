@@ -1,12 +1,7 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" temporary :width="$vuetify.display.mobile ? '100%' : '350px'">
-    <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc" v-if="shipsStoreInstance.isNavigationDrawerOpen">
-      <v-toolbar-title>
-        <v-list-item class="px-3">
-          <v-list-item-title class="text-h6 font-weight-black">Ships</v-list-item-title>
-          <v-list-item-subtitle class="text-caption">({{ itemsPerPage }} / {{ this.totalItems }})</v-list-item-subtitle>
-        </v-list-item>
-      </v-toolbar-title>
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 2" permanent :width="$vuetify.display.mobile ? '100%' : '400'">
+    <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc" v-if="dialogOpened">
+      <v-toolbar-title class="text-h5 font-weight-black pl-4"> Ships </v-toolbar-title>
 
       <v-spacer></v-spacer>
       <v-btn icon @click="shipsStoreInstance.setNavigationDrawerState(false)" density="compact">
@@ -18,8 +13,8 @@
       <!-- Search input field -->
       <v-text-field v-model="search" outlined clearable placeholder="Search ships by name or MMSI" hide-details></v-text-field>
 
-      <v-data-table-server density="compact" :items-per-page="itemsPerPage" :headers="headers" :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
-        <template v-slot:item.shipname="{ item }">
+      <v-data-table-server class="ships" density="compact" :items-per-page="itemsPerPage" :headers="headers" :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
+        <template v-slot:item.mmsi="{ item }">
           <v-list-item @click="selectShip(item)">
             <v-list-item-title class="font-weight-bold">{{ item?.shipname || item?.mmsi || "N/A" }}</v-list-item-title>
 
@@ -50,40 +45,23 @@
           title: "Ship",
           align: "start",
           sortable: false,
-          key: "shipname",
+          key: "mmsi",
         },
       ],
       serverItems: [],
       loading: true,
       totalItems: 0,
+      search: '',
     }),
 
     setup() {
-      function createDebounce() {
-        let timeout = null;
-        return function (fnc, delayMs) {
-          clearTimeout(timeout);
-          timeout = setTimeout(() => {
-            fnc();
-          }, delayMs || 500);
-        };
-      }
-
+      // Initialize ships store instance and debounce function
       const shipsStoreInstance = shipsStore();
-      return { shipsStoreInstance, debounce: createDebounce() };
+      return { shipsStoreInstance };
     },
 
     computed: {
-      search: {
-        get() {
-          return this.shipsStoreInstance.searchText;
-        },
-        set(value) {
-          this.debounce(() => {
-            this.shipsStoreInstance.searchText = value;
-          }, 300);
-        },
-      },
+      // Getter and setter for dialog opened state
       dialogOpened: {
         get() {
           return this.shipsStoreInstance.isNavigationDrawerOpen;
@@ -95,11 +73,12 @@
     },
 
     methods: {
+      // Load items from server
       loadItems({ page, itemsPerPage }) {
         this.loading = true;
 
         this.shipsStoreInstance
-          .searchShips({ page, itemsPerPage })
+          .searchShips({ page, itemsPerPage, searchText: this.search })
           .then(({ items, total }) => {
             this.serverItems = items.map((ship) => {
               ship.flag = "svgo-" + (ship?.countrycode || "xx").toLowerCase();
@@ -108,7 +87,7 @@
             this.totalItems = total;
             this.loading = false;
           })
-          .catch((error) => {
+          .catch(() => {
             this.serverItems = [];
             this.totalItems = 0;
             this.loading = false;
@@ -141,16 +120,16 @@
     height: 25px;
   }
 
-  .v-data-table__thead,
-  .v-data-table-footer__items-per-page {
+  .ships .v-data-table__thead,
+  .ships .v-data-table-footer__items-per-page {
     display: none !important;
   }
 
-  .v-table__wrapper {
+  .ships .v-table__wrapper {
     height: calc(100vh - 305px) !important;
   }
 
-  .v-data-table__tr td {
+  .ships .v-data-table__tr td {
     padding: 0px !important;
   }
 </style>

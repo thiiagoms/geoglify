@@ -15,9 +15,8 @@ app.get("/", (_, res) => {
 });
 
 // AIS Ships Routes
-app.get("/ships/:limit", async (req, res) => {
-  const limit = parseInt(req.params.limit) || 100;
-  const ships = await getAISShips(limit);
+app.get("/ships", async (_, res) => {
+  const ships = await getAISShips();
   res.json(ships);
 });
 
@@ -30,7 +29,8 @@ app.get("/ship/:id", async (req, res) => {
 app.post("/ships/search", async (req, res) => {
   const page = parseInt(req.body.page) || 1;
   const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
-  const ships = await searchAISShips(page, itemsPerPage);
+  const searchText = req.body.searchText || "";
+  const ships = await searchAISShips(page, itemsPerPage, searchText);
   res.json(ships);
 });
 

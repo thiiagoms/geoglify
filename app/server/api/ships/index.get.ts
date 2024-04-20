@@ -1,4 +1,4 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  return await $fetch(config.API_URL + "/ships/1000");
+  return await $fetch(config.API_URL + "/ships");
 });

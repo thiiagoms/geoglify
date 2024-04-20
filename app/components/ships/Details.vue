@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" temporary :width="$vuetify.display.mobile ? '100%' : '350'">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1000; left: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'">
     <v-card class="pa-0" flat v-if="shipDetails">
       <!-- Toolbar with ship name and flag -->
       <v-toolbar color="white" dark>

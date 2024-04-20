@@ -2,7 +2,7 @@
   <div id="map" class="map"></div>
   <Ships v-if="!!ready" :map="map"></Ships>
   <ShipsList v-if="!!ready" style="z-index: 1000" :map="map"></ShipsList>
-  <ShipsDetails v-if="!!ready" style="z-index: 1001"></ShipsDetails>
+  <ShipsDetails v-if="!!ready"></ShipsDetails>
 </template>
 <script>
   import maplibregl from "maplibre-gl";

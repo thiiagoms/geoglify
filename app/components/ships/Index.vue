@@ -126,7 +126,7 @@
 
       onSocketMessage(...args) {
         // Add the received message to the buffer for later processing
-        //this.messageBuffer.push(args[0]);
+        this.messageBuffer.push(args[0]);
       },
 
       async processMessageBatch() {
@@ -134,6 +134,7 @@
         if (this.messageBuffer.length > 0) {
           this.shipsStoreInstance.createOrReplaceShips(this.messageBuffer);
           this.messageBuffer = [];
+          this.render();
         }
       },
 
@@ -213,7 +214,7 @@
           getPixelOffset: [15, 0],
           getAngle: (f) => 0,
           fontWeight: "bold",
-          visible: this.map.getZoom() > 10,
+          visible: this.map.getZoom() > ZOOM_AIS_THRESHOLD,
         });
 
         this.deckShips.setProps({
@@ -253,9 +254,6 @@
 
         // Render the layers
         this.render();
-
-        // Set up a buffer interval to process messages every 5 seconds
-        //setInterval(this.render, 5000);
 
         // Set up a buffer interval to process messages every 5 seconds
         this.bufferInterval = setInterval(this.processMessageBatch, 5000);

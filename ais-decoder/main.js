@@ -76,10 +76,14 @@ async function startProcessing() {
           if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === "")) {
             delete message[key];
           }
+        }
 
-          if (key === "location" && message.location.coordinates[0] === null && message.location.coordinates[1] === null) {
-            delete message.location;
-          }
+        // Create a location field if lat and lon are present
+        if (!!message["lat"] && !!message["lon"]) {
+          message["location"] = {
+            type: "Point",
+            coordinates: [message.lon, message.lat],
+          };
         }
 
         // Push update operation to bulk operations array
@@ -97,7 +101,7 @@ async function startProcessing() {
       try {
         logInfo(`Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`);
         await realtimeMessagesCollection.bulkWrite(bulkOperations);
-        
+
         logInfo(`Remaining in aisMessageBuffer: ${aisMessageBuffer.length}`);
       } catch (error) {
         logError("Error while processing bulk operations");
@@ -164,10 +168,6 @@ function processAisMessage(message) {
 
     message = {
       ...decMsg,
-      location: {
-        type: "Point",
-        coordinates: [decMsg.lon, decMsg.lat],
-      },
       utc: new Date(now.getTime() - decMsg.utc),
       expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
       ais_server_host: AIS_SERVER_HOST,

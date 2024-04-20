@@ -24,17 +24,15 @@ async function connectToMongoDBWithRetry() {
   });
 }
 
-async function getAISShips(limit) {
+async function getAISShips() {
   const results = await mongoClient
     .db("geoglify")
     .collection("realtime")
     .find(
       {
         $and: [
-          {
-            $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
-          },
-          { "location.coordinates": { $not: { $size: 0 } } },
+          { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
+          { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
         ],
       },
       {
@@ -46,55 +44,49 @@ async function getAISShips(limit) {
           hdg: 1,
           location: 1,
           utc: 1,
+          lat: 1,
+          lon: 1,
         },
       }
     )
-    .limit(limit)
     .toArray();
 
   return results;
 }
 
-async function searchAISShips(page, itemsPerPage) {
+async function searchAISShips(page, itemsPerPage, searchText) {
+  let filter = {
+    $and: [
+      { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
+      { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
+    ],
+  };
+
+  if (searchText) {
+    filter.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }, { imo: { $regex: searchText, $options: "i" } }];
+  }
+
   let ships = await mongoClient
     .db("geoglify")
     .collection("realtime")
-    .find(
-      {
-        $and: [
-          {
-            $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
-          },
-          { "location.coordinates": { $not: { $size: 0 } } },
-        ],
+    .find(filter, {
+      projection: {
+        _id: 1,
+        mmsi: 1,
+        shipname: 1,
+        cargo: 1,
+        hdg: 1,
+        location: 1,
+        utc: 1,
+        lat: 1,
+        lon: 1,
       },
-      {
-        projection: {
-          _id: 1,
-          mmsi: 1,
-          shipname: 1,
-          cargo: 1,
-          hdg: 1,
-          location: 1,
-          utc: 1,
-        },
-      }
-    )
+    })
     .skip((page - 1) * itemsPerPage)
     .limit(itemsPerPage)
     .toArray();
 
-  let count = await mongoClient
-    .db("geoglify")
-    .collection("realtime")
-    .countDocuments({
-      $and: [
-        {
-          $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
-        },
-        { "location.coordinates": { $not: { $size: 0 } } },
-      ],
-    });
+  let count = await mongoClient.db("geoglify").collection("realtime").countDocuments(filter);
 
   return { items: ships, total: count };
 }
@@ -125,6 +117,8 @@ async function getAISShip(shipId) {
           hdg: 1,
           sog: 1,
           shipname: 1,
+          lat: 1,
+          lon: 1,
         },
       }
     );

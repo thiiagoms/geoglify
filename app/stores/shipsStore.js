@@ -10,42 +10,25 @@ export const shipsStore = defineStore("shipsStore", {
     selectedShip: null,
     selectedShipDetails: null,
     selectedCargos: configs.getCargos(),
-    isLoading: false,
-    isShipLoading: false,
-    searchText: "",
     isNavigationDrawerOpen: false,
   }),
 
   getters: {
     filteredList(state) {
-      const list = state.shipList.filter((ship) => {
-        const { shipname, mmsi, cargo } = ship;
-        const searchTextLower = state.searchText ? state.searchText.toLowerCase() : "";
-        return ((shipname && shipname.toLowerCase().includes(searchTextLower)) || (mmsi && mmsi.toString().includes(searchTextLower))) && state.selectedCargos.some((c) => c.code === (cargo ?? 0));
-      });
-
-      // return list with the filtered ships
-      return Object.freeze(list);
+      return state.shipList.filter((ship) => !!ship.location);
+      //@todo: filter by cargo;
     },
   },
 
   // Define the actions for interacting with the state
   actions: {
     async fetchShips() {
-      this.isLoading = true;
-
       try {
+        // Fetch ships from the API
         const ships = await $fetch("/api/ships");
-
-        if (ships) {
-          await this.createOrReplaceShips(ships);
-          console.log(`Processed ${ships.length} ships`);
-        }
+        await this.createOrReplaceShips(ships);
       } catch (error) {
-        // Handle errors appropriately
         console.error("Error fetching ships:", error);
-      } finally {
-        this.isLoading = false;
       }
     },
 
@@ -62,7 +45,6 @@ export const shipsStore = defineStore("shipsStore", {
         });
 
         return results;
-        
       } catch (error) {
         // Handle errors appropriately
         console.error("Error search ships:", error);
@@ -75,16 +57,12 @@ export const shipsStore = defineStore("shipsStore", {
         return;
       }
 
-      this.isShipLoading = true;
-
       const data = await $fetch("/api/ship/" + id);
 
       this.selectedShipDetails = data;
 
       //add flag country code to the ship details
       if (this.selectedShipDetails && this.selectedShipDetails.mmsi) this.selectedShipDetails.countrycode = configs.getCountryCode(this.selectedShipDetails.mmsi);
-
-      this.isShipLoading = false;
     },
 
     updateCargoActiveState(cargo, state) {
@@ -99,27 +77,33 @@ export const shipsStore = defineStore("shipsStore", {
     createOrReplaceShips(ships) {
       return new Promise((resolve, reject) => {
         try {
-          if (!ships || !Array.isArray(ships)) {
-            resolve(); // Resolves the promise if ships is invalid
+          if (!Array.isArray(ships)) {
+            resolve(); // Resolve the promise if ships is not a valid array
+            return;
           }
 
-          const processedShips = ships
-            .map((newShip) => {
-              // Check if the ship object is valid
-              if (!newShip || !newShip._id) {
-                console.error(`Invalid ship object`, newShip);
-                return null; // Return null for invalid ships
-              }
-              return this.processShipData(newShip);
-            })
-            .filter((ship) => ship !== null); // Remove null entries
+          // Process ship data and filter out invalid entries
+          const processedShips = ships.map(this.processShipData.bind(this)).filter(Boolean);
 
-          this.shipList = processedShips; // Replace the ship list with the processed ships
+          // Create a copy of the existing ship list to avoid direct mutations
+          const shipList = [...this.shipList];
 
-          resolve(); // Resolves the promise when finished
+          // Update or add new ships to the ship list
+          processedShips.forEach((newShip) => {
+            const index = shipList.findIndex((ship) => ship._id === newShip._id);
+            if (index !== -1) {
+              shipList[index] = newShip; // Replace existing ship
+            } else {
+              shipList.push(newShip); // Add new ship
+            }
+          });
+
+          this.shipList = shipList;
+
+          resolve(); // Resolve the promise when finished
         } catch (error) {
           console.error("Error creating or replacing ships:", error);
-          reject(error); // Rejects the promise if an error occurs
+          reject(error); // Reject the promise if an error occurs
         }
       });
     },
@@ -128,6 +112,8 @@ export const shipsStore = defineStore("shipsStore", {
     processShipData(ship) {
       // Extract relevant properties from the ship object
       const { hdg, cargo, mmsi } = ship;
+
+      if(!ship.location) console.log('no location', ship);
 
       // Check if heading is valid
       const isHeadingValid = !!(hdg && hdg !== 511);
@@ -167,11 +153,6 @@ export const shipsStore = defineStore("shipsStore", {
     // Action to set navigation drawer state
     setNavigationDrawerState(state) {
       this.isNavigationDrawerOpen = state;
-    },
-
-    // Toggle navigation drawer state
-    toggleNavigationDrawerState() {
-      this.isNavigationDrawerOpen = !this.isNavigationDrawerOpen;
     },
 
     getRequestBaseURL() {
