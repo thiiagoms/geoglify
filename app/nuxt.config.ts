@@ -27,10 +27,10 @@ export default defineNuxtConfig({
     },
   },
   modules: [
+    "nuxt3-vuex-module",
     "nuxt-gtag",
     'nuxt-svgo',
     "@nuxtjs/google-fonts",
-    ["@pinia/nuxt", { disableVuex: false }],
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", (config) => {
         // @ts-expect-error
@@ -60,8 +60,5 @@ export default defineNuxtConfig({
         ital: "200..1000",
       },
     },
-  },
-  pinia: {
-    storesDirs: ["./stores/**"],
   },
 });

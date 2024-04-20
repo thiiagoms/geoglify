@@ -1,7 +1,6 @@
 const { MongoClient } = require("mongodb");
 const { ObjectId } = require("mongodb");
 const { logSuccess, logError, logWarning } = require("./utils");
-const turf = require("@turf/turf");
 
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
@@ -46,6 +45,12 @@ async function getAISShips() {
           utc: 1,
           lat: 1,
           lon: 1,
+          dimA: 1,
+          dimB: 1,
+          dimC: 1,
+          dimD: 1,
+          length: 1,
+          width: 1,
         },
       }
     )
@@ -80,6 +85,12 @@ async function searchAISShips(page, itemsPerPage, searchText) {
         utc: 1,
         lat: 1,
         lon: 1,
+        dimA: 1,
+        dimB: 1,
+        dimC: 1,
+        dimD: 1,
+        length: 1,
+        width: 1,
       },
     })
     .skip((page - 1) * itemsPerPage)
@@ -122,69 +133,6 @@ async function getAISShip(shipId) {
         },
       }
     );
-}
-
-function processShipData(ship) {
-  try {
-    const [x, y] = ship.location.coordinates;
-    const hdg = ship?.hdg; // Heading of the ship
-
-    let geojson;
-
-    if (!hdg || hdg === 511) {
-      const length = ship?.dimA + ship?.dimB || ship.length || 20; // Length of the ship
-      const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
-
-      // Draw a circle if hdg is null or 511
-      const radius = Math.max(width, length) / 2;
-      geojson = turf.circle([x, y], radius, { units: "meters" });
-    } else {
-      const length = ship?.dimA + ship?.dimB || ship.length || 50; // Length of the ship
-      const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
-
-      // Calculate the offsets in degrees
-      const xOffsetA = ship?.dimA || length / 2;
-      100;
-      const xOffsetB = -(ship?.dimB || length / 2);
-      const yOffsetC = -(ship?.dimC || width / 2);
-      const yOffsetD = ship?.dimD || width / 2;
-
-      const yOffsetAux = xOffsetA - 10;
-
-      // Create a polygon with a "beak" and rotate it according to the heading
-      const polygon = turf.polygon([
-        [
-          [yOffsetC, xOffsetB],
-          [yOffsetC, yOffsetAux],
-          [(yOffsetC + yOffsetD) / 2, xOffsetA],
-          [yOffsetD, yOffsetAux],
-          [yOffsetD, xOffsetB],
-          [yOffsetC, xOffsetB],
-        ],
-      ]);
-
-      geojson = turf.toWgs84(polygon);
-
-      let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, { units: "meters" });
-      let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
-
-      geojson = turf.transformTranslate(geojson, distance, bearing, { units: "meters" });
-      geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), { pivot: ship.location.coordinates });
-    }
-
-    var options = { tolerance: 0.000001, highQuality: true };
-    var simplified = turf.simplify(geojson, options);
-
-    let result = {
-      type: "Feature",
-      properties: { _id: ship._id, mmsi: ship.mmsi, shipname: ship.shipname, cargo: ship.cargo, hdg: ship.hdg, utc: ship.utc },
-      geometry: simplified.geometry,
-    };
-
-    return { _id: ship._id, location: ship.location, geojson: result };
-  } catch (error) {
-    return;
-  }
 }
 
 async function getLayers() {

@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 10px" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 10px; z-index: 1000" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
     </template>
@@ -28,17 +28,24 @@
         antennaLayer: null,
         legendLayer: null,
         aisGeoJSONLayer: null,
-        deckShips: new MapboxOverlay({
-          interleaved: true,
+        overlay: new MapboxOverlay({
           layers: [],
+          layerFilter: (filter) => {
+            // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
+            const layer = filter.layer;
+
+            const zoom = filter.viewport.zoom;
+
+            if (layer.id === "ais-layer") return zoom <= ZOOM_AIS_THRESHOLD;
+            else if (layer.id === "antenna-layer") return zoom > ZOOM_AIS_THRESHOLD;
+            else if (layer.id === "aislegend-layer") return zoom > ZOOM_AIS_THRESHOLD;
+            else if (layer.id === "aisgeojson-layer") return zoom > ZOOM_AIS_THRESHOLD;
+            else return true;
+          },
         }),
         lastestZoom: 0,
+        ships: [],
       };
-    },
-
-    setup() {
-      const shipsStoreInstance = shipsStore();
-      return { shipsStoreInstance };
     },
 
     beforeDestroy() {
@@ -48,19 +55,25 @@
     computed: {
       dialogOpened: {
         get() {
-          return this.shipsStoreInstance.isNavigationDrawerOpen;
+          return this.$store.state.ships.listOpened;
         },
         set(value) {
-          this.shipsStoreInstance.setNavigationDrawerState(value);
+          this.$store.state.ships.listOpened = value;
         },
       },
 
       filteredShips() {
-        return this.shipsStoreInstance.filteredList;
+        return this.$store.state.ships.list;
       },
-      selectedShip() {
-        return this.shipsStoreInstance.selectedShip;
+
+      filteredShipsGeoJSON() {
+        return this.filteredShips.map((v) => v.geojson);
       },
+
+      selected() {
+        return this.$store.state.ships.selected;
+      },
+
       serviceStatusIcon() {
         switch (this.serviceStatus) {
           case "offline":
@@ -132,9 +145,9 @@
       async processMessageBatch() {
         // Process each message in the buffer and update ships data
         if (this.messageBuffer.length > 0) {
-          this.shipsStoreInstance.createOrReplaceShips(this.messageBuffer);
-          this.messageBuffer = [];
+          this.$store.dispatch("ships/CREATE_OR_REPLACE", this.messageBuffer);
           this.render();
+          this.messageBuffer = [];
         }
       },
 
@@ -145,26 +158,23 @@
 
       render() {
         // create a new GeojsonLayer for the AIS data
-        /*this.aisGeoJSONLayer = new GeoJsonLayer({
+        this.aisGeoJSONLayer = new GeoJsonLayer({
           id: "aisgeojson-layer",
-          data: this.filteredShips.map((v) => v.geojson),
+          data: this.filteredShipsGeoJSON,
           pickable: true,
           filled: true,
-          getFillColor: (f) => f.color,
+          getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
           lineJointRounded: true,
           lineCapRounded: true,
           autoHighlight: true,
           highlightColor: [255, 234, 0],
-          visible: this.map.getZoom() > ZOOM_AIS_THRESHOLD,
-          onClick: ({ object }) => {
-            this.shipsStoreInstance.setSelectedShip(object.properties);
-          },
-        });*/
+          onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
+        });
 
         this.antennaLayer = new ScatterplotLayer({
           id: "antenna-layer",
           data: this.filteredShips,
-          pickable: true,
+          pickable: false,
           opacity: 0.8,
           stroked: true,
           filled: false,
@@ -173,7 +183,22 @@
           sizeUnits: "meters",
           getRadius: (d) => 1,
           getLineColor: (d) => [255, 255, 255],
-          visible: this.map.getZoom() > ZOOM_AIS_THRESHOLD,
+        });
+
+        // Create a new TextLayer for the ship names
+        this.legendLayer = new TextLayer({
+          id: "aislegend-layer",
+          data: this.filteredShips,
+          pickable: false,
+          fontFamily: "Nunito",
+          getPosition: (f) => f.location.coordinates,
+          getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
+          getColor: [255, 255, 255, 255],
+          getSize: 12,
+          getTextAnchor: "start",
+          getPixelOffset: [15, 0],
+          getAngle: (f) => 0,
+          fontWeight: "bold",
         });
 
         // Create a new IconLayer for the AIS data
@@ -192,33 +217,16 @@
           getPosition: (f) => f.location.coordinates,
           getAngle: (f) => 360 - f.hdg,
           getSize: (f) => f.size,
-          getColor: (f) => (f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.color),
+          getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
           getCollisionPriority: (f) => f.priority,
           extensions: [new CollisionFilterExtension()],
           collisionGroup: "visualization",
           pickable: true,
-          visible: this.map.getZoom() <= ZOOM_AIS_THRESHOLD,
-          onClick: ({ object }) => this.shipsStoreInstance.setSelectedShip(object),
+          onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
         });
 
-        // Create a new TextLayer for the ship names
-        this.legendLayer = new TextLayer({
-          id: "aislegend-layer",
-          data: this.filteredShips,
-          fontFamily: "Nunito",
-          getPosition: (f) => f.location.coordinates,
-          getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
-          getColor: [255, 255, 255, 255],
-          getSize: 12,
-          getTextAnchor: "start",
-          getPixelOffset: [15, 0],
-          getAngle: (f) => 0,
-          fontWeight: "bold",
-          visible: this.map.getZoom() > ZOOM_AIS_THRESHOLD,
-        });
-
-        this.deckShips.setProps({
-          layers: [this.aisLayer, this.antennaLayer, this.legendLayer],
+        this.overlay.setProps({
+          layers: [this.aisLayer, this.aisGeoJSONLayer, this.antennaLayer, this.legendLayer],
         });
       },
 
@@ -242,35 +250,22 @@
     },
 
     async mounted() {
-      this.map.addControl(this.deckShips);
+      this.map.addControl(this.overlay);
 
       // Fetch the ships data and draw the layers
-      this.shipsStoreInstance.fetchShips().then(async () => {
-        // Set up the socket connection
-        this.socket = io(this.$config.public.REALTIME_URL);
-        this.socket.on("connect", this.onSocketConnect);
-        this.socket.on("disconnect", this.onSocketDisconnect);
-        this.socket.on("connect_error", this.onSocketDisconnect);
+      await this.$store.dispatch("ships/FETCH");
 
-        // Render the layers
-        this.render();
+      // Set up the socket connection
+      this.socket = io(this.$config.public.REALTIME_URL);
+      this.socket.on("connect", this.onSocketConnect);
+      this.socket.on("disconnect", this.onSocketDisconnect);
+      this.socket.on("connect_error", this.onSocketDisconnect);
 
-        // Set up a buffer interval to process messages every 5 seconds
-        this.bufferInterval = setInterval(this.processMessageBatch, 5000);
+      // Render the layers
+      this.render();
 
-        // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
-        this.latestZoom = this.map.getZoom();
-
-        this.map.on("zoomend", () => {
-          let currentZoom = this.map.getZoom();
-
-          if ((this.latestZoom <= ZOOM_AIS_THRESHOLD && currentZoom > ZOOM_AIS_THRESHOLD) || (this.latestZoom > ZOOM_AIS_THRESHOLD && currentZoom <= ZOOM_AIS_THRESHOLD)) {
-            this.render();
-          }
-
-          this.latestZoom = currentZoom;
-        });
-      });
+      // Set up a buffer interval to process messages every 5 seconds
+      this.bufferInterval = setInterval(this.processMessageBatch, 5000);
     },
   };
 </script>

@@ -1,6 +1,6 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1000; left: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'">
-    <v-card class="pa-0" flat v-if="shipDetails">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1000; left: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="selected">
+    <v-card class="pa-0" flat>
       <!-- Toolbar with ship name and flag -->
       <v-toolbar color="white" dark>
         <v-toolbar-title class="font-weight-black text-h6">
@@ -9,14 +9,14 @@
               <template v-slot:prepend>
                 <!-- Display ship flag -->
                 <v-avatar size="30">
-                  <component :is="'svgo-' + (shipDetails?.countrycode || 'xx').toLowerCase()" filled class="flag"></component>
+                  <component :is="'svgo-' + (selected?.countrycode || 'xx').toLowerCase()" filled class="flag"></component>
                 </v-avatar>
               </template>
               <!-- Display ship name and MMSI -->
               <v-list-item-title class="font-weight-black">
-                {{ shipDetails?.mmsi ?? "N/A" }}
+                {{ selected?.mmsi ?? "N/A" }}
               </v-list-item-title>
-              <v-list-item-subtitle>{{ shipDetails?.shipname ?? "N/A" }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ selected?.shipname ?? "N/A" }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
         </v-toolbar-title>
@@ -29,14 +29,14 @@
       <v-divider></v-divider>
       <v-card-text class="pa-0" style="height: calc(100vh - 200px); overflow: auto">
         <!-- Display ship icon -->
-        <v-img :src="'https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=' + shipDetails.mmsi">
+        <v-img :src="'https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=' + selected.mmsi">
           <template v-slot:error> <v-img class="mx-auto" src="https://placehold.co/600x400?text=No+Photo"></v-img> </template
         ></v-img>
         <!-- Table for displaying ship information -->
         <v-table density="compact">
           <tbody>
             <!-- Use v-for to loop through ship information -->
-            <template v-for="(value, label) in shipDetails">
+            <template v-for="(value, label) in selected">
               <template v-if="value !== null && value !== undefined && value !== '' && label != '_id' && label != 'countrycode'">
                 <tr :key="label">
                   <!-- Display label in bold -->
@@ -62,29 +62,19 @@
 
 <script>
   export default {
-    setup() {
-      // Use shipsStore to get ship data
-      const shipsStoreInstance = shipsStore();
-      return { shipsStoreInstance };
-    },
 
     computed: {
       // Computed property for dialog state
       dialogOpened: {
         get() {
-          return !!this.shipsStoreInstance?.selectedShip;
+          return !!this.$store.state.ships.selected;
         },
         set(value) {
-          this.shipsStoreInstance.selectedShip = value;
+          this.$store.state.ships.selected = value;
         },
       },
-      shipDetails: {
-        get() {
-          return this.shipsStoreInstance?.selectedShipDetails;
-        },
-        set(value) {
-          this.shipsStoreInstance.selectedShipDetails = value;
-        },
+      selected() {
+        return this.$store.state.ships.selected;
       },
     },
 
