@@ -28,15 +28,75 @@ async function getAISShips(limit) {
   const results = await mongoClient
     .db("geoglify")
     .collection("realtime")
-    .find({}, { projection: { _id: 1, mmsi: 1, shipname: 1, cargo: 1, hdg: 1, location: 1, utc: 1 } })
+    .find(
+      {
+        $and: [
+          {
+            $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
+          },
+          { "location.coordinates": { $not: { $size: 0 } } },
+        ],
+      },
+      {
+        projection: {
+          _id: 1,
+          mmsi: 1,
+          shipname: 1,
+          cargo: 1,
+          hdg: 1,
+          location: 1,
+          utc: 1,
+        },
+      }
+    )
     .limit(limit)
     .toArray();
 
-  return results.filter((ship) => ship && ship.location && ship.location.coordinates && !isEqual(ship.location.coordinates, [0, 0]) && !isEqual(ship.location.coordinates, [null, null])).map((ship) => processShipData(ship));
+  return results;
 }
 
-function isEqual(arr1, arr2) {
-  return arr1.length === arr2.length && arr1.every((value, index) => value === arr2[index]);
+async function searchAISShips(page, itemsPerPage) {
+  let ships = await mongoClient
+    .db("geoglify")
+    .collection("realtime")
+    .find(
+      {
+        $and: [
+          {
+            $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
+          },
+          { "location.coordinates": { $not: { $size: 0 } } },
+        ],
+      },
+      {
+        projection: {
+          _id: 1,
+          mmsi: 1,
+          shipname: 1,
+          cargo: 1,
+          hdg: 1,
+          location: 1,
+          utc: 1,
+        },
+      }
+    )
+    .skip((page - 1) * itemsPerPage)
+    .limit(itemsPerPage)
+    .toArray();
+
+  let count = await mongoClient
+    .db("geoglify")
+    .collection("realtime")
+    .countDocuments({
+      $and: [
+        {
+          $nor: [{ "location.coordinates.0": null }, { "location.coordinates.0": 0 }, { "location.coordinates.1": null }, { "location.coordinates.1": 0 }, { "location.coordinates": [null, null] }],
+        },
+        { "location.coordinates": { $not: { $size: 0 } } },
+      ],
+    });
+
+  return { items: ships, total: count };
 }
 
 async function getAISShip(shipId) {
@@ -250,6 +310,7 @@ module.exports = {
   connectToMongoDBWithRetry,
   getAISShips,
   getAISShip,
+  searchAISShips,
   getLayers,
   insertLayer,
   getLayerById,

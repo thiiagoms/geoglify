@@ -86,7 +86,7 @@
       },
       async fetchWeatherData() {
         try {
-          const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY;
+          const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY || '790a9878f3ac207114becfad4a7870aa';
           const position = await this.getCurrentPosition();
           const { latitude: lat, longitude: lon } = position.coords;
           const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}&units=metric`);

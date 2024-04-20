@@ -1,9 +1,10 @@
 <template>
   <div id="map" class="map"></div>
-  <AisShips v-if="!!ready" :map="map"></AisShips>
+  <Ships v-if="!!ready" :map="map"></Ships>
+  <ShipsList v-if="!!ready" style="z-index: 1000" :map="map"></ShipsList>
+  <ShipsDetails v-if="!!ready" style="z-index: 1001"></ShipsDetails>
 </template>
 <script>
-  import { Deck, MapView, FlyToInterpolator } from "@deck.gl/core";
   import maplibregl from "maplibre-gl";
   import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -154,6 +155,11 @@
 
       // Add the fullscreen control to the map
       this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
+
+      // if window resize, resize the map
+      window.addEventListener("resize", () => {
+        this.map.resize();
+      });
     },
   };
 </script>

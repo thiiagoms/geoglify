@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 10px" size="small" :prepend-icon="serviceStatusIcon">
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 10px" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
     </template>
@@ -32,6 +32,7 @@
           interleaved: true,
           layers: [],
         }),
+        lastestZoom: 0,
       };
     },
 
@@ -45,6 +46,15 @@
     },
 
     computed: {
+      dialogOpened: {
+        get() {
+          return this.shipsStoreInstance.isNavigationDrawerOpen;
+        },
+        set(value) {
+          this.shipsStoreInstance.setNavigationDrawerState(value);
+        },
+      },
+
       filteredShips() {
         return this.shipsStoreInstance.filteredList;
       },
@@ -134,12 +144,12 @@
 
       render() {
         // create a new GeojsonLayer for the AIS data
-        this.aisGeoJSONLayer = new GeoJsonLayer({
+        /*this.aisGeoJSONLayer = new GeoJsonLayer({
           id: "aisgeojson-layer",
           data: this.filteredShips.map((v) => v.geojson),
           pickable: true,
           filled: true,
-          getFillColor: (f) => f.properties.color,
+          getFillColor: (f) => f.color,
           lineJointRounded: true,
           lineCapRounded: true,
           autoHighlight: true,
@@ -148,7 +158,7 @@
           onClick: ({ object }) => {
             this.shipsStoreInstance.setSelectedShip(object.properties);
           },
-        });
+        });*/
 
         this.antennaLayer = new ScatterplotLayer({
           id: "antenna-layer",
@@ -179,15 +189,15 @@
             mask: true,
           }),
           getPosition: (f) => f.location.coordinates,
-          getAngle: (f) => 360 - f.geojson.properties.hdg,
+          getAngle: (f) => 360 - f.hdg,
           getSize: (f) => f.size,
-          getColor: (f) => (f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.geojson.properties.color),
-          getCollisionPriority: (f) => f.geojson.properties.priority,
+          getColor: (f) => (f._id == this.selectedShip?._id ? [255, 234, 0, 255] : f.color),
+          getCollisionPriority: (f) => f.priority,
           extensions: [new CollisionFilterExtension()],
           collisionGroup: "visualization",
           pickable: true,
           visible: this.map.getZoom() <= ZOOM_AIS_THRESHOLD,
-          onClick: ({ object }) => this.shipsStoreInstance.setSelectedShip(object.geojson.properties),
+          onClick: ({ object }) => this.shipsStoreInstance.setSelectedShip(object),
         });
 
         // Create a new TextLayer for the ship names
@@ -196,8 +206,8 @@
           data: this.filteredShips,
           fontFamily: "Nunito",
           getPosition: (f) => f.location.coordinates,
-          getText: (f) => (!!f.geojson?.properties?.shipname ? f.geojson.properties.shipname.trim() : "N/A"),
-          getColor: [0, 0, 0, 255],
+          getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
+          getColor: [255, 255, 255, 255],
           getSize: 12,
           getTextAnchor: "start",
           getPixelOffset: [15, 0],
@@ -207,10 +217,8 @@
         });
 
         this.deckShips.setProps({
-          layers: [this.aisLayer, this.aisGeoJSONLayer, this.antennaLayer, this.legendLayer],
+          layers: [this.aisLayer, this.antennaLayer, this.legendLayer],
         });
-
-        setInterval(this.render, 5000);
       },
 
       hexToRgbaArray(hex) {
@@ -247,7 +255,23 @@
         this.render();
 
         // Set up a buffer interval to process messages every 5 seconds
+        //setInterval(this.render, 5000);
+
+        // Set up a buffer interval to process messages every 5 seconds
         this.bufferInterval = setInterval(this.processMessageBatch, 5000);
+
+        // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
+        this.latestZoom = this.map.getZoom();
+
+        this.map.on("zoomend", () => {
+          let currentZoom = this.map.getZoom();
+
+          if ((this.latestZoom <= ZOOM_AIS_THRESHOLD && currentZoom > ZOOM_AIS_THRESHOLD) || (this.latestZoom > ZOOM_AIS_THRESHOLD && currentZoom <= ZOOM_AIS_THRESHOLD)) {
+            this.render();
+          }
+
+          this.latestZoom = currentZoom;
+        });
       });
     },
   };

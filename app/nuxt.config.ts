@@ -11,33 +11,24 @@ export default defineNuxtConfig({
   },
   nitro: {
     devProxy: {
-      "/api": {
+      "/_api": {
         target: "http://localhost:8081",
         changeOrigin: true,
         prependPath: true,
       },
-      "/realtime": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        ws: true,
-      },
-      "/socket.io": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        ws: true,
-      },
     },
   },
   runtimeConfig: {
+    API_URL: process.env.API_URL || "http://localhost:8081",
     public: {
-      REALTIME_URL: process.env.REALTIME_URL,
-      API_URL: process.env.API_URL,
+      REALTIME_URL: process.env.REALTIME_URL || "http://localhost:8080",
       MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
       OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
     },
   },
   modules: [
     "nuxt-gtag",
+    'nuxt-svgo',
     "@nuxtjs/google-fonts",
     ["@pinia/nuxt", { disableVuex: false }],
     (_options, nuxt) => {
@@ -50,13 +41,16 @@ export default defineNuxtConfig({
   gtag: {
     id: "G-DX7RJHR1G4",
   },
+  svgo: {
+    autoImportPath: '../../../node_modules/circle-flags/flags/',
+  },
   ssr: false,
   vite: {
     vue: {
       template: {
         transformAssetUrls,
       },
-    },
+    }
   },
   googleFonts: {
     families: {
