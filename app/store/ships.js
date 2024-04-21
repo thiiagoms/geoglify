@@ -1,6 +1,5 @@
 // Import necessary modules and libraries
 import configs from "@/helpers/configs";
-import * as turf from "@turf/turf";
 
 export const state = () => ({
   list: [],
@@ -104,6 +103,7 @@ function processShipData(ship) {
     ship.size = 22;
     ship.width = 41;
     ship.height = 96;
+    
   } else {
     ship.icon = "models/circle.png";
     ship.size = 10;
@@ -118,66 +118,8 @@ function processShipData(ship) {
 
   if (!!mmsi) ship.countrycode = configs.getCountryCode(mmsi);
 
-  ship.geojson = processShipGeoJson(ship);
+  //geojson 
+  ship.geojson = configs.processGeoJSON(ship);
 
   return ship;
-}
-
-function processShipGeoJson(ship) {
-  try {
-    const [x, y] = ship.location.coordinates;
-    const hdg = ship?.hdg; // Heading of the ship
-
-    let geojson;
-
-    if (!hdg || hdg === 511) {
-      const length = ship?.dimA + ship?.dimB || ship.length || 20; // Length of the ship
-      const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
-
-      // Draw a circle if hdg is null or 511
-      const radius = Math.max(width, length) / 2;
-      geojson = turf.circle([x, y], radius, { units: "meters" });
-    } else {
-      const length = ship?.dimA + ship?.dimB || ship.length || 50; // Length of the ship
-      const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
-
-      // Calculate the offsets in degrees
-      const xOffsetA = ship?.dimA || length / 2;
-      const xOffsetB = -(ship?.dimB || length / 2);
-      const yOffsetC = -(ship?.dimC || width / 2);
-      const yOffsetD = ship?.dimD || width / 2;
-
-      const yOffsetAux = xOffsetA - 10;
-
-      // Create a polygon with a "beak" and rotate it according to the heading
-      const polygon = turf.polygon([
-        [
-          [yOffsetC, xOffsetB],
-          [yOffsetC, yOffsetAux],
-          [(yOffsetC + yOffsetD) / 2, xOffsetA],
-          [yOffsetD, yOffsetAux],
-          [yOffsetD, xOffsetB],
-          [yOffsetC, xOffsetB],
-        ],
-      ]);
-
-      geojson = turf.toWgs84(polygon);
-
-      let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, { units: "meters" });
-      let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
-
-      geojson = turf.transformTranslate(geojson, distance, bearing, { units: "meters" });
-      geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), { pivot: ship.location.coordinates });
-    }
-
-    let result = {
-      type: "Feature",
-      properties: { _id: ship._id, color: ship.color },
-      geometry: geojson.geometry,
-    };
-
-    return result;
-  } catch (error) {
-    return null;
-  }
 }

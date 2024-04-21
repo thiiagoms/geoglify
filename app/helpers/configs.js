@@ -1,3 +1,5 @@
+import * as turf from "@turf/turf";
+
 import CARGOS from "./assets/cargos.json";
 import COUNTRIES from "./assets/countries.json";
 
@@ -16,10 +18,7 @@ export default {
         });
       }
       categorizedCargos.get(category).cargos.push(cargo);
-      categorizedCargos.get(category).priority = Math.max(
-        categorizedCargos.get(category).priority || 0,
-        cargo.priority
-      );
+      categorizedCargos.get(category).priority = Math.max(categorizedCargos.get(category).priority || 0, cargo.priority);
     });
 
     return categorizedCargos;
@@ -60,8 +59,7 @@ export default {
     return countrycode.toLowerCase();
   },
 
-  getBaseMaps()
-  {
+  getBaseMaps() {
     return [
       {
         id: "geoglify_mapbox",
@@ -130,5 +128,71 @@ export default {
         },
       },
     ];
-  }
+  },
+
+  processGeoJSON(ship) {
+    try {
+      const [x, y] = ship.location.coordinates;
+      const hdg = ship?.hdg; // Heading of the ship
+
+      let geojson;
+
+      if (!hdg || hdg === 511) {
+        const length = ship?.dimA + ship?.dimB || ship.length || 20; // Length of the ship
+        const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
+
+        // Draw a circle if hdg is null or 511
+        const radius = Math.max(width, length) / 2;
+        geojson = turf.circle([x, y], radius, { units: "meters" });
+      } else {
+        const length = ship?.dimA + ship?.dimB || ship.length || 50; // Length of the ship
+        const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
+
+        // Calculate the offsets in degrees
+        const xOffsetA = ship?.dimA || length / 2;
+        100;
+        const xOffsetB = -(ship?.dimB || length / 2);
+        const yOffsetC = -(ship?.dimC || width / 2);
+        const yOffsetD = ship?.dimD || width / 2;
+
+        const yOffsetAux = xOffsetA - 10;
+
+        // Create a polygon with a "beak" and rotate it according to the heading
+        const polygon = turf.polygon([
+          [
+            [yOffsetC, xOffsetB],
+            [yOffsetC, xOffsetA],
+            [yOffsetD, xOffsetA],
+
+            //[yOffsetC, yOffsetAux],
+            //[(yOffsetC + yOffsetD) / 2, xOffsetA],
+            //[yOffsetD, yOffsetAux],
+            [yOffsetD, xOffsetB],
+            [yOffsetC, xOffsetB],
+          ],
+        ]);
+
+        console.log(polygon);
+        geojson = turf.toWgs84(polygon, {mutate: true});
+
+        let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, { units: "meters" });
+        let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
+
+        geojson = turf.transformTranslate(geojson, distance, bearing, { units: "meters" });
+        geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), { pivot: ship.location.coordinates });
+      }
+
+      var options = { tolerance: 0.000001, highQuality: true };
+      geojson = turf.simplify(geojson, options);
+
+      geojson.properties.color = ship.color;
+      geojson.properties._id = ship._id;
+
+      return geojson;
+    
+    } catch (error) {
+      console.log("Error processing GeoJSON", error.message);
+      return;
+    }
+  },
 };

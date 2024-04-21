@@ -12,6 +12,7 @@
   import { IconLayer, TextLayer, GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
   import { CollisionFilterExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
+  import configs from "~/helpers/configs";
 
   const ZOOM_AIS_THRESHOLD = 14;
 
@@ -33,7 +34,6 @@
           layerFilter: (filter) => {
             // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
             const layer = filter.layer;
-
             const zoom = filter.viewport.zoom;
 
             if (layer.id === "ais-layer") return zoom <= ZOOM_AIS_THRESHOLD;
@@ -43,8 +43,7 @@
             else return true;
           },
         }),
-        lastestZoom: 0,
-        ships: [],
+        lastIntervalTimestamp: 0,
       };
     },
 
@@ -64,10 +63,6 @@
 
       filteredShips() {
         return this.$store.state.ships.list;
-      },
-
-      filteredShipsGeoJSON() {
-        return this.filteredShips.map((v) => v.geojson);
       },
 
       selected() {
@@ -146,7 +141,6 @@
         // Process each message in the buffer and update ships data
         if (this.messageBuffer.length > 0) {
           this.$store.dispatch("ships/CREATE_OR_REPLACE", this.messageBuffer);
-          this.render();
           this.messageBuffer = [];
         }
       },
@@ -156,78 +150,92 @@
         console.info(`[${new Date()}] ${message}`);
       },
 
-      render() {
-        // create a new GeojsonLayer for the AIS data
-        this.aisGeoJSONLayer = new GeoJsonLayer({
-          id: "aisgeojson-layer",
-          data: this.filteredShipsGeoJSON,
-          pickable: true,
-          filled: true,
-          getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
-          lineJointRounded: true,
-          lineCapRounded: true,
-          autoHighlight: true,
-          highlightColor: [255, 234, 0],
-          onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
-        });
+      render(now) {
+        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp >= 5 * 1000) {
+          this.processMessageBatch();
 
-        this.antennaLayer = new ScatterplotLayer({
-          id: "antenna-layer",
-          data: this.filteredShips,
-          pickable: false,
-          opacity: 0.8,
-          stroked: true,
-          filled: false,
-          lineWidthMinPixels: 4,
-          getPosition: (f) => f.location.coordinates,
-          sizeUnits: "meters",
-          getRadius: (d) => 1,
-          getLineColor: (d) => [255, 255, 255],
-        });
+          // Update the timestamp to right now
+          this.lastIntervalTimestamp = now;
 
-        // Create a new TextLayer for the ship names
-        this.legendLayer = new TextLayer({
-          id: "aislegend-layer",
-          data: this.filteredShips,
-          pickable: false,
-          fontFamily: "Nunito",
-          getPosition: (f) => f.location.coordinates,
-          getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
-          getColor: [255, 255, 255, 255],
-          getSize: 12,
-          getTextAnchor: "start",
-          getPixelOffset: [15, 0],
-          getAngle: (f) => 0,
-          fontWeight: "bold",
-        });
+          console.log("Rendering layers");
 
-        // Create a new IconLayer for the AIS data
-        this.aisLayer = new IconLayer({
-          id: "ais-layer",
-          data: this.filteredShips,
-          billboard: false,
-          autoHighlight: true,
-          highlightColor: [255, 234, 0],
-          getIcon: (f) => ({
-            url: f.icon,
-            width: f.width,
-            height: f.height,
-            mask: true,
-          }),
-          getPosition: (f) => f.location.coordinates,
-          getAngle: (f) => 360 - f.hdg,
-          getSize: (f) => f.size,
-          getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
-          getCollisionPriority: (f) => f.priority,
-          extensions: [new CollisionFilterExtension()],
-          collisionGroup: "visualization",
-          pickable: true,
-          onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
-        });
+          // create a new GeojsonLayer for the AIS data
+          this.aisGeoJSONLayer = new GeoJsonLayer({
+            id: "aisgeojson-layer",
+            data: this.filteredShips.map((s) => s.geojson),
+            pickable: true,
+            filled: true,
+            getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
+            lineJointRounded: true,
+            lineCapRounded: true,
+            autoHighlight: true,
+            getLineWidth: 2,
+            lineWidthUnits: "pixels",
+            highlightColor: [255, 234, 0],
+            onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
+          });
 
-        this.overlay.setProps({
-          layers: [this.aisLayer, this.aisGeoJSONLayer, this.antennaLayer, this.legendLayer],
-        });
+          this.antennaLayer = new ScatterplotLayer({
+            id: "antenna-layer",
+            data: this.filteredShips,
+            pickable: false,
+            opacity: 1,
+            stroked: true,
+            filled: true,
+            getLineWidth: 2,
+            lineWidthUnits: "pixels",
+            getPosition: (f) => f.location.coordinates,
+            sizeUnits: "meters",
+            getRadius: (d) => 0.5,
+            getLineColor: (d) => [255, 255, 255],
+          });
+
+          // Create a new TextLayer for the ship names
+          this.legendLayer = new TextLayer({
+            id: "aislegend-layer",
+            data: this.filteredShips,
+            pickable: false,
+            fontFamily: "Nunito",
+            getPosition: (f) => f.location.coordinates,
+            getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
+            getColor: [255, 255, 255, 255],
+            getSize: 12,
+            getTextAnchor: "start",
+            getPixelOffset: [15, 0],
+            getAngle: (f) => 0,
+            fontWeight: "bold",
+          });
+
+          // Create a new IconLayer for the AIS data
+          this.aisLayer = new IconLayer({
+            id: "ais-layer",
+            data: this.filteredShips,
+            billboard: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0],
+            getIcon: (f) => ({
+              url: f.icon,
+              width: f.width,
+              height: f.height,
+              mask: true,
+            }),
+            getPosition: (f) => f.location.coordinates,
+            getAngle: (f) => 360 - f.hdg,
+            getSize: (f) => f.size,
+            getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
+            getCollisionPriority: (f) => f.priority,
+            extensions: [new CollisionFilterExtension()],
+            collisionGroup: "visualization",
+            pickable: true,
+            onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
+          });
+
+          this.overlay.setProps({
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.antennaLayer, this.legendLayer],
+          });
+        }
+
+        requestAnimationFrame(this.render.bind(this));
       },
 
       hexToRgbaArray(hex) {
@@ -247,6 +255,18 @@
         // Return array with values [r, g, b, a]
         return [r, g, b, a];
       },
+
+      getVisibleFeatures() {
+        return this.overlay
+          .pickObjects({
+            x: 0,
+            y: 0,
+            width: this.overlay._deck.width,
+            height: this.overlay._deck.height,
+            layerIds: ["ais-layer"],
+          })
+          .map((f) => f.object);
+      },
     },
 
     async mounted() {
@@ -262,10 +282,7 @@
       this.socket.on("connect_error", this.onSocketDisconnect);
 
       // Render the layers
-      this.render();
-
-      // Set up a buffer interval to process messages every 5 seconds
-      this.bufferInterval = setInterval(this.processMessageBatch, 5000);
+      window.requestAnimationFrame(this.render.bind(this));
     },
   };
 </script>
