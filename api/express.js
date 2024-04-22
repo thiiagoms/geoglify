@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
-const { getAISShips, getAISShip, getLayers, insertLayer, getLayerById, updateLayer, deleteLayer, getFeaturesByLayerId, insertFeature, updateLayerStyle, getWmsLayers, insertWmsLayer, getWmsLayerById, updateWmsLayer, deleteWmsLayer } = require("./mongodb");
+const { getAISShips, getAISShip, searchAISShips, getLayers, insertLayer, getLayerById, updateLayer, deleteLayer, getFeaturesByLayerId, insertFeature, updateLayerStyle, getWmsLayers, insertWmsLayer, getWmsLayerById, updateWmsLayer, deleteWmsLayer } = require("./mongodb");
 
 const app = express();
 const server = http.createServer(app);
@@ -14,18 +14,25 @@ app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
 
-// AIS Ships Routes
-app.get("/ais_ships/:limit", async (req, res) => {
-  const limit = parseInt(req.params.limit) || 100;
-  const ais_ships = await getAISShips(limit);
-  res.json(ais_ships);
+app.get("/ships", async (_, res) => {
+  const ships = await getAISShips();
+  res.json(ships);
 });
 
-app.get("/ais_ship/:id", async (req, res) => {
+app.get("/ship/:id", async (req, res) => {
   const _id = req.params.id;
   const ais_ship = await getAISShip(_id);
   res.json(ais_ship);
 });
+
+app.post("/ships/search", async (req, res) => {
+  const page = parseInt(req.body.page) || 1;
+  const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
+  const searchText = req.body.searchText || "";
+  const ships = await searchAISShips(page, itemsPerPage, searchText);
+  res.json(ships);
+});
+
 
 // Layers Routes
 app.get("/layers", async (_, res) => {
