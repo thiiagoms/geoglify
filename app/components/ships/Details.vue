@@ -62,7 +62,6 @@
 
 <script>
   export default {
-
     computed: {
       // Computed property for dialog state
       dialogOpened: {

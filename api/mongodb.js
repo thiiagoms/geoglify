@@ -1,10 +1,13 @@
+// Description: MongoDB operations for Geoglify API.
 const { MongoClient } = require("mongodb");
 const { ObjectId } = require("mongodb");
 const { logSuccess, logError, logWarning } = require("./utils");
 
+// MongoDB Connection String
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 
+// Connect to MongoDB with retry
 async function connectToMongoDBWithRetry() {
   return new Promise((resolve) => {
     const connect = async () => {
@@ -23,6 +26,7 @@ async function connectToMongoDBWithRetry() {
   });
 }
 
+// Get the list of ships
 async function getAISShips() {
   const results = await mongoClient
     .db("geoglify")
@@ -59,6 +63,7 @@ async function getAISShips() {
   return results;
 }
 
+// Search for ships
 async function searchAISShips(page, itemsPerPage, searchText) {
   let filter = {
     $and: [
@@ -102,6 +107,7 @@ async function searchAISShips(page, itemsPerPage, searchText) {
   return { items: ships, total: count };
 }
 
+// Get a ship by ID
 async function getAISShip(shipId) {
   return await mongoClient
     .db("geoglify")
@@ -135,11 +141,14 @@ async function getAISShip(shipId) {
     );
 }
 
+
+// Get the list of layers
 async function getLayers() {
   const result = await mongoClient.db("geoglify").collection("layers").find().toArray();
   return result;
 }
 
+// Insert a new layer
 async function insertLayer(layer) {
   const result = await mongoClient.db("geoglify").collection("layers").insertOne(layer);
 

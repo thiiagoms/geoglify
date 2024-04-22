@@ -1,9 +1,19 @@
-import * as turf from "@turf/turf";
+// Description: Helper functions to process the data and configurations.
 
+// Import the required libraries
+import * as turf from "@turf/turf";
+import proj4 from "proj4";
+
+// Import the data files
 import CARGOS from "./assets/cargos.json";
 import COUNTRIES from "./assets/countries.json";
 
+// Projection used to convert coordinates from WGS84 to meters
+const METER_PROJECTION = `PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]`;
+
 export default {
+
+  // Get the list of categories
   getCategories() {
     const categorizedCargos = new Map();
 
@@ -24,14 +34,17 @@ export default {
     return categorizedCargos;
   },
 
+  // Get the list of cargos
   getCargos() {
     return CARGOS;
   },
 
+  // Get the cargo type by code
   getCargoType(code) {
     return CARGOS.find((cargo) => cargo.code === code) || CARGOS[0];
   },
 
+  // Convert hex color to RGB
   hexToRgb(hex) {
     hex = hex.replace(/^#/, "");
 
@@ -42,6 +55,7 @@ export default {
     return [r, g, b];
   },
 
+  // Get the country code from the MMSI
   getCountryCode(mmsi) {
     let countrycode = "xx";
 
@@ -59,6 +73,7 @@ export default {
     return countrycode.toLowerCase();
   },
 
+  // Get the base maps
   getBaseMaps() {
     return [
       {
@@ -133,66 +148,98 @@ export default {
   processGeoJSON(ship) {
     try {
       const [x, y] = ship.location.coordinates;
-      const hdg = ship?.hdg; // Heading of the ship
+      const hdg = ship?.hdg;
 
       let geojson;
 
       if (!hdg || hdg === 511) {
-        const length = ship?.dimA + ship?.dimB || ship.length || 20; // Length of the ship
-        const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
 
-        // Draw a circle if hdg is null or 511
+        // If the ship has no heading or the heading is invalid, create a circle
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 10;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 10;
+
+        // Calculate the radius of the circle
         const radius = Math.max(width, length) / 2;
-        geojson = turf.circle([x, y], radius, { units: "meters" });
-      } else {
-        const length = ship?.dimA + ship?.dimB || ship.length || 50; // Length of the ship
-        const width = ship?.dimC + ship?.dimD || ship.width || 20; // Width of the ship
+        let circle = turf.circle([x, y], radius, { units: "meters" });
 
-        // Calculate the offsets in degrees
+        // Simplify the circle to reduce the number of points
+        var options = { tolerance: 0.000001, highQuality: true };
+        circle = turf.simplify(circle, options);
+
+        // Create a small circle to represent the antenna
+        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        var options = { tolerance: 0.0000001, highQuality: true };
+        antenna = turf.simplify(antenna, options);
+
+        // Create a GeoJSON polygon with the circle and the antenna
+        geojson = turf.polygon([circle.geometry.coordinates[0], antenna.geometry.coordinates[0]]);
+
+      } else {
+
+        // If the ship has a valid heading, create a ship icon
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 30;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 8;
+
+        // Calculate the offset of the ship's dimensions
         const xOffsetA = ship?.dimA || length / 2;
-        100;
-        const xOffsetB = -(ship?.dimB || length / 2);
-        const yOffsetC = -(ship?.dimC || width / 2);
+        const xOffsetB = ship?.dimB || length / 2;
+        const yOffsetC = ship?.dimC || width / 2;
         const yOffsetD = ship?.dimD || width / 2;
 
-        const yOffsetAux = xOffsetA - 10;
+        // Calculate the center of the ship in meters
+        const center = this.convertCoordsToMeters([x, y]);
 
-        // Create a polygon with a "beak" and rotate it according to the heading
-        const polygon = turf.polygon([
-          [
-            [yOffsetC, xOffsetB],
-            [yOffsetC, xOffsetA],
-            [yOffsetD, xOffsetA],
+        // Calculate the four points of the ship in meters
+        let pointAC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] + Math.max(xOffsetA * 0.8, 2)]);
+        let pointE = this.convertCoordsToWGS84([center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA]);
+        let pointAD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] + Math.max(xOffsetA * 0.8, 2)]);
+        let pointBD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] - xOffsetB]);
+        let pointBC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] - xOffsetB]);
 
-            //[yOffsetC, yOffsetAux],
-            //[(yOffsetC + yOffsetD) / 2, xOffsetA],
-            //[yOffsetD, yOffsetAux],
-            [yOffsetD, xOffsetB],
-            [yOffsetC, xOffsetB],
-          ],
-        ]);
+        // Rotate the four points of the ship
+        let rotatePointAC = this.rotateCoords(pointAC, hdg, [x, y]);
+        let rotatePointE = this.rotateCoords(pointE, hdg, [x, y]);
+        let rotatePointAD = this.rotateCoords(pointAD, hdg, [x, y]);
+        let rotatePointBD = this.rotateCoords(pointBD, hdg, [x, y]);
+        let rotatePointBC = this.rotateCoords(pointBC, hdg, [x, y]);
 
-        console.log(polygon);
-        geojson = turf.toWgs84(polygon, {mutate: true});
+        // Create a small circle to represent the antenna
+        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        var options = { tolerance: 0.0000001, highQuality: true };
+        antenna = turf.simplify(antenna, options);
 
-        let distance = turf.rhumbDistance([0, 0], ship.location.coordinates, { units: "meters" });
-        let bearing = turf.rhumbBearing([0, 0], ship.location.coordinates);
-
-        geojson = turf.transformTranslate(geojson, distance, bearing, { units: "meters" });
-        geojson = turf.transformRotate(geojson, turf.bearingToAzimuth(hdg), { pivot: ship.location.coordinates });
+        // Create a GeoJSON polygon with the four rotated points
+        geojson = turf.polygon([[rotatePointAC, rotatePointE, rotatePointAD, rotatePointBD, rotatePointBC, rotatePointAC], antenna.geometry.coordinates[0]]);
       }
 
-      var options = { tolerance: 0.000001, highQuality: true };
-      geojson = turf.simplify(geojson, options);
-
-      geojson.properties.color = ship.color;
-      geojson.properties._id = ship._id;
+      // Add properties to the GeoJSON
+      geojson.properties = {
+        color: ship.color,
+        _id: ship._id,
+      };
 
       return geojson;
-    
     } catch (error) {
-      console.log("Error processing GeoJSON", error.message);
+      console.log("Error procesando GeoJSON", error.message);
       return;
     }
+  },
+
+  // Convert coordinates from WGS84 to meters
+  convertCoordsToMeters(coords) {
+    return proj4(METER_PROJECTION, coords);
+  },
+
+  // Convert coordinates from meters to WGS84
+  convertCoordsToWGS84(coords) {
+    return proj4(METER_PROJECTION, "+proj=longlat +datum=WGS84 +no_defs", coords);
+  },
+
+  // Rotate coordinates around a center point
+  rotateCoords(latlonPoint, angleDeg, latlonCenter) {
+    var point = turf.point(latlonPoint);
+    var options = { pivot: latlonCenter };
+    var rotatedPoint = turf.transformRotate(point, angleDeg, options);
+    return rotatedPoint.geometry.coordinates;
   },
 };

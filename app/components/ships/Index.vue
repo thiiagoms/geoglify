@@ -26,7 +26,6 @@
         messageBuffer: [],
         bufferInterval: null,
         aisLayer: null,
-        antennaLayer: null,
         legendLayer: null,
         aisGeoJSONLayer: null,
         overlay: new MapboxOverlay({
@@ -36,11 +35,11 @@
             const layer = filter.layer;
             const zoom = filter.viewport.zoom;
 
-            if (layer.id === "ais-layer") return zoom <= ZOOM_AIS_THRESHOLD;
-            else if (layer.id === "antenna-layer") return zoom > ZOOM_AIS_THRESHOLD;
-            else if (layer.id === "aislegend-layer") return zoom > ZOOM_AIS_THRESHOLD;
-            else if (layer.id === "aisgeojson-layer") return zoom > ZOOM_AIS_THRESHOLD;
-            else return true;
+            if (layer.id === "aislegend-layer") return zoom > ZOOM_AIS_THRESHOLD;
+
+            if (layer.id === "aisgeojson-layer") return zoom > ZOOM_AIS_THRESHOLD;
+
+            return true;
           },
         }),
         lastIntervalTimestamp: 0,
@@ -62,7 +61,7 @@
       },
 
       filteredShips() {
-        return this.$store.state.ships.list;
+        return Object.freeze(this.$store.state.ships.list);
       },
 
       selected() {
@@ -151,60 +150,54 @@
       },
 
       render(now) {
-        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp >= 5 * 1000) {
+        // Process the message buffer every second
+        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp >= 1 * 1000) {
+          // Process the message buffer every second
           this.processMessageBatch();
 
           // Update the timestamp to right now
           this.lastIntervalTimestamp = now;
 
-          console.log("Rendering layers");
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
+            // Get the visible features from the overlay
+            let visibleFeatures = this.getVisibleFeatures();
 
-          // create a new GeojsonLayer for the AIS data
-          this.aisGeoJSONLayer = new GeoJsonLayer({
-            id: "aisgeojson-layer",
-            data: this.filteredShips.map((s) => s.geojson),
-            pickable: true,
-            filled: true,
-            getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
-            lineJointRounded: true,
-            lineCapRounded: true,
-            autoHighlight: true,
-            getLineWidth: 2,
-            lineWidthUnits: "pixels",
-            highlightColor: [255, 234, 0],
-            onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
-          });
+            // Create a new GeoJsonLayer for the AIS data
+            this.aisGeoJSONLayer = new GeoJsonLayer({
+              id: "aisgeojson-layer",
+              data: visibleFeatures.map((s) => s.geojson),
+              pickable: true,
+              filled: true,
+              getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
+              lineJointRounded: true,
+              lineCapRounded: true,
+              autoHighlight: true,
+              getLineWidth: 2,
+              lineWidthUnits: "pixels",
+              highlightColor: [255, 234, 0],
+              onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
+            });
 
-          this.antennaLayer = new ScatterplotLayer({
-            id: "antenna-layer",
-            data: this.filteredShips,
-            pickable: false,
-            opacity: 1,
-            stroked: true,
-            filled: true,
-            getLineWidth: 2,
-            lineWidthUnits: "pixels",
-            getPosition: (f) => f.location.coordinates,
-            sizeUnits: "meters",
-            getRadius: (d) => 0.5,
-            getLineColor: (d) => [255, 255, 255],
-          });
-
-          // Create a new TextLayer for the ship names
-          this.legendLayer = new TextLayer({
-            id: "aislegend-layer",
-            data: this.filteredShips,
-            pickable: false,
-            fontFamily: "Nunito",
-            getPosition: (f) => f.location.coordinates,
-            getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
-            getColor: [255, 255, 255, 255],
-            getSize: 12,
-            getTextAnchor: "start",
-            getPixelOffset: [15, 0],
-            getAngle: (f) => 0,
-            fontWeight: "bold",
-          });
+            // Create a new TextLayer for the ship names
+            this.legendLayer = new TextLayer({
+              id: "aislegend-layer",
+              data: visibleFeatures,
+              pickable: false,
+              fontFamily: "Nunito",
+              getPosition: (f) => f.location.coordinates,
+              getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
+              getColor: [255, 255, 255, 255],
+              getSize: 12,
+              getTextAnchor: "start",
+              getPixelOffset: [15, 0],
+              getAngle: (f) => 0,
+              fontWeight: "bold",
+            });
+          } else {
+            // Clear the layers if the zoom is below the threshold
+            this.aisGeoJSONLayer = null;
+            this.legendLayer = null;
+          }
 
           // Create a new IconLayer for the AIS data
           this.aisLayer = new IconLayer({
@@ -230,14 +223,21 @@
             onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
           });
 
-          this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.antennaLayer, this.legendLayer],
-          });
+          // Update the layers in the overlay
+          if (this.overlay && !!this.aisGeoJSONLayer && !!this.legendLayer)
+            this.overlay.setProps({
+              layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+            });
+          else
+            this.overlay.setProps({
+              layers: [this.aisLayer],
+            });
         }
 
         requestAnimationFrame(this.render.bind(this));
       },
 
+      // Convert a hex color to an RGBA array
       hexToRgbaArray(hex) {
         if (!hex) return [223, 149, 13, 255]; // Return orange with alpha 255 if no color is defined
 
@@ -256,6 +256,7 @@
         return [r, g, b, a];
       },
 
+      // Get the visible features from the overlay
       getVisibleFeatures() {
         return this.overlay
           .pickObjects({
@@ -270,6 +271,7 @@
     },
 
     async mounted() {
+      // Add the overlay to the map
       this.map.addControl(this.overlay);
 
       // Fetch the ships data and draw the layers

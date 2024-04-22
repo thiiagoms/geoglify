@@ -10,6 +10,7 @@ export const state = () => ({
 });
 
 export const actions = {
+
   // Action to fetch the ship list
   async FETCH({ commit }) {
     return new Promise(async (resolve) => {
@@ -89,18 +90,25 @@ export const mutations = {
       }
     });
 
-    state.list = list;
+    // State mutation to update the ship list
+    state.list = Object.freeze([...list]);
+
   },
 };
 
+// Process the ship data and return the processed ship object
 function processShipData(ship) {
+
+  // Extract the necessary data from the ship object
   const { hdg, cargo, mmsi } = ship;
 
+  // Check if the heading is valid
   const isHeadingValid = !!(hdg && hdg !== 511);
 
+  // Create a new ship object with the necessary properties
   if (isHeadingValid) {
     ship.icon = "models/boat.svg";
-    ship.size = 22;
+    ship.size = 16;
     ship.width = 41;
     ship.height = 96;
     
@@ -111,14 +119,15 @@ function processShipData(ship) {
     ship.height = 20;
   }
 
+  // Determine the color and priority of the ship based on the cargo type
   const cargoType = configs.getCargoType(cargo);
-
   ship.color = configs.hexToRgb(cargoType.color);
   ship.priority = -(isHeadingValid ? cargoType.priority * -100 : -100);
 
+  // Get the country code from the MMSI
   if (!!mmsi) ship.countrycode = configs.getCountryCode(mmsi);
 
-  //geojson 
+  // Process the GeoJSON data
   ship.geojson = configs.processGeoJSON(ship);
 
   return ship;

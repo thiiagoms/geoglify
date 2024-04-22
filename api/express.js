@@ -14,7 +14,6 @@ app.get("/", (_, res) => {
   res.json("Geoglify API");
 });
 
-// AIS Ships Routes
 app.get("/ships", async (_, res) => {
   const ships = await getAISShips();
   res.json(ships);

@@ -5,10 +5,10 @@
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 </template>
 <script>
+  
+  // Import the necessary libraries
   import maplibregl from "maplibre-gl";
   import "maplibre-gl/dist/maplibre-gl.css";
-
-  // Base maps switcher plugin
   import BasemapsControl from "maplibre-gl-basemaps";
   import "maplibre-gl-basemaps/lib/basemaps.css";
   import configs from "~/helpers/configs";
@@ -29,6 +29,7 @@
     transitionDuration: "auto",
   };
 
+  // Export the component
   export default {
     data() {
       return {
@@ -40,9 +41,9 @@
       };
     },
 
-    methods: {},
-
+    // When the component is mounted, create the map
     async mounted() {
+
       // Create a Mapbox GL map
       this.map = new maplibregl.Map({
         container: "map",
@@ -70,6 +71,7 @@
         })
       );
 
+      // Add the navigation control to the map
       this.map.addControl(new maplibregl.NavigationControl(), "top-right");
 
       // Add the basemap control to the map
@@ -81,18 +83,23 @@
 
       this.map.addControl(this.baseMapControl, "top-right");
 
+      // Wait for the map to load
       while (!this.map.loaded()) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      this.ready = true;
+      nextTick(() => {
 
-      // Add the fullscreen control to the map
-      this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
+        this.ready = true;
 
-      // if window resize, resize the map
-      window.addEventListener("resize", () => {
-        this.map.resize();
+        // Add the fullscreen control to the map
+        this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
+
+        // if window resize, resize the map
+        window.addEventListener("resize", () => {
+          this.map.resize();
+        });
+        
       });
     },
   };

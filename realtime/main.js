@@ -101,6 +101,7 @@ async function startApplication() {
     changeStream.on("change", async (change) => {
       let ship = change.fullDocument;
 
+      // Check if the ship object is valid
       if (!ship || !ship?.location) return;
 
       let message = {
