@@ -18,6 +18,7 @@ export default defineNuxtConfig({
       },
     },
   },
+  css: ["maplibre-gl/dist/maplibre-gl.css", "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css", , "maplibre-gl-basemaps/lib/basemaps.css"],
   runtimeConfig: {
     public: {
       API_URL: process.env.API_URL || "http://localhost:8081",
@@ -29,7 +30,7 @@ export default defineNuxtConfig({
   modules: [
     "nuxt3-vuex-module",
     "nuxt-gtag",
-    'nuxt-svgo',
+    "nuxt-svgo",
     "@nuxtjs/google-fonts",
     (_options, nuxt) => {
       nuxt.hooks.hook("vite:extendConfig", (config) => {
@@ -42,7 +43,7 @@ export default defineNuxtConfig({
     id: "G-DX7RJHR1G4",
   },
   svgo: {
-    autoImportPath: '../../../node_modules/circle-flags/flags/',
+    autoImportPath: "../../../node_modules/circle-flags/flags/",
   },
   ssr: false,
   vite: {
@@ -50,7 +51,7 @@ export default defineNuxtConfig({
       template: {
         transformAssetUrls,
       },
-    }
+    },
   },
   googleFonts: {
     families: {

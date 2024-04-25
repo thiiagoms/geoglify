@@ -12,7 +12,6 @@ import COUNTRIES from "./assets/countries.json";
 const METER_PROJECTION = `PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]`;
 
 export default {
-
   // Get the list of categories
   getCategories() {
     const categorizedCargos = new Map();
@@ -153,7 +152,6 @@ export default {
       let geojson;
 
       if (!hdg || hdg === 511) {
-
         // If the ship has no heading or the heading is invalid, create a circle
         const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 10;
         const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 10;
@@ -173,9 +171,7 @@ export default {
 
         // Create a GeoJSON polygon with the circle and the antenna
         geojson = turf.polygon([circle.geometry.coordinates[0], antenna.geometry.coordinates[0]]);
-
       } else {
-
         // If the ship has a valid heading, create a ship icon
         const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 30;
         const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 8;
@@ -241,5 +237,182 @@ export default {
     var options = { pivot: latlonCenter };
     var rotatedPoint = turf.transformRotate(point, angleDeg, options);
     return rotatedPoint.geometry.coordinates;
+  },
+
+  getMapDrawStyles() {
+    return [
+      {
+        id: "highlight-active-points",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "true"]],
+        paint: {
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#D20C0C",
+        },
+      },
+      {
+        id: "points-are-blue",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "false"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#D20C0C",
+        },
+      },
+      {
+        id: "gl-draw-line",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#D20C0C",
+          "line-dasharray": [0.2, 2],
+          "line-width": 2,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        paint: {
+          "fill-color": "#D20C0C",
+          "fill-outline-color": "#D20C0C",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon mid points
+      {
+        id: "gl-draw-polygon-midpoint",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
+        paint: {
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#D20C0C",
+        },
+      },
+      // polygon outline stroke
+      // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+      {
+        id: "gl-draw-polygon-stroke-active",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#D20C0C",
+          "line-dasharray": [0.2, 2],
+          "line-width": 2,
+        },
+      },
+      // vertex point halos
+      {
+        id: "gl-draw-polygon-and-line-vertex-halo-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#FFF",
+        },
+      },
+      // vertex points
+      {
+        id: "gl-draw-polygon-and-line-vertex-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 3,
+          "circle-color": "#D20C0C",
+        },
+      },
+
+      // INACTIVE (static, already drawn)
+      // line stroke
+      {
+        id: "gl-draw-line-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#000",
+          "line-width": 3,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill-static",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        paint: {
+          "fill-color": "#000",
+          "fill-outline-color": "#000",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon outline
+      {
+        id: "gl-draw-polygon-stroke-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#000",
+          "line-width": 3,
+        },
+      },
+    ];
+  },
+
+  getMeasuresOptions() {
+    return {
+      lang: {
+        areaMeasurementButtonTitle: "Measure area",
+        lengthMeasurementButtonTitle: "Measure length",
+        clearMeasurementsButtonTitle: "Clear measurements",
+      },
+      units: "metric", //or metric, the default
+      unitsGroupingSeparator: " ", // optional. use a space instead of ',' for separating thousands (3 digits group). Do not send this to use the browser default
+      style: {
+        text: {
+          radialOffset: 0.9,
+          letterSpacing: 0.05,
+          color: "#D20C0C",
+          haloColor: "#fff",
+          haloWidth: 0,
+          font: "Nunito",
+        },
+        common: {
+          midPointRadius: 3,
+          midPointColor: "#D20C0C",
+          midPointHaloRadius: 5,
+          midPointHaloColor: "#FFF",
+        },
+        areaMeasurement: {
+          fillColor: "#D20C0C",
+          fillOutlineColor: "#D20C0C",
+          fillOpacity: 0.01,
+          lineWidth: 2,
+        },
+        lengthMeasurement: {
+          lineWidth: 2,
+          lineColor: "#D20C0C",
+        },
+      },
+    };
   },
 };
