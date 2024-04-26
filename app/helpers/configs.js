@@ -8,9 +8,6 @@ import proj4 from "proj4";
 import CARGOS from "./assets/cargos.json";
 import COUNTRIES from "./assets/countries.json";
 
-// Projection used to convert coordinates from WGS84 to meters
-const METER_PROJECTION = `PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]`;
-
 export default {
   // Get the list of categories
   getCategories() {
@@ -146,8 +143,8 @@ export default {
 
   processGeoJSON(ship) {
     try {
-      const [x, y] = ship.location.coordinates;
-      const hdg = ship?.hdg;
+      let originalCoords = ship.location.coordinates;
+      let hdg = ship?.hdg;
 
       let geojson;
 
@@ -158,14 +155,14 @@ export default {
 
         // Calculate the radius of the circle
         const radius = Math.max(width, length) / 2;
-        let circle = turf.circle([x, y], radius, { units: "meters" });
+        let circle = turf.circle(originalCoords, radius, { units: "meters" });
 
         // Simplify the circle to reduce the number of points
         var options = { tolerance: 0.000001, highQuality: true };
         circle = turf.simplify(circle, options);
 
         // Create a small circle to represent the antenna
-        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        let antenna = turf.circle(originalCoords, 0.2, { units: "meters" });
         var options = { tolerance: 0.0000001, highQuality: true };
         antenna = turf.simplify(antenna, options);
 
@@ -177,30 +174,38 @@ export default {
         const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 8;
 
         // Calculate the offset of the ship's dimensions
-        const xOffsetA = ship?.dimA || length / 2;
-        const xOffsetB = ship?.dimB || length / 2;
-        const yOffsetC = ship?.dimC || width / 2;
-        const yOffsetD = ship?.dimD || width / 2;
+        const xOffsetA = ship?.dimA;
+        const xOffsetB = ship?.dimB;
+        const yOffsetC = ship?.dimC;
+        const yOffsetD = ship?.dimD;
+
+        const source = this.proj4_setdef(originalCoords[0]);
 
         // Calculate the center of the ship in meters
-        const center = this.convertCoordsToMeters([x, y]);
+        const center = this.convertCoordsToMeters(originalCoords, source);
 
         // Calculate the four points of the ship in meters
-        let pointAC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] + Math.max(xOffsetA * 0.8, 2)]);
-        let pointE = this.convertCoordsToWGS84([center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA]);
-        let pointAD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] + Math.max(xOffsetA * 0.8, 2)]);
-        let pointBD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] - xOffsetB]);
-        let pointBC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] - xOffsetB]);
+        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA * 0.8];
+        let pointE = [center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA];
+        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA * 0.8];
+        let pointBD = [center[0] + yOffsetD, center[1] - xOffsetB];
+        let pointBC = [center[0] - yOffsetC, center[1] - xOffsetB];
+
+        let pointACWGS84 = this.convertCoordsToWGS84(pointAC, source);
+        let pointEWGS84 = this.convertCoordsToWGS84(pointE, source);
+        let pointADWGS84 = this.convertCoordsToWGS84(pointAD, source);
+        let pointBDWGS84 = this.convertCoordsToWGS84(pointBD, source);
+        let pointBCWGS84 = this.convertCoordsToWGS84(pointBC, source);
 
         // Rotate the four points of the ship
-        let rotatePointAC = this.rotateCoords(pointAC, hdg, [x, y]);
-        let rotatePointE = this.rotateCoords(pointE, hdg, [x, y]);
-        let rotatePointAD = this.rotateCoords(pointAD, hdg, [x, y]);
-        let rotatePointBD = this.rotateCoords(pointBD, hdg, [x, y]);
-        let rotatePointBC = this.rotateCoords(pointBC, hdg, [x, y]);
+        let rotatePointAC = this.rotateCoords(pointACWGS84, hdg, originalCoords);
+        let rotatePointE = this.rotateCoords(pointEWGS84, hdg, originalCoords);
+        let rotatePointAD = this.rotateCoords(pointADWGS84, hdg, originalCoords);
+        let rotatePointBD = this.rotateCoords(pointBDWGS84, hdg, originalCoords);
+        let rotatePointBC = this.rotateCoords(pointBCWGS84, hdg, originalCoords);
 
         // Create a small circle to represent the antenna
-        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        let antenna = turf.circle(originalCoords, 0.2, { units: "meters" });
         var options = { tolerance: 0.0000001, highQuality: true };
         antenna = turf.simplify(antenna, options);
 
@@ -221,14 +226,31 @@ export default {
     }
   },
 
+  //get utm-zone from longitude degrees
+  utmzone_from_lon(lon_deg) {
+    return 1 + Math.floor((lon_deg + 180) / 6);
+  },
+
+  //get UTM projection definition from longitude
+  proj4_setdef(lon_deg) {
+    console.log(`Longitude: ${lon_deg}`);
+    const utm_zone = this.utmzone_from_lon(lon_deg);
+    console.log(`UTM zone from longitude: ${utm_zone}`);
+    return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
+  },
+
   // Convert coordinates from WGS84 to meters
-  convertCoordsToMeters(coords) {
-    return proj4(METER_PROJECTION, coords);
+  convertCoordsToMeters(coords, target) {
+    // Define the source and target projections
+    var source = "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
+    return proj4(source, target, coords);
   },
 
   // Convert coordinates from meters to WGS84
-  convertCoordsToWGS84(coords) {
-    return proj4(METER_PROJECTION, "+proj=longlat +datum=WGS84 +no_defs", coords);
+  convertCoordsToWGS84(coords, source) {
+    // Define the source and target projections
+    var target = "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
+    return proj4(source, target, coords);
   },
 
   // Rotate coordinates around a center point

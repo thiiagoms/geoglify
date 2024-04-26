@@ -64,6 +64,10 @@ export default class Toolbox {
   _setControl(mode) {
     switch (mode) {
       case "draw":
+        if (this._map.hasControl(this.measures)) {
+          this._map.removeControl(this.measures);
+        }
+
         this.draw = new MapboxDraw({
           displayControlsDefault: false,
           styles: configs.getMapDrawStyles(),
@@ -81,10 +85,15 @@ export default class Toolbox {
         document.querySelector(".measures_control").style.display = "none";
         break;
       case "measures":
+        if (this._map.hasControl(this.draw)) {
+          this._map.removeControl(this.draw);
+        }
+
         this.measures = new MeasuresControl();
         this._map.addControl(this.measures, "top-right");
         document.querySelector(".draw_control").style.display = "none";
         break;
+
       case "none":
         if (this._map.hasControl(this.draw)) {
           this._map.removeControl(this.draw);

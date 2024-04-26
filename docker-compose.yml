@@ -53,6 +53,20 @@ services:
     depends_on:
       - mongodb
 
+  ais-decoder-ptfnc:
+    build: ./ais-decoder
+    restart: always
+    container_name: ais-decoder-ptfnc
+    working_dir: /opt/ais-decoder
+    environment:
+      - NODE_ENV=production
+      - MONGODB_CONNECTION_STRING=mongodb://root:root@mongodb:27778/?directConnection=true&authMechanism=DEFAULT
+      - AIS_SERVER_HOST=ais.apram.pt
+      - AIS_SERVER_PORT=8530
+    command: "node main.js"
+    depends_on:
+      - mongodb
+
   realtime:
     build: ./realtime
     restart: always

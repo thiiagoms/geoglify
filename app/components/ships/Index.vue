@@ -12,7 +12,9 @@
   import { IconLayer, TextLayer, GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
   import { CollisionFilterExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
-  import configs from "~/helpers/configs";
+  import { COORDINATE_SYSTEM } from "@deck.gl/core";
+
+  console.log(COORDINATE_SYSTEM);
 
   const ZOOM_AIS_THRESHOLD = 14;
 
@@ -173,6 +175,7 @@
               lineCapRounded: true,
               autoHighlight: true,
               getLineWidth: 2,
+              getFillOpacity: 0.2,
               lineWidthUnits: "pixels",
               highlightColor: [255, 234, 0],
               onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),

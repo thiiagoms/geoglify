@@ -1,7 +1,6 @@
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import * as turf from "@turf/turf";
-
-import * as convert from "convert-units";
+import convert from "convert-units";
 
 const DRAW_LABELS_SOURCE_ID = "source-draw-labels";
 const DRAW_LABELS_LAYER_ID = "layer-draw-labels";
@@ -32,7 +31,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#D20C0C",
+            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#000",
             "line-dasharray": [0.2, 2],
             "line-width": this.options?.style?.lengthMeasurement?.lineWidth ?? 2,
           },
@@ -43,8 +42,8 @@ export default class MeasuresControl {
           type: "fill",
           filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
           paint: {
-            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#D20C0C",
-            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#D20C0C",
+            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#000",
+            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
             "fill-opacity": this.options?.style?.areaMeasurement?.fillOpacity ?? 0.1,
           },
         },
@@ -55,7 +54,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointColor ?? "#fbb03b",
+            "circle-color": this.options?.style?.common?.midPointColor ?? "#000",
           },
         },
         // polygon outline stroke
@@ -69,7 +68,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#D20C0C",
+            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
             "line-dasharray": [0.2, 2],
             "line-width": this.options?.style?.areaMeasurement?.lineWidth ?? 2,
           },
@@ -81,7 +80,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointHaloRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointHaloColor ?? "#FFF",
+            "circle-color": this.options?.style?.common?.midPointHaloColor ?? "#000",
           },
         },
         // vertex points
@@ -91,7 +90,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointColor ?? "#fbb03b",
+            "circle-color": this.options?.style?.common?.midPointColor ?? "#000",
           },
         },
 
@@ -106,7 +105,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#D20C0C",
+            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#000",
             "line-width": this.options?.style?.lengthMeasurement?.lineWidth ?? 3,
           },
         },
@@ -140,10 +139,12 @@ export default class MeasuresControl {
   }
 
   onAdd(map) {
+    console.log(map);
     this._map = map;
     this._map.addControl(this._drawCtrl, "top-left");
     this._initControl();
     this._registerEvents();
+    this._recreateSourceAndLayers();
     return this._container;
   }
 
@@ -246,9 +247,6 @@ export default class MeasuresControl {
 
   _registerEvents() {
     if (this._map) {
-      this._map.on("load", () => {
-        this._recreateSourceAndLayers();
-      });
       this._map.on("draw.create", this._updateLabels.bind(this));
       this._map.on("draw.update", this._updateLabels.bind(this));
       this._map.on("draw.delete", this._updateLabels.bind(this));
@@ -257,7 +255,6 @@ export default class MeasuresControl {
   }
 
   _recreateSourceAndLayers() {
-
     if (!this._map.getSource(DRAW_LABELS_SOURCE_ID))
       this._map.addSource(DRAW_LABELS_SOURCE_ID, {
         type: "geojson",
@@ -293,9 +290,7 @@ export default class MeasuresControl {
           ],
         },
         paint: {
-          "text-color": this.options?.style?.text?.color ?? "#D20C0C",
-          "text-halo-color": this.options?.style?.text?.haloColor ?? "#fff",
-          "text-halo-width": this.options?.style?.text?.haloWidth ?? 10,
+          "text-color": this.options?.style?.text?.color ?? "#000",
         },
       });
   }
@@ -316,7 +311,6 @@ export default class MeasuresControl {
   }
 
   _updateLabels() {
-
     let source = this._map.getSource(DRAW_LABELS_SOURCE_ID);
 
     if (!source && this._map) {
@@ -353,7 +347,7 @@ export default class MeasuresControl {
           });
         }
       } catch (e) {
-        //Silently ignored
+        console.log(e);
       }
     });
     let data = {
@@ -367,8 +361,13 @@ export default class MeasuresControl {
 
   onRemove() {
     this._container.parentNode.removeChild(this._container);
-    this._map.removeLayer(DRAW_LABELS_LAYER_ID);
-    this._map.removeSource(DRAW_LABELS_SOURCE_ID);
+
+    if (this._map && !!this._map.getLayer(DRAW_LABELS_LAYER_ID)) this._map.removeLayer(DRAW_LABELS_LAYER_ID);
+
+    if (this._map && !!this._map.getSource(DRAW_LABELS_SOURCE_ID)) this._map.removeSource(DRAW_LABELS_SOURCE_ID);
+
+    if (this._drawCtrl && this._map.hasControl(this._drawCtrl)) this._map.removeControl(this._drawCtrl);
+
     this._map = undefined;
   }
 }
