@@ -9,10 +9,9 @@
 
 <script>
   import { io } from "socket.io-client";
-  import { IconLayer, TextLayer, GeoJsonLayer, ScatterplotLayer } from "@deck.gl/layers";
+  import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
   import { CollisionFilterExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
-  import configs from "~/helpers/configs";
 
   const ZOOM_AIS_THRESHOLD = 14;
 
@@ -172,9 +171,10 @@
               lineJointRounded: true,
               lineCapRounded: true,
               autoHighlight: true,
-              getLineWidth: 2,
-              lineWidthUnits: "pixels",
-              highlightColor: [255, 234, 0],
+              lineBillboard: true,
+              getLineWidth: 0.5,
+              getLineColor: [0, 0, 0, 125],
+              highlightColor: [255, 234, 0, 255],
               onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
             });
 
@@ -182,16 +182,28 @@
             this.legendLayer = new TextLayer({
               id: "aislegend-layer",
               data: visibleFeatures,
-              pickable: false,
-              fontFamily: "Nunito",
+
+              fontFamily: "Monaco, monospace",
+              fontSettings: {
+                sdf: true,
+                fontSize: 128,
+                buffer: 20,
+                radius: 64,
+              },
+              fontWeight: "bold",
+              getAngle: 0,
+              getBackgroundColor: [255, 255, 255, 255],
+              getColor: [0, 0, 0],
               getPosition: (f) => f.location.coordinates,
+              getSize: 16,
               getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
-              getColor: [255, 255, 255, 255],
-              getSize: 12,
+              getTextAnchor: "middle",
+              getColor: [0, 0, 0],
+              outlineColor: [211, 211, 211, 255],
+              outlineWidth: 10,
               getTextAnchor: "start",
               getPixelOffset: [15, 0],
-              getAngle: (f) => 0,
-              fontWeight: "bold",
+              pickable: true,
             });
           } else {
             // Clear the layers if the zoom is below the threshold
@@ -214,7 +226,7 @@
             }),
             getPosition: (f) => f.location.coordinates,
             getAngle: (f) => 360 - f.hdg,
-            getSize: (f) => f.size,
+            getSize: (f) => (this.map.getZoom() < ZOOM_AIS_THRESHOLD ? f.size : 5),
             getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
             getCollisionPriority: (f) => f.priority,
             extensions: [new CollisionFilterExtension()],
@@ -224,36 +236,12 @@
           });
 
           // Update the layers in the overlay
-          if (this.overlay && !!this.aisGeoJSONLayer && !!this.legendLayer)
-            this.overlay.setProps({
-              layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
-            });
-          else
-            this.overlay.setProps({
-              layers: [this.aisLayer],
-            });
+          this.overlay.setProps({
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+          });
         }
 
         requestAnimationFrame(this.render.bind(this));
-      },
-
-      // Convert a hex color to an RGBA array
-      hexToRgbaArray(hex) {
-        if (!hex) return [223, 149, 13, 255]; // Return orange with alpha 255 if no color is defined
-
-        // If hex is in #rrggbb format, append 'ff' for the alpha channel
-        if (hex.length === 7) {
-          hex += "ff";
-        }
-
-        // Parse hexadecimal values to decimal for each color channel and alpha channel
-        const r = parseInt(hex.substring(1, 3), 16);
-        const g = parseInt(hex.substring(3, 5), 16);
-        const b = parseInt(hex.substring(5, 7), 16);
-        const a = parseInt(hex.substring(7, 9), 16); // Alpha from 0 to 255
-
-        // Return array with values [r, g, b, a]
-        return [r, g, b, a];
       },
 
       // Get the visible features from the overlay

@@ -8,11 +8,7 @@ import proj4 from "proj4";
 import CARGOS from "./assets/cargos.json";
 import COUNTRIES from "./assets/countries.json";
 
-// Projection used to convert coordinates from WGS84 to meters
-const METER_PROJECTION = `PROJCS["WGS 84 / Pseudo-Mercator",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Mercator_1SP"],PARAMETER["central_meridian",0],PARAMETER["scale_factor",1],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AXIS["X",EAST],AXIS["Y",NORTH],EXTENSION["PROJ4","+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs"],AUTHORITY["EPSG","3857"]]`;
-
 export default {
-
   // Get the list of categories
   getCategories() {
     const categorizedCargos = new Map();
@@ -45,14 +41,15 @@ export default {
   },
 
   // Convert hex color to RGB
-  hexToRgb(hex) {
+  hexToRgb(hex, opacity = 1) {
     hex = hex.replace(/^#/, "");
 
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
+    const a = Math.round(opacity * 255);
 
-    return [r, g, b];
+    return [r, g, b, a];
   },
 
   // Get the country code from the MMSI
@@ -145,40 +142,36 @@ export default {
     ];
   },
 
+  // Get the ship geojson
   processGeoJSON(ship) {
     try {
-      const [x, y] = ship.location.coordinates;
-      const hdg = ship?.hdg;
+      // Check if the ship is valid
+      let originalCoords = ship.location.coordinates;
+      let hdg = ship?.hdg;
 
       let geojson;
 
       if (!hdg || hdg === 511) {
-
         // If the ship has no heading or the heading is invalid, create a circle
-        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 10;
-        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 10;
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || 10;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || 10;
 
         // Calculate the radius of the circle
         const radius = Math.max(width, length) / 2;
-        let circle = turf.circle([x, y], radius, { units: "meters" });
-
-        // Simplify the circle to reduce the number of points
-        var options = { tolerance: 0.000001, highQuality: true };
-        circle = turf.simplify(circle, options);
+        let circle = turf.circle(originalCoords, radius, { units: "meters" });
 
         // Create a small circle to represent the antenna
-        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        let antenna = turf.circle(originalCoords, 0.2, { units: "meters" });
         var options = { tolerance: 0.0000001, highQuality: true };
         antenna = turf.simplify(antenna, options);
 
         // Create a GeoJSON polygon with the circle and the antenna
         geojson = turf.polygon([circle.geometry.coordinates[0], antenna.geometry.coordinates[0]]);
-
       } else {
-
         // If the ship has a valid heading, create a ship icon
-        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 30;
-        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 8;
+
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || 60;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || 10;
 
         // Calculate the offset of the ship's dimensions
         const xOffsetA = ship?.dimA || length / 2;
@@ -186,25 +179,35 @@ export default {
         const yOffsetC = ship?.dimC || width / 2;
         const yOffsetD = ship?.dimD || width / 2;
 
+        // Define the source projection
+        const source = this.proj4_setdef(originalCoords[0]);
+
         // Calculate the center of the ship in meters
-        const center = this.convertCoordsToMeters([x, y]);
+        const center = this.convertCoordsToMeters(originalCoords, source);
 
         // Calculate the four points of the ship in meters
-        let pointAC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] + Math.max(xOffsetA * 0.8, 2)]);
-        let pointE = this.convertCoordsToWGS84([center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA]);
-        let pointAD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] + Math.max(xOffsetA * 0.8, 2)]);
-        let pointBD = this.convertCoordsToWGS84([center[0] + yOffsetD, center[1] - xOffsetB]);
-        let pointBC = this.convertCoordsToWGS84([center[0] - yOffsetC, center[1] - xOffsetB]);
+        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - Math.min(10, xOffsetA)];
+        let pointE = [center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA];
+        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - Math.min(10, xOffsetA)];
+        let pointBD = [center[0] + yOffsetD, center[1] - xOffsetB];
+        let pointBC = [center[0] - yOffsetC, center[1] - xOffsetB];
+
+        // Convert the four points of the ship to WGS84
+        let pointACWGS84 = this.convertCoordsToWGS84(pointAC, source);
+        let pointEWGS84 = this.convertCoordsToWGS84(pointE, source);
+        let pointADWGS84 = this.convertCoordsToWGS84(pointAD, source);
+        let pointBDWGS84 = this.convertCoordsToWGS84(pointBD, source);
+        let pointBCWGS84 = this.convertCoordsToWGS84(pointBC, source);
 
         // Rotate the four points of the ship
-        let rotatePointAC = this.rotateCoords(pointAC, hdg, [x, y]);
-        let rotatePointE = this.rotateCoords(pointE, hdg, [x, y]);
-        let rotatePointAD = this.rotateCoords(pointAD, hdg, [x, y]);
-        let rotatePointBD = this.rotateCoords(pointBD, hdg, [x, y]);
-        let rotatePointBC = this.rotateCoords(pointBC, hdg, [x, y]);
+        let rotatePointAC = this.rotateCoords(pointACWGS84, hdg, originalCoords);
+        let rotatePointE = this.rotateCoords(pointEWGS84, hdg, originalCoords);
+        let rotatePointAD = this.rotateCoords(pointADWGS84, hdg, originalCoords);
+        let rotatePointBD = this.rotateCoords(pointBDWGS84, hdg, originalCoords);
+        let rotatePointBC = this.rotateCoords(pointBCWGS84, hdg, originalCoords);
 
         // Create a small circle to represent the antenna
-        let antenna = turf.circle([x, y], 0.2, { units: "meters" });
+        let antenna = turf.circle(originalCoords, 0.2, { units: "meters" });
         var options = { tolerance: 0.0000001, highQuality: true };
         antenna = turf.simplify(antenna, options);
 
@@ -225,14 +228,29 @@ export default {
     }
   },
 
+  //get utm-zone from longitude degrees
+  utmzone_from_lon(lon_deg) {
+    return 1 + Math.floor((lon_deg + 180) / 6);
+  },
+
+  //get UTM projection definition from longitude
+  proj4_setdef(lon_deg) {
+    const utm_zone = this.utmzone_from_lon(lon_deg);
+    return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
+  },
+
   // Convert coordinates from WGS84 to meters
-  convertCoordsToMeters(coords) {
-    return proj4(METER_PROJECTION, coords);
+  convertCoordsToMeters(coords, target) {
+    // Define the source and target projections
+    var source = "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
+    return proj4(source, target, coords);
   },
 
   // Convert coordinates from meters to WGS84
-  convertCoordsToWGS84(coords) {
-    return proj4(METER_PROJECTION, "+proj=longlat +datum=WGS84 +no_defs", coords);
+  convertCoordsToWGS84(coords, source) {
+    // Define the source and target projections
+    var target = "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
+    return proj4(source, target, coords);
   },
 
   // Rotate coordinates around a center point
@@ -241,5 +259,184 @@ export default {
     var options = { pivot: latlonCenter };
     var rotatedPoint = turf.transformRotate(point, angleDeg, options);
     return rotatedPoint.geometry.coordinates;
+  },
+
+  // Get the drawstyles
+  getMapDrawStyles() {
+    return [
+      {
+        id: "highlight-active-points",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "true"]],
+        paint: {
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#0197f6",
+        },
+      },
+      {
+        id: "points-are-blue",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "false"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#0197f6",
+        },
+      },
+      {
+        id: "gl-draw-line",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#0197f6",
+          "line-dasharray": [0.2, 2],
+          "line-width": 2,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        paint: {
+          "fill-color": "#0197f6",
+          "fill-outline-color": "#0197f6",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon mid points
+      {
+        id: "gl-draw-polygon-midpoint",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
+        paint: {
+          "circle-radius": 4,
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#0197f6",
+        },
+      },
+      // polygon outline stroke
+      // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+      {
+        id: "gl-draw-polygon-stroke-active",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#0197f6",
+          "line-dasharray": [0.2, 2],
+          "line-width": 2,
+        },
+      },
+      // vertex point halos
+      {
+        id: "gl-draw-polygon-and-line-vertex-halo-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#FFF",
+        },
+      },
+      // vertex points
+      {
+        id: "gl-draw-polygon-and-line-vertex-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 3,
+          "circle-color": "#0197f6",
+        },
+      },
+
+      // INACTIVE (static, already drawn)
+      // line stroke
+      {
+        id: "gl-draw-line-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#000",
+          "line-width": 3,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill-static",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        paint: {
+          "fill-color": "#000",
+          "fill-outline-color": "#000",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon outline
+      {
+        id: "gl-draw-polygon-stroke-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#000",
+          "line-width": 3,
+        },
+      },
+    ];
+  },
+
+  // Get the draw modes options
+  getMeasuresOptions() {
+    return {
+      lang: {
+        areaMeasurementButtonTitle: "Measure area",
+        lengthMeasurementButtonTitle: "Measure length",
+        clearMeasurementsButtonTitle: "Clear measurements",
+      },
+      units: "metric", //or metric, the default
+      unitsGroupingSeparator: " ", // optional. use a space instead of ',' for separating thousands (3 digits group). Do not send this to use the browser default
+      style: {
+        text: {
+          radialOffset: 0.9,
+          letterSpacing: 0.05,
+          color: "#0197f6",
+          haloColor: "#fff",
+          haloWidth: 0,
+          font: "Nunito",
+        },
+        common: {
+          midPointRadius: 3,
+          midPointColor: "#0197f6",
+          midPointHaloRadius: 5,
+          midPointHaloColor: "#FFF",
+        },
+        areaMeasurement: {
+          fillColor: "#0197f6",
+          fillOutlineColor: "#0197f6",
+          fillOpacity: 0.01,
+          lineWidth: 2,
+        },
+        lengthMeasurement: {
+          lineWidth: 2,
+          lineColor: "#0197f6",
+        },
+      },
+    };
   },
 };
