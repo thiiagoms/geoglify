@@ -41,14 +41,15 @@ export default {
   },
 
   // Convert hex color to RGB
-  hexToRgb(hex) {
+  hexToRgb(hex, opacity = 1) {
     hex = hex.replace(/^#/, "");
 
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
+    const a = Math.round(opacity * 255);
 
-    return [r, g, b];
+    return [r, g, b, a];
   },
 
   // Get the country code from the MMSI
@@ -141,8 +142,10 @@ export default {
     ];
   },
 
+  // Get the ship geojson
   processGeoJSON(ship) {
     try {
+      // Check if the ship is valid
       let originalCoords = ship.location.coordinates;
       let hdg = ship?.hdg;
 
@@ -150,16 +153,12 @@ export default {
 
       if (!hdg || hdg === 511) {
         // If the ship has no heading or the heading is invalid, create a circle
-        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 10;
-        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 10;
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || 10;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || 10;
 
         // Calculate the radius of the circle
         const radius = Math.max(width, length) / 2;
         let circle = turf.circle(originalCoords, radius, { units: "meters" });
-
-        // Simplify the circle to reduce the number of points
-        var options = { tolerance: 0.000001, highQuality: true };
-        circle = turf.simplify(circle, options);
 
         // Create a small circle to represent the antenna
         let antenna = turf.circle(originalCoords, 0.2, { units: "meters" });
@@ -170,27 +169,30 @@ export default {
         geojson = turf.polygon([circle.geometry.coordinates[0], antenna.geometry.coordinates[0]]);
       } else {
         // If the ship has a valid heading, create a ship icon
-        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || ship.length || 30;
-        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || ship.width || 8;
+
+        const length = (ship?.dimA || 0) + (ship?.dimB || 0) || 60;
+        const width = (ship?.dimC || 0) + (ship?.dimD || 0) || 10;
 
         // Calculate the offset of the ship's dimensions
-        const xOffsetA = ship?.dimA;
-        const xOffsetB = ship?.dimB;
-        const yOffsetC = ship?.dimC;
-        const yOffsetD = ship?.dimD;
+        const xOffsetA = ship?.dimA || length / 2;
+        const xOffsetB = ship?.dimB || length / 2;
+        const yOffsetC = ship?.dimC || width / 2;
+        const yOffsetD = ship?.dimD || width / 2;
 
+        // Define the source projection
         const source = this.proj4_setdef(originalCoords[0]);
 
         // Calculate the center of the ship in meters
         const center = this.convertCoordsToMeters(originalCoords, source);
 
         // Calculate the four points of the ship in meters
-        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA * 0.8];
+        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - Math.min(10, xOffsetA)];
         let pointE = [center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA];
-        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA * 0.8];
+        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - Math.min(10, xOffsetA)];
         let pointBD = [center[0] + yOffsetD, center[1] - xOffsetB];
         let pointBC = [center[0] - yOffsetC, center[1] - xOffsetB];
 
+        // Convert the four points of the ship to WGS84
         let pointACWGS84 = this.convertCoordsToWGS84(pointAC, source);
         let pointEWGS84 = this.convertCoordsToWGS84(pointE, source);
         let pointADWGS84 = this.convertCoordsToWGS84(pointAD, source);
@@ -233,9 +235,7 @@ export default {
 
   //get UTM projection definition from longitude
   proj4_setdef(lon_deg) {
-    console.log(`Longitude: ${lon_deg}`);
     const utm_zone = this.utmzone_from_lon(lon_deg);
-    console.log(`UTM zone from longitude: ${utm_zone}`);
     return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
   },
 
@@ -261,6 +261,7 @@ export default {
     return rotatedPoint.geometry.coordinates;
   },
 
+  // Get the drawstyles
   getMapDrawStyles() {
     return [
       {
@@ -271,7 +272,7 @@ export default {
           "circle-radius": 4,
           "circle-stroke-color": "#FFF",
           "circle-stroke-width": 2,
-          "circle-color": "#D20C0C",
+          "circle-color": "#0197f6",
         },
       },
       {
@@ -280,7 +281,7 @@ export default {
         filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "false"]],
         paint: {
           "circle-radius": 5,
-          "circle-color": "#D20C0C",
+          "circle-color": "#0197f6",
         },
       },
       {
@@ -292,7 +293,7 @@ export default {
           "line-join": "round",
         },
         paint: {
-          "line-color": "#D20C0C",
+          "line-color": "#0197f6",
           "line-dasharray": [0.2, 2],
           "line-width": 2,
         },
@@ -303,8 +304,8 @@ export default {
         type: "fill",
         filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
         paint: {
-          "fill-color": "#D20C0C",
-          "fill-outline-color": "#D20C0C",
+          "fill-color": "#0197f6",
+          "fill-outline-color": "#0197f6",
           "fill-opacity": 0.1,
         },
       },
@@ -317,7 +318,7 @@ export default {
           "circle-radius": 4,
           "circle-stroke-color": "#FFF",
           "circle-stroke-width": 2,
-          "circle-color": "#D20C0C",
+          "circle-color": "#0197f6",
         },
       },
       // polygon outline stroke
@@ -331,7 +332,7 @@ export default {
           "line-join": "round",
         },
         paint: {
-          "line-color": "#D20C0C",
+          "line-color": "#0197f6",
           "line-dasharray": [0.2, 2],
           "line-width": 2,
         },
@@ -353,7 +354,7 @@ export default {
         filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
         paint: {
           "circle-radius": 3,
-          "circle-color": "#D20C0C",
+          "circle-color": "#0197f6",
         },
       },
 
@@ -400,6 +401,7 @@ export default {
     ];
   },
 
+  // Get the draw modes options
   getMeasuresOptions() {
     return {
       lang: {
@@ -413,26 +415,26 @@ export default {
         text: {
           radialOffset: 0.9,
           letterSpacing: 0.05,
-          color: "#D20C0C",
+          color: "#0197f6",
           haloColor: "#fff",
           haloWidth: 0,
           font: "Nunito",
         },
         common: {
           midPointRadius: 3,
-          midPointColor: "#D20C0C",
+          midPointColor: "#0197f6",
           midPointHaloRadius: 5,
           midPointHaloColor: "#FFF",
         },
         areaMeasurement: {
-          fillColor: "#D20C0C",
-          fillOutlineColor: "#D20C0C",
+          fillColor: "#0197f6",
+          fillOutlineColor: "#0197f6",
           fillOpacity: 0.01,
           lineWidth: 2,
         },
         lengthMeasurement: {
           lineWidth: 2,
-          lineColor: "#D20C0C",
+          lineColor: "#0197f6",
         },
       },
     };

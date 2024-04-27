@@ -31,7 +31,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#000",
+            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#0197f6",
             "line-dasharray": [0.2, 2],
             "line-width": this.options?.style?.lengthMeasurement?.lineWidth ?? 2,
           },
@@ -42,8 +42,8 @@ export default class MeasuresControl {
           type: "fill",
           filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
           paint: {
-            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#000",
-            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
+            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#0197f6",
+            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#0197f6",
             "fill-opacity": this.options?.style?.areaMeasurement?.fillOpacity ?? 0.1,
           },
         },
@@ -54,7 +54,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointColor ?? "#000",
+            "circle-color": this.options?.style?.common?.midPointColor ?? "#0197f6",
           },
         },
         // polygon outline stroke
@@ -68,7 +68,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
+            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#0197f6",
             "line-dasharray": [0.2, 2],
             "line-width": this.options?.style?.areaMeasurement?.lineWidth ?? 2,
           },
@@ -80,7 +80,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointHaloRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointHaloColor ?? "#000",
+            "circle-color": this.options?.style?.common?.midPointHaloColor ?? "#0197f6",
           },
         },
         // vertex points
@@ -90,7 +90,7 @@ export default class MeasuresControl {
           filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
-            "circle-color": this.options?.style?.common?.midPointColor ?? "#000",
+            "circle-color": this.options?.style?.common?.midPointColor ?? "#0197f6",
           },
         },
 
@@ -105,7 +105,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#000",
+            "line-color": this.options?.style?.lengthMeasurement?.lineColor ?? "#0197f6",
             "line-width": this.options?.style?.lengthMeasurement?.lineWidth ?? 3,
           },
         },
@@ -115,8 +115,8 @@ export default class MeasuresControl {
           type: "fill",
           filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
           paint: {
-            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#000",
-            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
+            "fill-color": this.options?.style?.areaMeasurement?.fillColor ?? "#0197f6",
+            "fill-outline-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#0197f6",
             "fill-opacity": this.options?.style?.areaMeasurement?.fillOpacity ?? 0.1,
           },
         },
@@ -130,7 +130,7 @@ export default class MeasuresControl {
             "line-join": "round",
           },
           paint: {
-            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#000",
+            "line-color": this.options?.style?.areaMeasurement?.fillOutlineColor ?? "#0197f6",
             "line-width": this.options?.style?.areaMeasurement?.lineWidth ?? 2,
           },
         },
@@ -139,7 +139,6 @@ export default class MeasuresControl {
   }
 
   onAdd(map) {
-    console.log(map);
     this._map = map;
     this._map.addControl(this._drawCtrl, "top-left");
     this._initControl();
@@ -267,30 +266,15 @@ export default class MeasuresControl {
         type: "symbol",
         source: DRAW_LABELS_SOURCE_ID,
         layout: {
-          "text-font": [this.options?.style?.text?.font ?? "Klokantech Noto Sans Bold"],
+          "text-font": [this.options?.style?.text?.font ?? "Open Sans Bold"],
           "text-field": ["get", "measurement"],
-          "text-variable-anchor": ["top", "bottom", "left", "right"],
-          "text-radial-offset": this.options?.style?.text?.radialOffset ?? 0.5,
           "text-justify": "auto",
-          "text-letter-spacing": this.options?.style?.text?.letterSpacing ?? 0.05,
-          "text-size": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            5,
-            10,
-            10,
-            12.0,
-            13,
-            14.0,
-            14,
-            16.0,
-            18,
-            18.0, // Change 15.0 to 10.0 or lower
-          ],
+          "text-size": 16,
         },
         paint: {
-          "text-color": this.options?.style?.text?.color ?? "#000",
+          "text-color": this.options?.style?.text?.color ?? "#0197f6",
+          "text-halo-color": "#fff",
+          "text-halo-width": 2,
         },
       });
   }
