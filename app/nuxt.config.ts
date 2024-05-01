@@ -9,25 +9,21 @@ export default defineNuxtConfig({
   experimental: {
     watcher: "chokidar",
   },
-  nitro: {
-    devProxy: {
-      "/_api": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        prependPath: true,
-      },
-    },
-  },
-  css: ["maplibre-gl/dist/maplibre-gl.css", "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css", , "maplibre-gl-basemaps/lib/basemaps.css"],
+  css: ["maplibre-gl/dist/maplibre-gl.css", "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css", "maplibre-gl-basemaps/lib/basemaps.css"],
   runtimeConfig: {
     public: {
-      API_URL: process.env.API_URL || "http://localhost:8081",
       REALTIME_URL: process.env.REALTIME_URL || "http://localhost:8080",
+      API_URL: process.env.API_URL || "http://localhost:8081",
+      GEOAPI_URL: process.env.GEOAPI_URL || "http://localhost:8082",
       MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
       OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
     },
   },
+  googleSignIn: {
+    clientId: "CLIENT ID OBTAINED FROM GOOGLE API CONSOLE",
+  },
   modules: [
+    "nuxt-vue3-google-signin",
     "nuxt3-vuex-module",
     "nuxt-gtag",
     "nuxt-svgo",
