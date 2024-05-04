@@ -28,16 +28,12 @@
         legendLayer: null,
         aisGeoJSONLayer: null,
         overlay: new MapboxOverlay({
+          interleaved: true,
           layers: [],
           layerFilter: (filter) => {
             // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
-            const layer = filter.layer;
-            const zoom = filter.viewport.zoom;
-
-            if (layer.id === "aislegend-layer") return zoom > ZOOM_AIS_THRESHOLD;
-
-            if (layer.id === "aisgeojson-layer") return zoom > ZOOM_AIS_THRESHOLD;
-
+            if (filter.layer.id === "aislegend-layer") return filter.viewport.zoom > ZOOM_AIS_THRESHOLD;
+            if (filter.layer.id === "aisgeojson-layer") return filter.viewport.zoom > ZOOM_AIS_THRESHOLD;
             return true;
           },
         }),
@@ -171,9 +167,8 @@
               lineJointRounded: true,
               lineCapRounded: true,
               autoHighlight: true,
-              lineBillboard: true,
               getLineWidth: 0.5,
-              getLineColor: [0, 0, 0, 125],
+              getLineColor: [0, 0, 0, 255],
               highlightColor: [255, 234, 0, 255],
               onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
             });
