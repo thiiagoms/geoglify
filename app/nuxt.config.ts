@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     public: {
       REALTIME_URL: process.env.REALTIME_URL || "http://localhost:8080",
       API_URL: process.env.API_URL || "http://localhost:8081",
-      GEOAPI_URL: process.env.GEOAPI_URL || "http://localhost:8082",
+      GEOAPI_URL: process.env.GEOAPI_URL || "http://localhost:8082/api",
       MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
       OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
     },
@@ -23,6 +23,7 @@ export default defineNuxtConfig({
     clientId: "CLIENT ID OBTAINED FROM GOOGLE API CONSOLE",
   },
   modules: [
+    "@sidebase/nuxt-auth",
     "nuxt-vue3-google-signin",
     "nuxt3-vuex-module",
     "nuxt-gtag",
@@ -35,6 +36,22 @@ export default defineNuxtConfig({
       });
     },
   ],
+  auth: {
+    baseURL: "/api/auth",
+    provider: {
+      type: "local",
+      endpoints: {
+        signIn: { path: "/login", method: "post" },
+        signOut: { path: "/logout", method: "get" },
+        signUp: { path: "/register", method: "post" },
+        getSession: { path: "/me", method: "get" },
+      },
+      token: {
+        signInResponseTokenPointer: "/accessToken",
+      },
+      sessionDataType: {},
+    },
+  },
   gtag: {
     id: "G-DX7RJHR1G4",
   },

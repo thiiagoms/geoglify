@@ -38,8 +38,9 @@ fi
 # Clear the old boostrap/cache
 php artisan clear-compiled
 
-# 
-php artisan jwt:secret
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+
+php artisan jwt:secret --force
 
 # Install composer dependencies
 if [ "$PRODUCTION" = "1" ]; then

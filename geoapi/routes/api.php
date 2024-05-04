@@ -14,8 +14,16 @@ use App\Http\Controllers\AuthController;
 |
 */
 
+//login
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::group(['middleware' => 'auth:api'], function () {
-   Route::get('/auth/logout', [AuthController::class, 'logout']);
+   //refresh token
+   Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+
+   //logout
+   Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+   //get user info
+   Route::get('/auth/me', [AuthController::class, 'me']);
 });

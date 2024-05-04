@@ -3,16 +3,14 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event);
     const body = await readBody(event);
 
-    return await $fetch(config.public.API_URL + "/auth/login", {
+    return await $fetch(config.public.GEOAPI_URL + "/auth/login", {
       method: "POST",
       body: body,
       headers: {
         "Content-Type": "application/json",
       },
     });
-
   } catch (error) {
-    console.log(error);
-    return [];
+    return new Response("Login failed", { status: 401 });
   }
 });
