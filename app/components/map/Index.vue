@@ -1,12 +1,16 @@
 <template>
   <div id="map" class="map"></div>
+
   <Ships v-if="!!ready" :map="map"></Ships>
   <ShipsList v-if="!!ready" style="z-index: 1001" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
-  <Layers v-if="!!ready" :map="map"></Layers>
-  <LayersList v-if="!!ready" style="z-index: 1001" :map="map"></LayersList>
+
+  <Layers v-if="!!ready && isAuthenticated" :map="map"></Layers>
+  <LayersList v-if="!!ready && isAuthenticated" style="z-index: 1001" :map="map"></LayersList>
 </template>
 <script>
+  const { status } = useAuth();
+
   // Import the necessary libraries
   import maplibregl from "maplibre-gl";
   import BasemapsControl from "maplibre-gl-basemaps";
@@ -39,8 +43,15 @@
         deck: null,
         mapDraw: null,
         currentViewState: { ...INITIAL_VIEW_STATE },
-        basemaps: configs.getBaseMaps()
+        basemaps: configs.getBaseMaps(),
       };
+    },
+
+    computed: {
+      // Check if the user is authenticated
+      isAuthenticated() {
+        return status.value === "authenticated";
+      },
     },
 
     // When the component is mounted, create the map
@@ -60,7 +71,7 @@
         bearing: this.currentViewState.bearing,
         pitch: this.currentViewState.pitch,
         maxPitch: 0,
-        preserveDrawingBuffer: true
+        preserveDrawingBuffer: true,
       });
 
       // Add geolocate control to the map.
@@ -89,7 +100,7 @@
       while (!this.map.loaded()) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      
+
       // Add the fullscreen control to the map
       this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
 
@@ -170,5 +181,4 @@
     background-repeat: no-repeat !important;
     background-position: center !important;
   }*/
-  
 </style>

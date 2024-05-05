@@ -49,7 +49,6 @@
     },
 
     computed: {
-
       dialogOpened: {
         get() {
           return this.opened;
@@ -75,13 +74,12 @@
       },
 
       async logout() {
-
         this.loading = true;
 
         await signOut({ redirect: false });
 
         this.dialogOpened = false;
-        
+
         this.loading = false;
       },
     },

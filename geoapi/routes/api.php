@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LayerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,16 +15,32 @@ use App\Http\Controllers\AuthController;
 |
 */
 
-//login
+// Route to login
 Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::group(['middleware' => 'auth:api'], function () {
-   //refresh token
+
+   // refresh
    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
 
-   //logout
+   // logout
    Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-   //get user info
+   // Get the authenticated User
    Route::get('/auth/me', [AuthController::class, 'me']);
+
+   // Route to display all layers
+   Route::post('/layers/search', [LayerController::class, 'index']);
+
+   // Route to display a single layer
+   Route::get('/layers/{layer}', [LayerController::class, 'show']);
+
+   // Route to create a new layer
+   Route::post('/layers', [LayerController::class, 'store']);
+
+   // Route to update an existing layer
+   Route::put('/layers/{layer}', [LayerController::class, 'update']);
+
+   // Route to delete a layer
+   Route::delete('/layers/{layer}', [LayerController::class, 'destroy']);
 });
