@@ -1,12 +1,18 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 2" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="dialogOpened">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1001" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="dialogOpened">
     <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
       <v-toolbar-title class="text-h5 font-weight-black pl-4"> Layers </v-toolbar-title>
 
       <v-spacer></v-spacer>
-      <v-btn icon @click="dialogOpened = false" density="compact">
+
+      <v-btn icon @click="openLayerCreator()" density="compact">
+        <v-icon>mdi-plus</v-icon>
+      </v-btn>
+
+      <v-btn icon @click="dialogOpened = false" density="compact" class="ml-1">
         <v-icon>mdi-close</v-icon>
       </v-btn>
+
     </v-toolbar>
 
     <!-- Search input field -->
@@ -32,7 +38,7 @@
           <v-list-item-subtitle>{{ item?.description }}</v-list-item-subtitle>
 
           <template v-slot:append>
-            <v-menu v-if="false">
+            <v-menu>
               <template v-slot:activator="{ props }">
                 <v-btn icon="mdi-dots-vertical" v-bind="props" variant="text" density="compact"></v-btn>
               </template>
@@ -57,6 +63,19 @@
       </template>
     </v-data-table-server>
   </v-navigation-drawer>
+
+  <LayersCreator
+    :open="openCreateDialog"
+    @update:open="updateOpenCreateDialogState"
+  />
+
+  <LayersEditor
+    :open="openEditDialog"
+    :layerData="layerDataToEdit"
+    :layerId="layerIdToEdit"
+    @update:open="updateOpenEditDialogState" 
+  />
+
 </template>
 
 <script>
@@ -77,6 +96,8 @@
       loading: true,
       totalItems: 0,
       search: "",
+      openCreateDialog: false,
+      openEditDialog: false,
     }),
 
     computed: {
@@ -119,8 +140,27 @@
         }
       },
 
+      // Open layer creator
+      openLayerCreator() {
+        this.openCreateDialog = true;
+      },
+
+      // Update open create dialog state
+      updateOpenCreateDialogState(value) {
+        this.openCreateDialog = value;
+      },
+
       // Open layer editor
-      openLayerEditor() {},
+      openLayerEditor(layerId, layerData) {
+        this.layerIdToEdit = layerId;
+        this.layerDataToEdit = layerData;
+        this.openEditDialog = true;
+      },
+
+      // Update open edit dialog state
+      updateOpenEditDialogState(value) {
+        this.openEditDialog = value;
+      },
 
       // Open layer style editor
       openLayerStyleEditor() {},

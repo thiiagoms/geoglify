@@ -2,11 +2,11 @@
   <div id="map" class="map"></div>
 
   <Ships v-if="!!ready" :map="map"></Ships>
-  <ShipsList v-if="!!ready" style="z-index: 1001" :map="map"></ShipsList>
+  <ShipsList v-if="!!ready" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 
   <Layers v-if="!!ready && isAuthenticated" :map="map"></Layers>
-  <LayersList v-if="!!ready && isAuthenticated" style="z-index: 1001" :map="map"></LayersList>
+  <LayersList v-if="!!ready && isAuthenticated" :map="map"></LayersList>
 </template>
 <script>
   const { status } = useAuth();

@@ -21,4 +21,9 @@ class Feature extends Model
     {
         return $this->belongsTo(User::class, 'deleted_by');
     }
+
+    public function layer()
+    {
+        return $this->belongsTo(Layer::class);
+    }
 }

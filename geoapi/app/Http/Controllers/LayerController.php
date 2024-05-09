@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Layer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LayerController extends Controller
 {
@@ -17,7 +18,11 @@ class LayerController extends Controller
 
         if (!empty($searchText)) {
             $query->where('name', 'like', '%' . $searchText . '%');
+            $query->orWhere('description', 'like', '%' . $searchText . '%');
+            $query->orWhere('code', 'like', '%' . $searchText . '%');
         }
+
+        $query->orderBy('id');
 
         $layers = $query->paginate($itemsPerPage, ['*'], 'page', $page);
 
@@ -37,19 +42,39 @@ class LayerController extends Controller
         return Layer::create($request->all());
     }
 
-    public function show(Layer $layer)
+    public function show($id)
     {
+        $layer = Layer::find($id);
         return $layer;
     }
 
-    public function update(Request $request, Layer $layer)
+    public function update(Request $request, $id)
     {
-        $layer->update($request->all());
+        //update layer information
+        $layer = Layer::find($id);
+        $layer->name = $request->name;
+        $layer->description = $request->description;
+        $layer->code = $request->code;
+        $layer->style = json_encode($request->style);
+        $layer->updated_by = auth()->user()->id;
+        $layer->created_by = auth()->user()->id;
+        $layer->save();
+
+        Log::emergency($layer);
+
+        //replace features
+        /*$layer->features()->delete();
+
+        foreach ($request->features as $feature) {
+            dd($feature);
+        }*/
+
         return $layer;
     }
 
-    public function destroy(Layer $layer)
+    public function destroy($id)
     {
+        $layer = Layer::find($id);
         $layer->delete();
         return response()->json(null, 204);
     }

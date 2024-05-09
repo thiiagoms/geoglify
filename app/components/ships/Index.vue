@@ -230,9 +230,32 @@
             onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
           });
 
+          let geo = new GeoJsonLayer({
+            id: "geojson-layer",
+            data: "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_ports.geojson",
+            filled: true,
+            pointRadiusMinPixels: 5,
+            pointRadiusMaxPixels: 200,
+            opacity: 0.4,
+            pointRadiusScale: 1,
+            getRadius: 50,
+            getLineWidth: 20,
+            getFillColor: [255, 0, 0, 255],
+            autoHighlight: true,
+            transitions: {
+              getRadius: {
+                type: "spring",
+                stiffness: 0.1,
+                damping: 0.15,
+                enter: () => [0], // grow from size 0,
+                duration: 10000,
+              },
+            },
+          });
+
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, geo],
           });
         }
 

@@ -33,14 +33,14 @@ Route::group(['middleware' => 'auth:api'], function () {
    Route::post('/layers/search', [LayerController::class, 'index']);
 
    // Route to display a single layer
-   Route::get('/layers/{layer}', [LayerController::class, 'show']);
+   Route::get('/layers/{id}', [LayerController::class, 'show']);
 
    // Route to create a new layer
    Route::post('/layers', [LayerController::class, 'store']);
 
    // Route to update an existing layer
-   Route::put('/layers/{layer}', [LayerController::class, 'update']);
+   Route::put('/layers/{id}', [LayerController::class, 'update']);
 
    // Route to delete a layer
-   Route::delete('/layers/{layer}', [LayerController::class, 'destroy']);
+   Route::delete('/layers/{id}', [LayerController::class, 'destroy']);
 });

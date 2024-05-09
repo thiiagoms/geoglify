@@ -55,6 +55,46 @@ export const actions = {
       resolve();
     });
   },
+
+  async CREATE({ commit }, data) {
+    return new Promise(async (resolve) => {
+      // Fetch the search results from the server
+      const results = await $fetch("/api/layers", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+
+      // Resolve the promise with the search results
+      resolve(results);
+    });
+  },
+
+  async UPDATE({ commit }, { layerId, data }) {
+    return new Promise(async (resolve) => {
+      // Fetch the search results from the server
+      const results = await $fetch(`/api/layers/${layerId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+
+      // Resolve the promise with the search results
+      resolve(results);
+    });
+  },
+
+  async DELETE({ commit }, layerId) {
+    return new Promise(async (resolve) => {
+      // Fetch the search results from the server
+      const results = await $fetch(`/api/layers/${layerId}`, {
+        method: "DELETE",
+      });
+
+      // Resolve the promise with the search results
+      resolve(results);
+    });
+  }
+
+
 };
 
 export const mutations = {
