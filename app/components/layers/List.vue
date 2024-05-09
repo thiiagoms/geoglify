@@ -28,7 +28,7 @@
           </template>
 
           <v-list-item-title>
-            <div class="legend-container">
+            <div class="legend-container" v-if="!!item.style">
               <Legend :style.sync="item.style" :type.sync="item.type" :id="item._id"></Legend>
             </div>
 
@@ -134,9 +134,9 @@
       // Handle layer checkbox change
       handleLayerCheckboxChange(layer) {
         if (layer.isActive) {
-          this.$store.dispatch("layers/GET_FEATURES", layer._id);
+          this.$store.dispatch("layers/GET_FEATURES", layer.id);
         } else {
-          this.$store.dispatch("layers/CLEAR_FEATURES", layer._id);
+          this.$store.dispatch("layers/CLEAR_FEATURES", layer.id);
         }
       },
 

@@ -43,4 +43,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 
    // Route to delete a layer
    Route::delete('/layers/{id}', [LayerController::class, 'destroy']);
+
+   // Route to display all features of a layer
+   Route::get('/layers/{id}/features', [LayerController::class, 'features']);
 });

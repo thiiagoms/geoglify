@@ -7,6 +7,9 @@ use App\Models\User;
 
 class Feature extends Model
 {
+    protected $casts = [
+        'geojson' => 'json',
+    ];
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

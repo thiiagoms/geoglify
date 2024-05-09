@@ -6,13 +6,16 @@ export const state = () => ({
 
 export const actions = {
   // Action to search for layers
-  async SEARCH(_, payload) {
+  async SEARCH({ commit }, payload) {
     return new Promise(async (resolve) => {
+      
       // Fetch the search results from the server
       const results = await $fetch("/api/layers/search", {
         method: "POST",
         body: JSON.stringify(payload),
       });
+
+      commit('setList', results.items);
 
       // Resolve the promise with the search results
       resolve(results);
@@ -26,13 +29,16 @@ export const actions = {
       commit("setStateLoadingLayer", { layerId, isLoading: true });
 
       // Fetch the features from the server
-      const features  = await $fetch(`api/layers/${layerId}/features`);
+      const features = await $fetch(`api/layers/${layerId}/features`);
 
       // Set the layer features
       commit("setLayerFeatures", { layerId, features });
 
       // Set the layer as not loading
       commit("setStateLoadingLayer", { layerId, isLoading: false });
+
+      // Add layerId to selected layers
+      commit("setSelected", layerId);
 
       // Resolve the promise with the features
       resolve(features);
@@ -50,6 +56,9 @@ export const actions = {
 
       // Set the layer as not loading
       commit("setStateLoadingLayer", { layerId, isLoading: false });
+
+      // Remove layerId from selected layers
+      commit("unsetSelected", layerId);
 
       // Resolve the promise
       resolve();
@@ -92,16 +101,20 @@ export const actions = {
       // Resolve the promise with the search results
       resolve(results);
     });
-  }
-
-
+  },
 };
 
 export const mutations = {
+
+  // Action to create or replace the layer list
+  setList(state, list) {
+    state.list = list;
+  },
+
   // Action to create or replace the layer list
   setStateLoadingLayer(state, { layerId, isLoading }) {
     state.list = state.list.map((layer) => {
-      if (layer._id === layerId) {
+      if (layer.id === layerId) {
         return {
           ...layer,
           isLoading,
@@ -115,7 +128,7 @@ export const mutations = {
   // Action to set the selected layer
   setLayerFeatures(state, { layerId, features }) {
     state.list = state.list.map((layer) => {
-      if (layer._id === layerId) {
+      if (layer.id === layerId) {
         return {
           ...layer,
           features,
@@ -124,5 +137,15 @@ export const mutations = {
 
       return layer;
     });
+  },
+
+  // Action to set the selected layer
+  setSelected(state, layerId) {
+    if (!state.selected.includes(layerId)) state.selected.push(layerId);
+  },
+
+  // Action to unset the selected layer
+  unsetSelected(state, layerId) {
+    state.selected = state.selected.filter((id) => id !== layerId);
   },
 };

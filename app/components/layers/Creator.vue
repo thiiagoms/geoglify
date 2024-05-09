@@ -111,6 +111,7 @@
       async saveLayer() {
         const { valid } = await this.$refs.form.validate();
         if (valid) {
+          console.log(this.newLayer);
           await this.$store.dispatch("layers/CREATE", this.newLayer);
           this.closeDialog();
         }

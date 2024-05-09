@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string('name');
             $table->text('description');
             $table->string('type');
-            $table->json('style');
+            $table->json('style')->nullable();
             $table->timestamps(); 
             $table->softDeletes();
 

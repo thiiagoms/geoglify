@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Layer;
+use App\Models\Feature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -30,7 +31,7 @@ class LayerController extends Controller
             $layer->style = json_decode($layer->style, true);
             return $layer;
         });
-        
+
         return response()->json([
             'items' => $layers->items(),
             'total' => $layers->total(),
@@ -39,7 +40,28 @@ class LayerController extends Controller
 
     public function store(Request $request)
     {
-        return Layer::create($request->all());
+        // create layer
+        $layer = new Layer;
+        $layer->name = $request->name;
+        $layer->description = $request->description;
+        $layer->code = $request->code;
+        $layer->style = $request->style;
+        $layer->type = $request->type;
+        $layer->updated_by = auth()->user()->id;
+        $layer->created_by = auth()->user()->id;
+        $layer->save();
+
+        // add features
+        foreach ($request->features as $f) {
+            $feature = new Feature;
+            $feature->layer_id = $layer->id;
+            $feature->geojson = $f;
+            $feature->created_by = auth()->user()->id;
+            $feature->updated_by = auth()->user()->id;
+            $feature->save();
+        }
+
+        return $layer;
     }
 
     public function show($id)
@@ -50,24 +72,28 @@ class LayerController extends Controller
 
     public function update(Request $request, $id)
     {
+
         //update layer information
         $layer = Layer::find($id);
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->code = $request->code;
-        $layer->style = json_encode($request->style);
+        $layer->style = $request->style;
         $layer->updated_by = auth()->user()->id;
         $layer->created_by = auth()->user()->id;
         $layer->save();
 
-        Log::emergency($layer);
-
         //replace features
-        /*$layer->features()->delete();
+        $layer->features()->delete();
 
-        foreach ($request->features as $feature) {
-            dd($feature);
-        }*/
+        foreach ($request->features as $f) {
+            $feature = new Feature;
+            $feature->layer_id = $layer->id;
+            $feature->geojson = $f;
+            $feature->created_by = auth()->user()->id;
+            $feature->updated_by = auth()->user()->id;
+            $feature->save();
+        }
 
         return $layer;
     }
@@ -77,6 +103,12 @@ class LayerController extends Controller
         $layer = Layer::find($id);
         $layer->delete();
         return response()->json(null, 204);
+    }
+
+    public function features($id)
+    {
+        $layer = Layer::find($id);
+        return $layer->features->pluck('geojson');
     }
 
 }

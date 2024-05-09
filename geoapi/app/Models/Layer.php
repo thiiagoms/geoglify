@@ -8,6 +8,10 @@ use App\Models\User;
 class Layer extends Model
 {
 
+    protected $casts = [
+        'style' => 'json',
+    ];
+    
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
