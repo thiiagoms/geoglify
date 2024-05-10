@@ -27,8 +27,10 @@ class LayerController extends Controller
 
         $layers = $query->paginate($itemsPerPage, ['*'], 'page', $page);
 
+
         $layers->transform(function ($layer) {
-            $layer->style = json_decode($layer->style, true);
+            if ($layer->style != null)
+                $layer->style = json_decode($layer->style, true);
             return $layer;
         });
 
@@ -51,16 +53,6 @@ class LayerController extends Controller
         $layer->created_by = auth()->user()->id;
         $layer->save();
 
-        // add features
-        foreach ($request->features as $f) {
-            $feature = new Feature;
-            $feature->layer_id = $layer->id;
-            $feature->geojson = $f;
-            $feature->created_by = auth()->user()->id;
-            $feature->updated_by = auth()->user()->id;
-            $feature->save();
-        }
-
         return $layer;
     }
 
@@ -72,7 +64,6 @@ class LayerController extends Controller
 
     public function update(Request $request, $id)
     {
-
         //update layer information
         $layer = Layer::find($id);
         $layer->name = $request->name;
@@ -80,22 +71,42 @@ class LayerController extends Controller
         $layer->code = $request->code;
         $layer->style = $request->style;
         $layer->updated_by = auth()->user()->id;
-        $layer->created_by = auth()->user()->id;
         $layer->save();
 
-        //replace features
-        $layer->features()->delete();
+        return $layer;
+    }
 
-        foreach ($request->features as $f) {
-            $feature = new Feature;
-            $feature->layer_id = $layer->id;
-            $feature->geojson = $f;
-            $feature->created_by = auth()->user()->id;
-            $feature->updated_by = auth()->user()->id;
-            $feature->save();
+    public function upload(Request $request, $id)
+    {
+        // Get layer
+        $layer = Layer::findOrfail($id);
+
+        // Handle GeoJSON file upload
+        if ($request->hasFile('file')) {
+
+            // Replace features
+            $layer->features()->delete();
+
+            // Get uploaded file
+            $file = $request->file('file');
+
+            // Process GeoJSON file
+            $geojson = json_decode(file_get_contents($file->getPathname()), true);
+            if (isset($geojson['features'])) {
+                foreach ($geojson['features'] as $f) {
+
+                    $feature = new Feature;
+                    $feature->layer_id = $id;
+                    $feature->geojson = $f;
+                    $feature->created_by = auth()->user()->id;
+                    $feature->updated_by = auth()->user()->id;
+                    $feature->save();
+
+                }
+            }
         }
 
-        return $layer;
+        return response()->json("Ok", 200);
     }
 
     public function destroy($id)

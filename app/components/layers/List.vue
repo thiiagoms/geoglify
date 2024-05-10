@@ -12,7 +12,6 @@
       <v-btn icon @click="dialogOpened = false" density="compact" class="ml-1">
         <v-icon>mdi-close</v-icon>
       </v-btn>
-
     </v-toolbar>
 
     <!-- Search input field -->
@@ -23,7 +22,7 @@
           <template v-slot:prepend>
             <v-list-item-action>
               <v-checkbox-btn v-if="!item.isLoading" v-model="item.isActive" @change="handleLayerCheckboxChange(item)"></v-checkbox-btn>
-              <v-icon v-else color="primary" class="ma-2"> mdi-loading mdi-spin </v-icon>
+              <v-icon v-if="item.isLoading" color="primary" class="ma-2"> mdi-loading mdi-spin </v-icon>
             </v-list-item-action>
           </template>
 
@@ -44,16 +43,19 @@
               </template>
 
               <v-list density="compact">
-                <v-list-item @click="openDatatable(item._id)">
+                <v-list-item @click="openDatatable(item.id)">
                   <v-list-item-title>Show Data</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerEditor(item._id, item)">
+                <v-list-item @click="openLayerEditor(item.id, item)">
                   <v-list-item-title>Edit Layer</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerStyleEditor(item._id, item.type, item.style)">
+                <v-list-item @click="openLayerStyleEditor(item.id, item.type, item.style)">
                   <v-list-item-title>Style Layer</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerDeletor(item._id)">
+                <v-list-item @click="openLayerUploader(item.id, item)">
+                  <v-list-item-title>Upload Data</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="openLayerDeletor(item.id)">
                   <v-list-item-title>Delete Layer</v-list-item-title>
                 </v-list-item>
               </v-list>
@@ -64,18 +66,11 @@
     </v-data-table-server>
   </v-navigation-drawer>
 
-  <LayersCreator
-    :open="openCreateDialog"
-    @update:open="updateOpenCreateDialogState"
-  />
+  <LayersCreator :open="openCreateDialog" @update:open="updateOpenCreateDialogState" />
 
-  <LayersEditor
-    :open="openEditDialog"
-    :layerData="layerDataToEdit"
-    :layerId="layerIdToEdit"
-    @update:open="updateOpenEditDialogState" 
-  />
+  <LayersEditor :open="openEditDialog" :layerData="layerDataToEdit" :layerId="layerIdToEdit" @update:open="updateOpenEditDialogState" />
 
+  <LayersUpload :open="openUploadDialog" :layerId="layerIdToEdit" @update:open="updateOpenUploadDialogState" />
 </template>
 
 <script>
@@ -98,6 +93,7 @@
       search: "",
       openCreateDialog: false,
       openEditDialog: false,
+      openUploadDialog: false,
     }),
 
     computed: {
@@ -132,11 +128,15 @@
       },
 
       // Handle layer checkbox change
-      handleLayerCheckboxChange(layer) {
+      async handleLayerCheckboxChange(layer) {
         if (layer.isActive) {
-          this.$store.dispatch("layers/GET_FEATURES", layer.id);
+          layer.isLoading = true;
+          await this.$store.dispatch("layers/GET_FEATURES", layer.id);
+          layer.isLoading = false;
         } else {
-          this.$store.dispatch("layers/CLEAR_FEATURES", layer.id);
+          layer.isLoading = true;
+          await this.$store.dispatch("layers/CLEAR_FEATURES", layer.id);
+          layer.isLoading = false;
         }
       },
 
@@ -160,6 +160,17 @@
       // Update open edit dialog state
       updateOpenEditDialogState(value) {
         this.openEditDialog = value;
+      },
+
+      // Open layer uploader
+      openLayerUploader(layerId) {
+        this.layerIdToEdit = layerId;
+        this.openUploadDialog = true;
+      },
+
+      // Update open upload dialog state
+      updateOpenUploadDialogState(value) {
+        this.openUploadDialog = value;
       },
 
       // Open layer style editor

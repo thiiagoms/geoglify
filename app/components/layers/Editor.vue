@@ -12,8 +12,6 @@
 
           <v-textarea v-model="updatedLayer.description" label="Description" placeholder="Enter Description" variant="outlined" :rules="descriptionRules" required rows="2" class="mb-2"></v-textarea>
 
-          <v-file-input v-model="updatedLayer.file" label="GeoJSON File" type="file" @change="handleFileUpload" accept=".geojson" variant="outlined" class="mb-2" append-inner-icon="mdi-paperclip" prepend-icon="" :rules="fileRules"></v-file-input>
-
           <v-select v-model="updatedLayer.type" :items="layerTypes" label="Type" placeholder="Select Type" required variant="outlined" :rules="typeRules" class="mb-2" readonly disabled></v-select>
         </v-form>
       </v-card-text>
@@ -60,7 +58,6 @@
           },
         ],
         typeRules: [(value) => !!value || "Type is required"],
-        fileRules: [(value) => !!value || "GeoJSON file is required"],
         layerTypes: [
           { title: "Point", value: "point" },
           { title: "Line", value: "line" },
@@ -82,17 +79,6 @@
     methods: {
       async loadLayerData(data) {
         this.updatedLayer = { ...data };
-      },
-      handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const geoJsonData = JSON.parse(e.target.result);
-          this.updatedLayer.features = geoJsonData.features;
-        };
-        reader.readAsText(file);
       },
       async saveLayer() {
         const { valid } = await this.$refs.form.validate();
