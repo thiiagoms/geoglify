@@ -9,7 +9,6 @@ export default defineEventHandler(async (event) => {
       },
     });
   } catch (error) {
-    console.log("Me failed", error);
     return new Response("Me failed", { status: 401 });
   }
 });

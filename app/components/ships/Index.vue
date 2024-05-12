@@ -155,7 +155,7 @@
 
           if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
             // Get the visible features from the overlay
-            let visibleFeatures = this.getVisibleFeatures();
+            let visibleFeatures = this.getVisibleShips();
 
             // Create a new GeoJsonLayer for the AIS data
             this.aisGeoJSONLayer = new GeoJsonLayer({
@@ -230,6 +230,7 @@
             onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
           });
 
+          
           // Update the layers in the overlay
           this.overlay.setProps({
             layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
@@ -240,7 +241,7 @@
       },
 
       // Get the visible features from the overlay
-      getVisibleFeatures() {
+      getVisibleShips() {
         return this.overlay
           .pickObjects({
             x: 0,

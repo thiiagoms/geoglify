@@ -12,6 +12,7 @@
   "dependencies": {
     "@deck.gl/core": "9.0.0",
     "@deck.gl/extensions": "9.0.7",
+    "@deck.gl/geo-layers": "^9.0.14",
     "@deck.gl/layers": "^9.0.7",
     "@deck.gl/mapbox": "9.0.7",
     "@mapbox/mapbox-gl-draw": "^1.0.4",
@@ -34,6 +35,7 @@
   "devDependencies": {
     "@nuxtjs/google-fonts": "^3.0.2",
     "@sidebase/nuxt-auth": "^0.7.2",
+    "maska": "^2.1.11",
     "nuxt-gtag": "^2.0.5",
     "nuxt-svgo": "^4.0.0",
     "sass": "^1.75.0",
