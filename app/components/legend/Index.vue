@@ -1,14 +1,14 @@
 <template>
   <div id="svgPreview" ref="svgPreview" style="position: relative; width: 100%; height: 100%">
     <svg :style="{ width: '100%', height: '100%' }">
-      <defs>
+      <defs  v-if="this.style.fillPattern != 'none'">
         <pattern :id="'legend-' + style.fillPattern" patternUnits="userSpaceOnUse" width="100" height="100">
           <image
             :xlink:href="fillPatternUrl"
             x="0"
             y="0"
-            width="100"
-            height="100"
+            width="15"
+            height="15"
             :style="{
               filter: 'url(#legend-colorize)',
               opacity: 1,
@@ -20,22 +20,24 @@
           <feColorMatrix color-interpolation-filters="sRGB" type="matrix" :values="colorMatrixValues(style.fillColor)" />
         </filter>
       </defs>
-      <circle v-if="type === 'point'" :style="circleStyle" cx="50%" cy="50%" :r="Math.min(8, style.radius)" />
-      <line v-else-if="type === 'line'" :style="lineStyle" x1="20%" y1="50%" x2="80%" y2="50%" />
-      <rect v-else-if="type === 'polygon'" :style="rectStyle" x="8" y="8" width="15px" height="15px" />
+      <!-- Render the legend based on the type and if mini -->
+      <circle v-if="type === 'point' && mini" :style="circleStyle" cx="50%" cy="50%" :r="Math.min(8, style.radius)" />
+      <line v-else-if="type === 'line' && mini" :style="lineStyle" x1="20%" y1="50%" x2="80%" y2="50%" />
+      <rect v-else-if="type === 'polygon' && mini" :style="rectStyle" x="8" y="8" width="15px" height="15px" />
+      <!-- Render the legend based on the type and if not mini -->
+      <circle v-if="type === 'point' && !mini" :style="circleStyle" cx="50%" cy="50%" :r="style.radius" />
+      <line v-else-if="type === 'line' && !mini" :style="lineStyle" x1="20%" y1="50%" x2="80%" y2="50%" />
+      <rect v-else-if="type === 'polygon' && !mini" :style="rectStyle" x="25%" y="25%" width="50%" height="50%" />
     </svg>
   </div>
 </template>
 
 <script>
   export default {
-    props: {
-      style: Object,
-      type: String,
-    },
+    props: ["style", "type", "mini"],
     computed: {
       fillPatternUrl() {
-        return "@/assets/patterns/" + this.style.fillPattern + ".png";
+        return "./patterns/" + this.style.fillPattern + ".png";
       },
       circleStyle() {
         return {
@@ -74,6 +76,9 @@
       colorMatrixValues(color) {
         // Convert hexadecimal color to RGB
         const hexToRgb = (hex) => {
+
+          console.log(hex)
+
           // Remove '#' if present
           hex = hex.replace("#", "");
 

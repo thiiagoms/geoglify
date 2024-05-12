@@ -27,24 +27,28 @@
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="saveLayer">Save</v-btn>
+        <v-btn text @click="saveLayer" :loading="loading" :disabled="loading">Create</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script>
+  import configs from "~/helpers/configs";
+
   export default {
     props: ["open"],
     data() {
       return {
+        loading: false,
         dialogVisible: false,
         menu: false,
         newLayer: {
           code: null,
           name: null,
           description: null,
-          type: null
+          type: null,
+          style: configs.getDefaultGeoJSONStyle(),
         },
         codeRules: [
           (value) => {
@@ -89,15 +93,30 @@
           code: null,
           name: null,
           description: null,
-          type: null
+          type: null,
+          style: configs.getDefaultGeoJSONStyle(),
         };
         this.$refs.form.resetValidation();
       },
       async saveLayer() {
+        // Set the loading state
+        this.loading = true;
+
+        // Validate the form
         const { valid } = await this.$refs.form.validate();
+
+        // Check if the form is valid
         if (valid) {
+          // Create the layer
           await this.$store.dispatch("layers/CREATE", { data: this.newLayer });
+
+          // Reset the loading state
+          this.loading = false;
+
+          // Close the dialog
           this.closeDialog();
+        } else {
+          this.loading = false;
         }
       },
       closeDialog() {

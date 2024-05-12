@@ -1,7 +1,16 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-card-title class="font-weight-black py-5">EDIT LAYER</v-card-title>
+      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
+        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Edit Layer </v-toolbar-title>
+
+        <v-spacer></v-spacer>
+
+        <v-btn icon @click="closeDialog" density="compact" class="ml-1">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+
       <v-divider></v-divider>
 
       <v-card-text>
@@ -15,11 +24,12 @@
           <v-select v-model="updatedLayer.type" :items="layerTypes" label="Type" placeholder="Select Type" required variant="outlined" :rules="typeRules" class="mb-2" readonly disabled></v-select>
         </v-form>
       </v-card-text>
+
       <v-divider></v-divider>
+
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="closeDialog">Cancel</v-btn>
-        <v-btn text @click="saveLayer">Save</v-btn>
+        <v-btn text @click="saveLayer" :loading="loading" :disabled="loading">Save</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -30,6 +40,7 @@
     props: ["open", "layerData"],
     data() {
       return {
+        loading: false,
         dialogVisible: false,
         menu: false,
         updatedLayer: {
@@ -81,10 +92,26 @@
         this.updatedLayer = { ...data };
       },
       async saveLayer() {
+
+        // Set the loading state
+        this.loading = true;
+
+        // Set the loading state
         const { valid } = await this.$refs.form.validate();
+
+        // Validate the form
         if (valid) {
+
+          // Update the layer
           await this.$store.dispatch("layers/UPDATE", { layerId: this.updatedLayer.id, data: this.updatedLayer });
+
+          // Reset the loading state
+          this.loading = false;
+
+          // Reset the loading state
           this.closeDialog();
+        } else {
+          this.loading = false;
         }
       },
       closeDialog() {

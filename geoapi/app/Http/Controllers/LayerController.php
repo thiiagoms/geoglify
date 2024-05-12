@@ -27,13 +27,6 @@ class LayerController extends Controller
 
         $layers = $query->paginate($itemsPerPage, ['*'], 'page', $page);
 
-
-        $layers->transform(function ($layer) {
-            if ($layer->style != null)
-                $layer->style = json_decode($layer->style, true);
-            return $layer;
-        });
-
         return response()->json([
             'items' => $layers->items(),
             'total' => $layers->total(),
@@ -47,7 +40,6 @@ class LayerController extends Controller
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->code = $request->code;
-        $layer->style = $request->style;
         $layer->type = $request->type;
         $layer->updated_by = auth()->user()->id;
         $layer->created_by = auth()->user()->id;
@@ -69,14 +61,24 @@ class LayerController extends Controller
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->code = $request->code;
-        $layer->style = $request->style;
         $layer->updated_by = auth()->user()->id;
         $layer->save();
 
         return $layer;
     }
 
-    public function upload(Request $request, $id)
+    public function update_style(Request $request, $id)
+    {
+        //update layer style
+        $layer = Layer::find($id);
+        $layer->style = $request->all();
+        $layer->updated_by = auth()->user()->id;
+        $layer->save();
+
+        return $layer;
+    }
+
+    public function upload_data(Request $request, $id)
     {
         // Get layer
         $layer = Layer::findOrfail($id);
@@ -113,7 +115,7 @@ class LayerController extends Controller
     {
         $layer = Layer::find($id);
         $layer->delete();
-        return response()->json(null, 204);
+        return response()->json("Ok", 200);
     }
 
     public function features($id)
@@ -121,5 +123,4 @@ class LayerController extends Controller
         $layer = Layer::find($id);
         return $layer->features->pluck('geojson');
     }
-
 }

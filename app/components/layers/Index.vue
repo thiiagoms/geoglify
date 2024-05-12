@@ -5,6 +5,8 @@
 <script>
   import { GeoJsonLayer } from "@deck.gl/layers";
   import { MapboxOverlay } from "@deck.gl/mapbox";
+  import { PathStyleExtension, FillStyleExtension } from "@deck.gl/extensions";
+  import configs from "~/helpers/configs";
 
   export default {
     props: ["map"],
@@ -16,7 +18,7 @@
           interleaved: false,
           layers: [],
         }),
-        lastIntervalTimestamp: 0
+        lastIntervalTimestamp: 0,
       };
     },
 
@@ -63,58 +65,143 @@
     },
 
     methods: {
-
       // Add a layer to the map
       addLayer(id) {
-        let features = this.$store.state.layers.list.find((l) => l.id === id).features;
+        
+        const layer = this.$store.state.layers.list.find((l) => l.id === id);
+
+        let features = layer.features;
 
         let data = {
           type: "FeatureCollection",
           features: JSON.parse(JSON.stringify(features)),
         };
 
-        let layer = new GeoJsonLayer({
-          id: "layer-" + id,
-          data: data,
-          filled: true,
-          pointRadiusMinPixels: 5,
-          pointRadiusMaxPixels: 200,
-          opacity: 0.4,
-          pointRadiusScale: 1,
-          getRadius: 50,
-          getLineWidth: 20,
-          getFillColor: [255, 0, 0, 255],
-          autoHighlight: true,
-          transitions: {
-            getRadius: {
-              type: "spring",
-              stiffness: 0.1,
-              damping: 0.15,
-              enter: () => [0], // grow from size 0,
-              duration: 10000,
-            },
-          },
-        });
+        let geojsonLayer = null;
 
-        this.layers.set(id, layer);
+        if (layer.type === "point") {
+          geojsonLayer = this.getGeoJSONPointLayer(layer, data);
+        } else if (layer.type === "line") {
+          geojsonLayer = this.getGeoJSONLineLayer(layer, data);
+        } else if (layer.type === "polygon") {
+          geojsonLayer = this.getGeoJSONPolygonLayer(layer, data);
+        }
+
+        this.layers.set(layer.id, geojsonLayer);
 
         this.updateOverlay();
       },
 
-
       // Remove a layer from the map
       removeLayer(id) {
+        const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
-        this.layers.delete(id);
+        this.layers.delete(layer.id);
 
         this.updateOverlay();
-
       },
 
       // Update the overlay with the current layers
       updateOverlay() {
+
         this.overlay.setProps({
           layers: Array.from(this.layers.values()),
+        });
+      },
+
+      // Get a GeoJSON point layer
+      getGeoJSONPointLayer(layer, data) {
+        return new GeoJsonLayer({
+          id: "layer-" + layer.id,
+          data: data,
+          pickable: false,
+          filled: true,
+          getPointRadius: layer.style?.radius || 4,
+          getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+          getLineWidth: layer.style?.lineWidth || 5,
+          lineWidthUnits: "pixels",
+          pointRadiusUnits: "pixels",
+          getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+          autoHighlight: true,
+          highlightColor: [255, 234, 0, 125],
+          getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+          updateTriggers: {
+            getPointRadius: layer.style?.radius,
+            getFillColor: [layer.style?.fillColor, this.selectedFeature],
+            getLineColor: layer.style?.lineColor,
+            getLineWidth: layer.style?.lineWidth,
+          },
+        });
+      },
+
+      // Get a GeoJSON line layer
+      getGeoJSONLineLayer(layer, data) {
+        return new GeoJsonLayer({
+          id: "layer-" + layer.id,
+          data: data,
+          pickable: true,
+          getLineWidth: layer.style?.lineWidth || 5,
+          lineWidthUnits: "pixels",
+          autoHighlight: true,
+          highlightColor: [255, 234, 0, 125],
+          getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+          getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+          dashJustified: true,
+          dashGapPickable: true,
+          extensions: [new PathStyleExtension({ dash: true })],
+          updateTriggers: {
+            getLineColor: [layer.style?.lineColor, this.selectedFeature],
+            getLineWidth: layer.style?.lineWidth,
+            getDashArray: layer.style?.dashArray,
+          },
+        });
+      },
+
+      // Get a GeoJSON polygon layer
+      getGeoJSONPolygonLayer(layer, data) {
+
+        return new GeoJsonLayer({
+          id: "layer-" + layer._id,
+          data: data,
+          pickable: true,
+          stroked: true,
+          filled: true,
+          extruded: false,
+          autoHighlight: true,
+          highlightColor: [255, 234, 0, 125],
+          getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+          getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+          getLineWidth: layer.style?.lineWidth || 5,
+          lineWidthUnits: "pixels",
+
+          //props added by PathStyleExtension
+          getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+          dashJustified: true,
+          dashGapPickable: true,
+
+          // props added by FillStyleExtension
+          fillPatternAtlas: "./patterns/patterns.png",
+          fillPatternMapping: "./patterns/patterns.json",
+          getFillPattern: (f) => layer.style?.fillPattern,
+          getFillPatternScale: (f) => 100,
+          getFillPatternOffset: (f) => [0, 0],
+
+          extensions: [
+            new PathStyleExtension({ dash: true }),
+            new FillStyleExtension({
+              pattern: !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
+            }),
+          ],
+
+          updateTriggers: {
+            getFillColor: [layer.style?.fillColor, this.selectedFeature],
+            getLineColor: layer.style?.lineColor,
+            getLineWidth: layer.style?.lineWidth,
+            getDashArray: layer.style?.dashArray,
+            getFillPattern: layer.style?.fillPattern,
+            getFillPatternScale: layer.style?.fillPatternScale,
+            getFillPatternOffset: layer.style?.fillPatternOffset,
+          },
         });
       },
     },

@@ -1,4 +1,4 @@
-FROM postgis/postgis
+FROM postgis/postgis:16-3.4
 
 ENV POSTGRES_PASSWORD postgres
 

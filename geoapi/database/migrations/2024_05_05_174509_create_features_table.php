@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->id();
             $table->unsignedBigInteger('layer_id')->nullable();
             $table->json('geojson');
-            $table->geometry('geom')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
@@ -31,6 +30,16 @@ return new class extends Migration {
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('set null');
         });
+
+        // Adding the Geometry field
+        DB::statement('ALTER TABLE features ADD COLUMN geom geometry(Geometry,4326);');
+
+        // Adding the spatial index
+        DB::statement('
+            CREATE INDEX features_geom_idx
+            ON features
+            USING GIST (geom)');
+
 
         // Adding the trigger to update the Geometry field
         DB::unprepared('

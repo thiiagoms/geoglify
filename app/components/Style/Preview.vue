@@ -21,6 +21,7 @@
             :style="{
               filter: 'url(#colorize)',
               opacity: 1,
+              scale: 0.3
             }"
           />
         </pattern>

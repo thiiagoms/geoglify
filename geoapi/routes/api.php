@@ -48,6 +48,9 @@ Route::group(['middleware' => 'auth:api'], function () {
    Route::get('/layers/{id}/features', [LayerController::class, 'features']);
 
    // Route to upload geojson features
-   Route::post('/layers/{id}/features', [LayerController::class, 'upload']);
+   Route::post('/layers/{id}/features', [LayerController::class, 'upload_data']);
+
+   // Route to update style of a layer
+   Route::post('/layers/{id}/style', [LayerController::class, 'update_style']);
 
 });

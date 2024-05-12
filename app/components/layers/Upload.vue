@@ -1,7 +1,16 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-card-title class="font-weight-black py-5">UPLOAD DATA</v-card-title>
+      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
+        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Upload Data into Layer </v-toolbar-title>
+
+        <v-spacer></v-spacer>
+
+        <v-btn icon @click="closeDialog" density="compact" class="ml-1">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-toolbar>
+
       <v-divider></v-divider>
 
       <v-card-text>
@@ -12,8 +21,7 @@
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn text @click="closeDialog">Cancel</v-btn>
-        <v-btn text @click="uploadData">Save</v-btn>
+        <v-btn text @click="uploadData" :loading="loading" :disabled="loading">Upload</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -28,6 +36,7 @@
         menu: false,
         file: null,
         fileRules: [(value) => !!value || "GeoJSON file is required"],
+        loading: false,
         id: null,
       };
     },
@@ -52,10 +61,14 @@
         this.file = file;
       },
       async uploadData() {
+        this.loading = true;
         const { valid } = await this.$refs.form.validate();
         if (valid) {
-          await this.$store.dispatch("layers/UPLOAD", { layerId: this.id, file: this.file });
+          await this.$store.dispatch("layers/UPLOAD_DATA", { layerId: this.id, file: this.file });
+          this.loading = false;
           this.closeDialog();
+        } else {
+          this.loading = false;
         }
       },
       closeDialog() {
