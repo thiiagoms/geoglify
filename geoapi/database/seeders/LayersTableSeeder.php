@@ -16,7 +16,6 @@ class LayersTableSeeder extends Seeder
     {
         $data = [
             [
-                "code" => "EEZS",
                 "name" => "Exclusive Economic Zones",
                 "description" => "List of Exclusive Economic Zones with corresponding details. Explore this dataset to access information about Exclusive Economic Zones, including economic activities and jurisdictional boundaries.",
                 "type" => "polygon",
@@ -32,7 +31,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "ECZS",
                 "name" => "Exclusive Coastal Zones",
                 "description" => "List of Exclusive Coastal Zones with corresponding details. Delve into this dataset to discover Exclusive Coastal Zones, featuring comprehensive information on environmental regulations and coastal management.",
                 "type" => "polygon",
@@ -48,7 +46,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "PORTS",
                 "name" => "Ports",
                 "description" => "List of Ports with corresponding details. This dataset provides information about various ports, including facilities and activities.",
                 "type" => "point",
@@ -64,7 +61,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "LIGHTHOUSES",
                 "name" => "Lighthouses",
                 "description" => "List of Lighthouses with corresponding details. Explore this dataset to discover information about various lighthouses, their locations, and characteristics.",
                 "type" => "point",
@@ -80,7 +76,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "BEACHES",
                 "name" => "Beaches",
                 "description" => "List of Beaches with corresponding details. This dataset provides information about various beaches, including amenities and recreational activities.",
                 "type" => "polygon",
@@ -96,7 +91,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "COASTAL_STRIP",
                 "name" => "Coastal Strips",
                 "description" => "List of Coastal Strips with corresponding details. Explore this dataset to access information about coastal strips and their features.",
                 "type" => "polygon",
@@ -112,7 +106,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "WILDLIFE_HABITATS",
                 "name" => "Wildlife Habitats",
                 "description" => "List of Wildlife Habitats with corresponding details. Delve into this dataset to discover information about various wildlife habitats along the coastlines.",
                 "type" => "polygon",
@@ -128,7 +121,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "MARINAS",
                 "name" => "Marinas",
                 "description" => "List of Marinas with corresponding details. This dataset provides information about various marinas, including services and facilities.",
                 "type" => "point",
@@ -144,7 +136,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "ESTUARIES",
                 "name" => "Estuaries",
                 "description" => "List of Estuaries with corresponding details. Explore this dataset to discover information about estuarine environments, their ecological importance, and associated habitats.",
                 "type" => "polygon",
@@ -160,7 +151,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "RIVERS",
                 "name" => "Rivers",
                 "description" => "List of Rivers with corresponding details. Explore this dataset to discover information about river systems, their courses, and ecological significance.",
                 "type" => "line",
@@ -176,7 +166,6 @@ class LayersTableSeeder extends Seeder
                 ])
             ],
             [
-                "code" => "NAVIGATION_ROUTES",
                 "name" => "Navigation Routes",
                 "description" => "List of Navigation Routes with corresponding details. Delve into this dataset to explore navigational routes, including shipping lanes, channels, and other designated paths.",
                 "type" => "line",

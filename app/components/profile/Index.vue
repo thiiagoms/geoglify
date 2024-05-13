@@ -4,7 +4,7 @@
       <v-card-title>
         <v-list>
           <v-list-item>
-            <v-list-item-title class="text-h5 font-weight-black">Welcome back!</v-list-item-title>
+            <v-list-item-title class="text-h5 font-weight-bold">Welcome back!</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card-title>
@@ -30,8 +30,9 @@
       </v-card-text>
 
       <v-card-actions class="px-10 py-5">
-        <v-btn :loading="loading" color="blue-grey-darken-3" size="large" type="submit" variant="flat" block @click="logout">Logout</v-btn>
+        <v-btn :loading="loading" color="black" size="large" type="submit" variant="flat" block @click="logout">Logout</v-btn>
       </v-card-actions>
+
     </v-card>
   </v-dialog>
 </template>

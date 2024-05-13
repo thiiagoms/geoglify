@@ -9,6 +9,7 @@ export const actions = {
   // Action to search for layers
   async SEARCH({ commit }, payload) {
     return new Promise(async (resolve) => {
+      
       // Fetch the search results from the server
       const results = await $fetch("/api/layers/search", {
         method: "POST",
@@ -41,9 +42,6 @@ export const actions = {
 
       // Add layerId to selected layers
       commit("setSelected", layerId);
-
-      // Set the layer loading state to false
-      commit("setLayerLoading", { layerId, loading: false });
 
       // Resolve the promise with the features
       resolve(features);
@@ -136,11 +134,17 @@ export const actions = {
       resolve(results);
     });
   },
+
+  SET_LAYER_LOADING({ commit }, { layerId, loading }) {
+    commit("setLayerLoading", { layerId, loading });
+  }
+  
 };
 
 export const mutations = {
   // Action to create or replace the layer list
   setList(state, list) {
+    
     if (!!list) {
       list.map((layer) => {
         if (state.selected.includes(layer.id)) {

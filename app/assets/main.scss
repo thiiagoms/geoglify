@@ -7,8 +7,14 @@ html {
   overflow: hidden;
 }
 
-.flag
-{
+.flag {
   width: 25px !important;
   height: 25px !important;
+}
+
+.v-list-item__prepend > .v-badge ~ .v-list-item__spacer,
+.v-list-item__prepend > .v-icon ~ .v-list-item__spacer,
+.v-list-item__prepend > .v-tooltip ~ .v-list-item__spacer,
+.v-list-item__prepend > .v-list-item-action ~ .v-list-item__spacer {
+  width: 5px !important;
 }

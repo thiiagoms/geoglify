@@ -478,10 +478,10 @@ export default {
   // Get default geojson style
   getDefaultGeoJSONStyle() {
     return {
-      radius: 6,
-      lineWidth: 5,
-      fillColor: "#DF950D", // Default fill color1
-      lineColor: "#000000ff", // Default Line Color
+      radius: 5,
+      lineWidth: 2,
+      fillColor: "#0077C9", // Default fill color1
+      lineColor: "#FFFFFF", // Default Line Color
       dashArray: "0,0", // Default dash array
       fillPattern: "none", // Default fill pattern
       fillPatternScale: 100, // Default fill pattern scale

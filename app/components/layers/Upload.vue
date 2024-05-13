@@ -1,26 +1,23 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
-        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Upload Data into Layer </v-toolbar-title>
-
-        <v-spacer></v-spacer>
-
-        <v-btn icon @click="closeDialog" density="compact" class="ml-1">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-toolbar>
+      <v-card-title class="font-weight-bold">Upload Data into Layer</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text>
+
+        <v-alert class="mb-5">
+          You can only upload GeoJSON files. All existing data in the layer will be replaced.
+        </v-alert>
         <v-form ref="form">
-          <v-file-input label="GeoJSON File" type="file" @change="handleFileUpload" accept=".geojson" variant="outlined" class="mb-2" append-inner-icon="mdi-paperclip" prepend-icon="" :rules="fileRules"></v-file-input>
+          <v-file-input counter show-size label="GeoJSON File" @change="handleFileUpload" accept=".geojson" variant="outlined" class="mb-2" append-inner-icon="mdi-paperclip" prepend-icon="" :rules="fileRules"></v-file-input>
         </v-form>
       </v-card-text>
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog" :disabled="loading">Cancel</v-btn>
         <v-btn text @click="uploadData" :loading="loading" :disabled="loading">Upload</v-btn>
       </v-card-actions>
     </v-card>
@@ -35,7 +32,7 @@
         dialogVisible: false,
         menu: false,
         file: null,
-        fileRules: [(value) => !!value || "GeoJSON file is required"],
+        fileRules: [(value) => !value || !value.length || value[0].size < 25000000 || 'GeoJSON size should be less than 25 MB!'],
         loading: false,
         id: null,
       };
@@ -56,14 +53,12 @@
         this.id = id;
       },
       handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        this.file = file;
+        this.file = event.target.files[0];
       },
       async uploadData() {
         this.loading = true;
         const { valid } = await this.$refs.form.validate();
-        if (valid) {
+        if (valid && !!this.file) {
           await this.$store.dispatch("layers/UPLOAD_DATA", { layerId: this.id, file: this.file });
           this.loading = false;
           this.closeDialog();

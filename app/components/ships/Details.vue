@@ -3,7 +3,7 @@
     <v-card class="pa-0" flat>
       <!-- Toolbar with ship name and flag -->
       <v-toolbar color="white" dark>
-        <v-toolbar-title class="font-weight-black text-h6">
+        <v-toolbar-title class="font-weight-bold text-h6">
           <v-list density="compact">
             <v-list-item class="pa-2 ma-0">
               <template v-slot:prepend>
@@ -13,7 +13,7 @@
                 </v-avatar>
               </template>
               <!-- Display ship name and MMSI -->
-              <v-list-item-title class="font-weight-black">
+              <v-list-item-title class="font-weight-bold">
                 {{ selected?.mmsi ?? "N/A" }}
               </v-list-item-title>
               <v-list-item-subtitle>{{ selected?.shipname ?? "N/A" }}</v-list-item-subtitle>

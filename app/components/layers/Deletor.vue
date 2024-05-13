@@ -1,15 +1,7 @@
 <template>
   <v-dialog v-model="confirmDelete" max-width="500px">
     <v-card>
-      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
-        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Delete Layer </v-toolbar-title>
-
-        <v-spacer></v-spacer>
-
-        <v-btn icon @click="cancelDelete" density="compact" class="ml-1">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-toolbar>
+      <v-card-title class="font-weight-bold">Delete Layer</v-card-title>
 
       <v-divider></v-divider>
 
@@ -17,6 +9,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn text @click="cancelDelete" :disabled="loading">Cancel</v-btn>
         <v-btn color="error" @click="deleteLayer" :loading="loading" :disabled="loading">Delete</v-btn>
       </v-card-actions>
     </v-card>

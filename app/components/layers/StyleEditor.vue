@@ -2,24 +2,14 @@
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <!-- Dialog content -->
     <v-card>
-      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
-        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Edit Layer Style </v-toolbar-title>
-
-        <v-spacer></v-spacer>
-
-        <v-btn icon @click="closeDialog" density="compact" class="ml-1">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-
-      </v-toolbar>
+      <v-card-title class="font-weight-bold">Edit Layer Style</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text v-if="!!styleToUpdate">
-
         <v-form ref="form">
           <div class="style-container mb-5">
-            <Legend :style.sync="styleToUpdate" :type.sync="layerType" :id="layerId" :mini="false"></Legend>
+            <Legend :style.sync="styleToUpdate" :type.sync="layerType" :id="layerId" :mini="false" ></Legend>
           </div>
 
           <!-- Additional fields for point type layers -->
@@ -146,6 +136,7 @@
       <v-divider></v-divider>
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog" :disabled="loading">Cancel</v-btn>
         <v-btn text @click="updateLayerStyle" :loading="loading" :disabled="loading">Save</v-btn>
       </v-card-actions>
     </v-card>
@@ -227,7 +218,6 @@
     },
     methods: {
       async updateLayerStyle() {
-
         this.loading = true;
 
         if (!this.layerId) {
@@ -239,7 +229,7 @@
         await this.$store.dispatch("layers/UPDATE_STYLE", { layerId: this.layerId, style: this.styleToUpdate });
 
         this.loading = false;
-        
+
         // Close the dialog
         this.closeDialog();
       },

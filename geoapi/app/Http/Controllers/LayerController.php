@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Layer;
 use App\Models\Feature;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class LayerController extends Controller
 {
@@ -20,7 +19,6 @@ class LayerController extends Controller
         if (!empty($searchText)) {
             $query->where('name', 'like', '%' . $searchText . '%');
             $query->orWhere('description', 'like', '%' . $searchText . '%');
-            $query->orWhere('code', 'like', '%' . $searchText . '%');
         }
 
         $query->orderBy('id');
@@ -39,7 +37,6 @@ class LayerController extends Controller
         $layer = new Layer;
         $layer->name = $request->name;
         $layer->description = $request->description;
-        $layer->code = $request->code;
         $layer->type = $request->type;
         $layer->updated_by = auth()->user()->id;
         $layer->created_by = auth()->user()->id;
@@ -60,7 +57,6 @@ class LayerController extends Controller
         $layer = Layer::find($id);
         $layer->name = $request->name;
         $layer->description = $request->description;
-        $layer->code = $request->code;
         $layer->updated_by = auth()->user()->id;
         $layer->save();
 

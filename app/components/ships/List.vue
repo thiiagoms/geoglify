@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 2" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="dialogOpened">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1001" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="dialogOpened">
     <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
       <v-toolbar-title class="text-h5 font-weight-black pl-4"> Ships </v-toolbar-title>
 

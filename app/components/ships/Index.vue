@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 10px; z-index: 1000" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 45px; z-index: 1000"  rounded="lg" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
     </template>

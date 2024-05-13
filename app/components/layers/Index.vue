@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 140px; z-index: 1000" size="small" @click="dialogOpened = true" prepend-icon="mdi-layers"> Layers </v-btn>
+  <v-btn class="position-absolute" style="top: 10px; left: 10px; z-index: 1000" density="comfortable" rounded="lg" size="small" @click="dialogOpened = true" icon="mdi-layers"></v-btn>
 </template>
 
 <script>
@@ -67,7 +67,6 @@
     methods: {
       // Add a layer to the map
       addLayer(id) {
-        
         const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
         let features = layer.features;
@@ -103,9 +102,12 @@
 
       // Update the overlay with the current layers
       updateOverlay() {
-
         this.overlay.setProps({
           layers: Array.from(this.layers.values()),
+        });
+
+        this.selected.forEach((id) => {
+          this.$store.dispatch("layers/SET_LAYER_LOADING", { layerId: id, loading: false });
         });
       },
 
@@ -159,50 +161,76 @@
 
       // Get a GeoJSON polygon layer
       getGeoJSONPolygonLayer(layer, data) {
+        if (layer.style?.fillPattern === "none") {
+          return new GeoJsonLayer({
+            id: "layer-" + layer.id,
+            data: data,
+            pickable: true,
+            stroked: true,
+            filled: true,
+            extruded: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+            getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+            getLineWidth: layer.style?.lineWidth || 5,
+            lineWidthUnits: "pixels",
+            getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
+            updateTriggers: {
+              getFillColor: [layer.style?.fillColor, this.selectedFeature],
+              getLineColor: layer.style?.lineColor,
+              getLineWidth: layer.style?.lineWidth,
+              getDashArray: layer.style?.dashArray,
+            },
+          });
+        } else {
+          return new GeoJsonLayer({
+            id: "layer-" + layer.id,
+            data: data,
+            pickable: true,
+            stroked: true,
+            filled: true,
+            extruded: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+            getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+            getLineWidth: layer.style?.lineWidth || 5,
+            lineWidthUnits: "pixels",
 
-        return new GeoJsonLayer({
-          id: "layer-" + layer._id,
-          data: data,
-          pickable: true,
-          stroked: true,
-          filled: true,
-          extruded: false,
-          autoHighlight: true,
-          highlightColor: [255, 234, 0, 125],
-          getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
-          getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
-          getLineWidth: layer.style?.lineWidth || 5,
-          lineWidthUnits: "pixels",
+            //props added by PathStyleExtension
+            getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
 
-          //props added by PathStyleExtension
-          getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
-          dashJustified: true,
-          dashGapPickable: true,
+            // props added by FillStyleExtension
+            fillPatternAtlas: "./patterns/patterns.png",
+            fillPatternMapping: "./patterns/patterns.json",
+            getFillPattern: (f) => layer.style?.fillPattern,
+            getFillPatternScale: (f) => 100,
+            getFillPatternOffset: (f) => [0, 0],
 
-          // props added by FillStyleExtension
-          fillPatternAtlas: "./patterns/patterns.png",
-          fillPatternMapping: "./patterns/patterns.json",
-          getFillPattern: (f) => layer.style?.fillPattern,
-          getFillPatternScale: (f) => 100,
-          getFillPatternOffset: (f) => [0, 0],
+            extensions: [
+              new PathStyleExtension({ dash: true }),
+              new FillStyleExtension({
+                pattern: !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
+              }),
+            ],
 
-          extensions: [
-            new PathStyleExtension({ dash: true }),
-            new FillStyleExtension({
-              pattern: !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
-            }),
-          ],
-
-          updateTriggers: {
-            getFillColor: [layer.style?.fillColor, this.selectedFeature],
-            getLineColor: layer.style?.lineColor,
-            getLineWidth: layer.style?.lineWidth,
-            getDashArray: layer.style?.dashArray,
-            getFillPattern: layer.style?.fillPattern,
-            getFillPatternScale: layer.style?.fillPatternScale,
-            getFillPatternOffset: layer.style?.fillPatternOffset,
-          },
-        });
+            updateTriggers: {
+              getFillColor: [layer.style?.fillColor, this.selectedFeature],
+              getLineColor: layer.style?.lineColor,
+              getLineWidth: layer.style?.lineWidth,
+              getDashArray: layer.style?.dashArray,
+              getFillPattern: layer.style?.fillPattern,
+              getFillPatternScale: layer.style?.fillPatternScale,
+              getFillPatternOffset: layer.style?.fillPatternOffset,
+            },
+          });
+        }
       },
     },
 

@@ -5,8 +5,8 @@
   <ShipsList v-if="!!ready" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 
-  <Layers v-if="!!ready && isAuthenticated" :map="map"></Layers>
-  <LayersList v-if="!!ready && isAuthenticated" :map="map"></LayersList>
+  <Layers v-if="!!ready" :map="map"></Layers>
+  <LayersList v-if="!!ready" :map="map"></LayersList>
 </template>
 <script>
   const { status } = useAuth();

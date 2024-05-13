@@ -50,6 +50,8 @@ export const actions = {
       });
 
       // Process the ship data and add country code
+      if (!results.items) return resolve([]);
+      
       results.items = results.items.map((ship) => {
         ship.countrycode = configs.getCountryCode(ship.mmsi);
         return ship;

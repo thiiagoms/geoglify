@@ -1,21 +1,13 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
-        <v-toolbar-title class="text-h5 font-weight-black pl-4"> Edit Layer </v-toolbar-title>
 
-        <v-spacer></v-spacer>
-
-        <v-btn icon @click="closeDialog" density="compact" class="ml-1">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-toolbar>
+      <v-card-title class="font-weight-bold">Edit Layer</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text>
         <v-form ref="form">
-          <v-text-field v-model="updatedLayer.code" label="Code" placeholder="Enter code" variant="outlined" :rules="codeRules" required class="mb-2"></v-text-field>
 
           <v-text-field v-model="updatedLayer.name" label="Name" placeholder="Enter Name" variant="outlined" :rules="nameRules" required class="mb-2"></v-text-field>
 
@@ -29,6 +21,7 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn text @click="closeDialog" :disabled="loading">Cancel</v-btn>
         <v-btn text @click="saveLayer" :loading="loading" :disabled="loading">Save</v-btn>
       </v-card-actions>
     </v-card>
@@ -44,28 +37,21 @@
         dialogVisible: false,
         menu: false,
         updatedLayer: {
-          code: null,
           name: null,
           description: null,
           type: null,
           style: null,
         },
-        codeRules: [
-          (value) => {
-            if (value?.length > 3) return true;
-            return "Name must be at least 3 characters.";
-          },
-        ],
         nameRules: [
           (value) => {
-            if (value?.length > 5) return true;
-            return "Name must be at least 5 characters.";
+            if (value?.length >= 3) return true;
+            return "Name must be at least 3 characters.";
           },
         ],
         descriptionRules: [
           (value) => {
-            if (value?.length > 10) return true;
-            return "Description must be at least 10 characters.";
+            if (value?.length >= 5) return true;
+            return "Description must be at least 5 characters.";
           },
         ],
         typeRules: [(value) => !!value || "Type is required"],
