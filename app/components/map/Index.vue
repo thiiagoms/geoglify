@@ -7,6 +7,8 @@
 
   <Layers v-if="!!ready" :map="map"></Layers>
   <LayersList v-if="!!ready" :map="map"></LayersList>
+
+  <Feature></Feature>
 </template>
 <script>
   const { status } = useAuth();

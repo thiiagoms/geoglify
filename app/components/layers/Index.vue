@@ -13,6 +13,7 @@
 
     data() {
       return {
+        tooltip: null,
         layers: new Map(),
         overlay: new MapboxOverlay({
           interleaved: false,
@@ -116,7 +117,7 @@
         return new GeoJsonLayer({
           id: "layer-" + layer.id,
           data: data,
-          pickable: false,
+          pickable: true,
           filled: true,
           getPointRadius: layer.style?.radius || 4,
           getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
@@ -133,6 +134,13 @@
             getLineColor: layer.style?.lineColor,
             getLineWidth: layer.style?.lineWidth,
           },
+
+          onClick: (event) => {
+            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            return true;
+          },
+
+          onHover: (info) => this.updateTooltip(info),
         });
       },
 
@@ -156,6 +164,13 @@
             getLineWidth: layer.style?.lineWidth,
             getDashArray: layer.style?.dashArray,
           },
+
+          onClick: (event) => {
+            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            return true;
+          },
+
+          onHover: (info) => this.updateTooltip(info),
         });
       },
 
@@ -185,6 +200,11 @@
               getLineWidth: layer.style?.lineWidth,
               getDashArray: layer.style?.dashArray,
             },
+            onClick: (event) => {
+              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              return true;
+            },
+            onHover: (info) => this.updateTooltip(info),
           });
         } else {
           return new GeoJsonLayer({
@@ -229,14 +249,61 @@
               getFillPatternScale: layer.style?.fillPatternScale,
               getFillPatternOffset: layer.style?.fillPatternOffset,
             },
+
+            onClick: (event) => {
+              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              return true;
+            },
+
+            onHover: (info) => this.updateTooltip(info),
           });
+        }
+      },
+
+      updateTooltip({ object, x, y }) {
+        if (object) {
+          this.tooltip.style.display = "block";
+          this.tooltip.style.left = `${x}px`;
+          this.tooltip.style.top = `${y}px`;
+          
+          this.tooltip.innerHTML = "";
+
+          for (const [key, value] of Object.entries(object.properties)) {
+            this.tooltip.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
+          }
+
+        } else {
+          this.tooltip.style.display = "none";
         }
       },
     },
 
     async mounted() {
+      this.tooltip = document.createElement("div");
+      this.tooltip.className = "deck-tooltip";
+      this.tooltip.style.position = "absolute";
+      this.tooltip.style.zIndex = 1;
+      this.tooltip.style.pointerEvents = "none";
+      document.body.append(this.tooltip);
+
       // Add the overlay to the map
       this.map.addControl(this.overlay);
     },
   };
 </script>
+
+<style>
+.deck-tooltip {
+  z-index: 2000 !important;
+  font-size: 12px;
+  position: absolute;
+  padding: 4px;
+  margin: 8px;
+  background: rgba(0, 0, 0, 1);
+  border-radius: 4px;
+  color: #fff;
+  max-width: 300px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+</style>
