@@ -103,9 +103,6 @@
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      // Add the fullscreen control to the map
-      this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
-
       // Add the measures control to the map
       this.map.addControl(new Toolbox(), "top-right");
 
@@ -178,9 +175,4 @@
     background-position: center;
   }
 
-  /*.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon {
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAACxAAAAsQHGLUmNAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAOVJREFUSInt1L9KQzEUx/FPtXKxrYKbj+Ls5OrS13D2MXwXN5Hin4Id6ii+gaNb1UmHm0tza0BIAi79QSDnkPy+J+EkbPWHBpn7dnGYyK/wlV/OWnN8J8Yb9uKFw0zAtbZamOAkzI9D/J7p+0tjzPRPcVTL/AAPwfQWzzUBceV32mt5rAUY6Vc+CvlqgLOEOVziBjulgCFO0ZQaxRpjql9xlgZY4CrKTazv/LwU0ASjZYg3W3G/JiBuxXvtSYrVAV6lW7EaoBvdI8rW5nfd4DOKX/AR5nNclMA64JP0VzwrNd/qf/QD8R8/yqR307gAAAAASUVORK5CYII=") !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-  }*/
 </style>

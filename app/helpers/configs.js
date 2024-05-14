@@ -218,6 +218,9 @@ export default {
       // Add properties to the GeoJSON
       geojson.properties = {
         color: ship.color,
+        shipname: ship.shipname,
+        mmsi: ship.mmsi,
+        utc: ship.utc,
         _id: ship._id,
       };
 

@@ -10,11 +10,12 @@ export const state = () => ({
 });
 
 export const actions = {
-
   // Action to fetch the ship list
   async FETCH({ commit }) {
+    const config = useRuntimeConfig();
+
     return new Promise(async (resolve) => {
-      const ships = await $fetch("/api/ships");
+      const ships = await $fetch(config.public.REALTIME_URL + "/ships");
       commit("createOrReplace", ships);
       resolve(ships);
     });
@@ -28,9 +29,11 @@ export const actions = {
   // Action to set the selected ship
   async SET_SELECTED({ commit }, ship) {
     return new Promise(async (resolve) => {
+      const config = useRuntimeConfig();
+
       if (ship?._id) {
-        const data = await $fetch("/api/ship/" + ship?._id);
-        data.countryCode = configs.getCountryCode(data.mmsi);
+        const data = await $fetch(config.public.REALTIME_URL + "/ship/" + ship?._id);
+        data.countrycode = configs.getCountryCode(data.mmsi);
         commit("setSelectedShip", data);
         resolve();
       } else {
@@ -43,15 +46,18 @@ export const actions = {
   // Action to search for ships
   async SEARCH(_, payload) {
     return new Promise(async (resolve) => {
+
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch("/api/ships/search", {
+      const results = await $fetch(config.public.REALTIME_URL + "/ships/search", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
       // Process the ship data and add country code
       if (!results.items) return resolve([]);
-      
+
       results.items = results.items.map((ship) => {
         ship.countrycode = configs.getCountryCode(ship.mmsi);
         return ship;
@@ -94,13 +100,11 @@ export const mutations = {
 
     // State mutation to update the ship list
     state.list = Object.freeze([...list]);
-
   },
 };
 
 // Process the ship data and return the processed ship object
 function processShipData(ship) {
-
   // Extract the necessary data from the ship object
   const { hdg, cargo, mmsi } = ship;
 
@@ -113,7 +117,6 @@ function processShipData(ship) {
     ship.size = 16;
     ship.width = 41;
     ship.height = 96;
-    
   } else {
     ship.icon = "models/circle.png";
     ship.size = 10;

@@ -1,19 +1,19 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-
       <v-card-title class="font-weight-bold">Edit Layer</v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text>
         <v-form ref="form">
-
           <v-text-field v-model="updatedLayer.name" label="Name" placeholder="Enter Name" variant="outlined" :rules="nameRules" required class="mb-2"></v-text-field>
 
           <v-textarea v-model="updatedLayer.description" label="Description" placeholder="Enter Description" variant="outlined" :rules="descriptionRules" required rows="2" class="mb-2"></v-textarea>
 
           <v-select v-model="updatedLayer.type" :items="layerTypes" label="Type" placeholder="Select Type" required variant="outlined" :rules="typeRules" class="mb-2" readonly disabled></v-select>
+
+          <v-text-field v-model="updatedLayer.datasource" label="Datasource" placeholder="Enter Datasource" variant="outlined" class="mb-2"></v-text-field>
         </v-form>
       </v-card-text>
 
@@ -40,18 +40,21 @@
           name: null,
           description: null,
           type: null,
+          datasource: null,
           style: null,
         },
         nameRules: [
+          (value) => !!value || "Name is required",
           (value) => {
-            if (value?.length >= 3) return true;
-            return "Name must be at least 3 characters.";
+            if (value?.length < 30) return true;
+            return "Name must be less than 30 characters.";
           },
         ],
         descriptionRules: [
+          (value) => !!value || "Description is required",
           (value) => {
-            if (value?.length >= 5) return true;
-            return "Description must be at least 5 characters.";
+            if (value?.length < 100) return true;
+            return "Description must be less than 100 characters.";
           },
         ],
         typeRules: [(value) => !!value || "Type is required"],
@@ -78,7 +81,6 @@
         this.updatedLayer = { ...data };
       },
       async saveLayer() {
-
         // Set the loading state
         this.loading = true;
 
@@ -87,7 +89,6 @@
 
         // Validate the form
         if (valid) {
-
           // Update the layer
           await this.$store.dispatch("layers/UPDATE", { layerId: this.updatedLayer.id, data: this.updatedLayer });
 

@@ -1,6 +1,7 @@
 version: '3.1'
 
 services:
+  
   app:
     container_name: app
     restart: always
@@ -69,21 +70,7 @@ services:
 
   api:
     build: ./api
-    restart: always
     container_name: api
-    working_dir: /opt/api
-    ports:
-      - "8081:8081"
-    environment:
-      - NODE_ENV=production
-      - MONGODB_CONNECTION_STRING=mongodb://root:root@mongodb:27778/?directConnection=true&authMechanism=DEFAULT
-    command: "node main.js"
-    depends_on:
-      - mongodb
-
-  geoapi:
-    build: ./geoapi
-    container_name: geoapi
     restart: always
     environment:
       PHP_OPCACHE_ENABLE: 0
@@ -91,27 +78,16 @@ services:
     ports:
       - 8082:80
     volumes:
-      - ./geoapi:/opt/geoapi
-      - vendor-data:/opt/geoapi/vendor
-      - storage-data:/opt/geoapi/storage
+      - ./api:/opt/api
+      - vendor-data:/opt/api/vendor
+      - storage-data:/opt/api/storage
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://geoapi/"]
+      test: ["CMD", "curl", "-f", "http://api/"]
       interval: 30s
       timeout: 10s
       retries: 3
     depends_on:
       - database
-
-  ollama:
-    volumes:
-      - ollama:/root/.ollama
-    ports:
-      - 11434:11434
-    container_name: ollama
-    pull_policy: always
-    tty: true
-    restart: unless-stopped
-    image: ollama/ollama:latest
 
   mongodb-seed:
     build: ./mongodb-seed
@@ -128,8 +104,6 @@ services:
     image: database
     restart: always
     container_name: database
-    ports:
-      - "5555:5432"
     volumes:
       - database_data:/var/lib/postgresql/data
 
@@ -138,4 +112,3 @@ volumes:
   storage-data:
   mongodb_data:
   database_data:
-  ollama:

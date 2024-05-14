@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig(event);
     const body = await readBody(event);
 
-    return await $fetch(config.public.GEOAPI_URL + "/auth/login", {
+    return await $fetch(config.public.API_URL + "/auth/login", {
       method: "POST",
       body: body,
       headers: {

@@ -140,7 +140,7 @@
             return true;
           },
 
-          onHover: (info) => this.updateTooltip(info),
+          onHover: (info) => this.showTooltip(info),
         });
       },
 
@@ -170,7 +170,7 @@
             return true;
           },
 
-          onHover: (info) => this.updateTooltip(info),
+          onHover: (info) => this.showTooltip(info),
         });
       },
 
@@ -204,7 +204,7 @@
               this.$store.dispatch("features/SELECTED_FEATURE", event.object);
               return true;
             },
-            onHover: (info) => this.updateTooltip(info),
+            onHover: (info) => this.showTooltip(info),
           });
         } else {
           return new GeoJsonLayer({
@@ -255,55 +255,43 @@
               return true;
             },
 
-            onHover: (info) => this.updateTooltip(info),
+            onHover: (info) => this.showTooltip(info),
           });
         }
       },
 
-      updateTooltip({ object, x, y }) {
+      showTooltip({ object, x, y }) {
         if (object) {
           this.tooltip.style.display = "block";
           this.tooltip.style.left = `${x}px`;
           this.tooltip.style.top = `${y}px`;
-          
+
           this.tooltip.innerHTML = "";
 
           for (const [key, value] of Object.entries(object.properties)) {
             this.tooltip.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
           }
-
         } else {
           this.tooltip.style.display = "none";
         }
       },
+
+      createTooltip() {
+        this.tooltip = document.createElement("div");
+        this.tooltip.className = "deck-tooltip";
+        this.tooltip.style.position = "absolute";
+        this.tooltip.style.zIndex = 1;
+        this.tooltip.style.pointerEvents = "none";
+        document.body.append(this.tooltip);
+      },
     },
 
     async mounted() {
-      this.tooltip = document.createElement("div");
-      this.tooltip.className = "deck-tooltip";
-      this.tooltip.style.position = "absolute";
-      this.tooltip.style.zIndex = 1;
-      this.tooltip.style.pointerEvents = "none";
-      document.body.append(this.tooltip);
+
+      this.createTooltip();
 
       // Add the overlay to the map
       this.map.addControl(this.overlay);
     },
   };
 </script>
-
-<style>
-.deck-tooltip {
-  z-index: 2000 !important;
-  font-size: 12px;
-  position: absolute;
-  padding: 4px;
-  margin: 8px;
-  background: rgba(0, 0, 0, 1);
-  border-radius: 4px;
-  color: #fff;
-  max-width: 300px;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-</style>

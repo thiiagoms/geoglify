@@ -1,5 +1,5 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1000; left: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="selected">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : 'right'" style="z-index: 1003; right: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="selected">
     <v-card class="pa-0" flat>
       <!-- Toolbar with ship name and flag -->
       <v-toolbar color="white" dark>
@@ -73,7 +73,7 @@
         },
       },
       selected() {
-        return this.$store.state.ships.selected;
+        return JSON.parse(JSON.stringify(this.$store.state.ships.selected));
       },
     },
 
@@ -85,3 +85,9 @@
     },
   };
 </script>
+<style>
+  .flag {
+    width: 25px;
+    height: 25px;
+  }
+</style>

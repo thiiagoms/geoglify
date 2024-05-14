@@ -17,25 +17,23 @@
 
     <v-data-table-server class="layers" density="compact" :items-per-page="itemsPerPage" :headers="headers" :items="layers" :items-length="total" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
       <template v-slot:item.id="{ item }">
-        <v-list-item class="px-1">
+        <v-card class="ma-1" density="compact">
           <template v-slot:prepend>
-            <v-list-item-action>
-              <v-checkbox-btn v-model="item.selected" @change="handleLayerCheckboxChange(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
-              <v-progress-circular indeterminate size="25" color="black" v-else class="mx-2"></v-progress-circular>
-            </v-list-item-action>
-          </template>
-
-          <v-list-item-title>
-            <span class="text-subtitle-1 font-weight-bold">{{ item?.name }} </span>
-          </v-list-item-title>
-
-          <v-list-item-subtitle>{{ item?.description }}</v-list-item-subtitle>
-
-          <template v-slot:append>
-
             <div class="legend-container" v-if="!!item.style">
               <Legend :style.sync="item.style" :type.sync="item.type" :id="item._id" :mini="true"></Legend>
             </div>
+          </template>
+          <template v-slot:title>
+            <span class="font-weight-bold">{{ item?.name }} </span>
+          </template>
+          <template v-slot:subtitle>
+            <span>Datasource: {{ item?.datasource || "N/A" }}</span>
+          </template>
+          <v-card-text class="pt-1"> Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi, ratione debitis quis est labore voluptatibus! Eaque cupiditate minima, at placeat totam, magni doloremque veniam neque porro libero rerum unde voluptatem! </v-card-text>
+
+          <template v-slot:append>
+            <v-checkbox-btn v-model="item.selected" @change="handleLayerCheckboxChange(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
+            <v-progress-circular indeterminate size="25" color="black" v-else class="mx-2"></v-progress-circular>
 
             <v-menu>
               <template v-slot:activator="{ props }">
@@ -70,7 +68,7 @@
               </v-list>
             </v-menu>
           </template>
-        </v-list-item>
+        </v-card>
       </template>
     </v-data-table-server>
   </v-navigation-drawer>
@@ -253,6 +251,11 @@
     padding: 0px !important;
   }
 
+  .layers .v-table__wrapper > table > tbody > tr:not(:last-child) > td,
+  .layers .v-table__wrapper > table > tbody > tr:not(:last-child) > th {
+    border-bottom: none !important;
+  }
+
   .legend-container {
     display: flex;
     justify-content: center;
@@ -261,6 +264,8 @@
     height: 31px;
     width: 31px;
     float: left;
+    border-radius: 5px;
+    margin-right: 5px;
     margin-left: 0px;
     margin-top: 0px;
   }

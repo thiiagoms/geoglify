@@ -9,9 +9,10 @@ export const actions = {
   // Action to search for layers
   async SEARCH({ commit }, payload) {
     return new Promise(async (resolve) => {
-      
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch("/api/layers/search", {
+      const results = await $fetch(config.public.API_URL + "/layers/search", {
         method: "POST",
         body: JSON.stringify(payload),
       });
@@ -28,6 +29,8 @@ export const actions = {
   // Action to fetch the layer list
   async GET_FEATURES({ commit }, layerId) {
     return new Promise(async (resolve) => {
+      const config = useRuntimeConfig();
+
       // Set the layer loading state to true
       commit("setLayerLoading", { layerId, loading: true });
 
@@ -35,7 +38,7 @@ export const actions = {
       commit("setLayerFeatures", { layerId, features: [] });
 
       // Fetch the features from the server
-      const features = await $fetch(`api/layers/${layerId}/features`);
+      const features = await $fetch(config.public.API_URL + `/layers/${layerId}/features`);
 
       // Set the layer features
       commit("setLayerFeatures", { layerId, features });
@@ -70,8 +73,10 @@ export const actions = {
 
   async CREATE({ commit }, { data }) {
     return new Promise(async (resolve) => {
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch("/api/layers", {
+      const results = await $fetch(config.public.API_URL + "/layers", {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -83,8 +88,10 @@ export const actions = {
 
   async UPDATE({ commit }, { layerId, data }) {
     return new Promise(async (resolve) => {
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch(`/api/layers/${layerId}`, {
+      const results = await $fetch(config.public.API_URL + `/layers/${layerId}`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
@@ -96,8 +103,11 @@ export const actions = {
 
   async DELETE({ commit }, { layerId }) {
     return new Promise(async (resolve) => {
+            
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch(`/api/layers/${layerId}`, {
+      const results = await $fetch(config.public.API_URL + `/layers/${layerId}`, {
         method: "DELETE",
       });
 
@@ -108,11 +118,14 @@ export const actions = {
 
   async UPLOAD_DATA({ commit }, { layerId, file }) {
     return new Promise(async (resolve) => {
+
+      const config = useRuntimeConfig();
+
       const formData = new FormData();
       formData.append("file", file);
 
       // Fetch the search results from the server
-      const results = await $fetch(`/api/layers/${layerId}/features/upload`, {
+      const results = await $fetch(config.public.API_URL + `/layers/${layerId}/features/upload`, {
         method: "POST",
         body: formData,
       });
@@ -124,8 +137,11 @@ export const actions = {
 
   async UPDATE_STYLE({ commit }, { layerId, style }) {
     return new Promise(async (resolve) => {
+
+      const config = useRuntimeConfig();
+
       // Fetch the search results from the server
-      const results = await $fetch(`/api/layers/${layerId}/style`, {
+      const results = await $fetch(config.public.API_URL + `/layers/${layerId}/style`, {
         method: "POST",
         body: JSON.stringify(style),
       });
@@ -137,14 +153,12 @@ export const actions = {
 
   SET_LAYER_LOADING({ commit }, { layerId, loading }) {
     commit("setLayerLoading", { layerId, loading });
-  }
-  
+  },
 };
 
 export const mutations = {
   // Action to create or replace the layer list
   setList(state, list) {
-    
     if (!!list) {
       list.map((layer) => {
         if (state.selected.includes(layer.id)) {

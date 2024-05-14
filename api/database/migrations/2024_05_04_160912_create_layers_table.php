@@ -13,6 +13,7 @@ return new class extends Migration {
         Schema::create('layers', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('datasource');
             $table->text('description');
             $table->string('type');
             $table->json('style')->nullable();

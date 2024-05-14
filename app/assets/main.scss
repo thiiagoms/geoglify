@@ -18,3 +18,17 @@ html {
 .v-list-item__prepend > .v-list-item-action ~ .v-list-item__spacer {
   width: 5px !important;
 }
+
+.deck-tooltip {
+  z-index: 2000 !important;
+  font-size: 12px;
+  position: absolute;
+  padding: 5px;
+  margin: 0px;
+  background: rgba(0, 0, 0, 1);
+  border-radius: 5px;
+  color: #fff;
+  max-width: 300px;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, .1);
+}

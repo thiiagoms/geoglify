@@ -38,6 +38,7 @@ class LayerController extends Controller
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->type = $request->type;
+        $layer->datasource = $request->datasource;
         $layer->updated_by = auth()->user()->id;
         $layer->created_by = auth()->user()->id;
         $layer->save();
@@ -57,6 +58,7 @@ class LayerController extends Controller
         $layer = Layer::find($id);
         $layer->name = $request->name;
         $layer->description = $request->description;
+        $layer->datasource = $request->datasource;
         $layer->updated_by = auth()->user()->id;
         $layer->save();
 
