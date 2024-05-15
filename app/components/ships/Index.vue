@@ -57,7 +57,7 @@
       },
 
       filteredShips() {
-        return Object.freeze(this.$store.state.ships.list);
+        return JSON.parse(JSON.stringify(this.$store.state.ships.list));
       },
 
       selected() {
@@ -168,7 +168,7 @@
               lineJointRounded: true,
               lineCapRounded: true,
               autoHighlight: true,
-              getLineWidth: 1,
+              getLineWidth: 0.3,
               getLineColor: [0, 0, 0, 255],
               highlightColor: [255, 234, 0, 255],
               onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
@@ -197,11 +197,10 @@
               getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
               getTextAnchor: "middle",
               getColor: [0, 0, 0],
-              outlineColor: [211, 211, 211],
-              outlineWidth: 15,
+              outlineColor: [255, 255, 255],
+              outlineWidth: 30,
               getTextAnchor: "start",
               getPixelOffset: [15, 0],
-              pickable: true,
             });
           } else {
             // Clear the layers if the zoom is below the threshold

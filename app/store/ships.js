@@ -126,7 +126,8 @@ function processShipData(ship) {
 
   // Determine the color and priority of the ship based on the cargo type
   const cargoType = configs.getCargoType(cargo);
-  ship.color = configs.hexToRgb(cargoType.color);
+  ship.color = configs.hexToRgb(cargoType.color, 1);
+  ship.colorGeoJson = configs.hexToRgb(cargoType.color, 0.5);
   ship.priority = -(isHeadingValid ? cargoType.priority * -100 : -100);
 
   // Get the country code from the MMSI

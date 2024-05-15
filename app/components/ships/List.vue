@@ -14,14 +14,17 @@
 
     <v-data-table-server class="ships" :items-per-page="itemsPerPage" :headers="headers" :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
       <template v-slot:item.mmsi="{ item }">
-        <v-card class="ma-1" density="comfortable" :subtitle="formatDate(item?.utc) || 'N/A'" @click="selectShip(item)">
+        <v-card class="ma-1" density="comfortable" @click="selectShip(item)">
           <template v-slot:prepend>
             <v-avatar size="30">
               <component :is="item.flag" filled class="flag"></component>
             </v-avatar>
           </template>
           <template v-slot:title>
-            <span class="font-weight-bold">{{ item?.shipname || item?.mmsi || "N/A" }}</span>
+            <span class="font-weight-bold text-subtitle-1">{{ item?.shipname || item?.mmsi || "N/A" }}</span>
+          </template>
+          <template v-slot:subtitle>
+            <span class="text-subtitle-2">{{ formatDate(item?.utc) || 'N/A' }}</span>
           </template>
         </v-card>
       </template>
