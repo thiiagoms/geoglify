@@ -5,8 +5,10 @@
   <ShipsList v-if="!!ready" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 
-  <Layers v-if="!!ready && isAuthenticated" :map="map"></Layers>
-  <LayersList v-if="!!ready && isAuthenticated" :map="map"></LayersList>
+  <Layers v-if="!!ready" :map="map"></Layers>
+  <LayersList v-if="!!ready" :map="map"></LayersList>
+
+  <Feature></Feature>
 </template>
 <script>
   const { status } = useAuth();
@@ -101,9 +103,6 @@
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      // Add the fullscreen control to the map
-      this.map.addControl(new maplibregl.FullscreenControl(), "top-right");
-
       // Add the measures control to the map
       this.map.addControl(new Toolbox(), "top-right");
 
@@ -141,13 +140,13 @@
   }
 
   .measures_control {
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAsQAAALEBxi1JjQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAGwSURBVEiJrdQ7a5RBFMbxn1FERBRFQy4I2sRLVhICRtDGNCkM2NnaiIKiX8DSTyCm8xtY+QGEFLGwSZFEg9FCsUjMaiQSvKBB1+LM4u4yyebdvA8MA3P5n8OZZw6d6wxe4wMu7oCT1Vms4BWeYx2XyoKfwrLIvhf7MYVvuFwmvKdhvZQg9bK8RHdm/wCmRbkGyoT3YQlXMYS/uFkEPrgFfBe68BS/8BFvcaQT+LGWvcNYww1h2d8J3l8EXsV8Br43zY/xB5/xpiz4PuGW++IxfyZ4X9ofx600xovCD6b5AWr42gKHhbRXE2VrUmUL+G5hwUcp8/UMXLo31xBkW/Ae4ZY7woY/2sCrmExnm+BzGTh8whPhli9YbAOv4DjutYOfEI65hg1R083g8ymRc63ZLSb40Uzm7/BM/NBqOtu7Cbyag9chL/x3CJwWvWUM34XX28ErOTiMCrs1BpnFDC5obs2F4Y1B1lKQQxjGqrDZjuG5IOdFhywNXteIsGFNs1uuiLJ1i8a3Ilp4RzqJ66JUdd0VD10Yviez9j6NVnWJkjwUbaJUTYiPVhPf//Z2L/4DcYWL3d21GsoAAAAASUVORK5CYII=");
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAELSURBVDiNpdO/LkRBFMfxD0rvoJSw0dBsI4QX2Cg8AApRKkh2EaUHUKhQeAYdQRQbOo2ObBQKCdH6k1XcM9xce7e5v2Qy954z39+czJwhUx0dtPTXEE5wjuEUnMIrujH2SuBBTOAx1l0mkw6+sYKbSO72gI9j7XTO5AyaWMJRroq8SYJTPG+yn3ZoRPIOF/H9gVoBTuMBYxjIl7mKObwEvFACd3EYlf3TRhU4abwKXDywIlyrAi/iE9tV4BTbKRps9YEn8YVnXOdyv5WMYgbtHnA6sBZmcR+525hbsIk3WQ+0e8BJ65E7wJq/rnQVP2+Yl7V22VU1sCx7O++yV+wJp+E6UgLm1Yyd6/ADpJd+mQp1ObkAAAAASUVORK5CYII=");
     background-repeat: no-repeat;
     background-position: center;
   }
 
   .draw_control {
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADhSURBVDiNpdMxSkNBEMbxH/oqG4O1jY22tmJnlwNo4UHEVltBsPEAXsALiKVgBLGLtiFpI6IkRQixyASXl7ePp34wLMzM959ddnfV79XCLa4x/oPfOWYRH0Uk97BZ0TzAQzL5CqfYwdGidpkQy/Ea5nU8Rq4bw84C6gsnNVtuoVMC36QNMxxmzOnkRTxjowmgkbkOcFcyP8VxllQFWMMkM/nN/NbAShURuygwxT0OMIzatuTKiyXrXF3s4wWjTE8t4N3PA6pV7giN9W9AgT6OG/ZvxdpLk+1I5P5DGp+4SM3f17FI48j5M10AAAAASUVORK5CYII=");
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAyAAAAMgBFP3XOwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAD8SURBVDiNpdO/LkRBFMfxz8QmNprdVks8gY5tNAqi1PEAeoXOsmQTkSA2HkOl8AaIf1EoxAtIVDrdUbgre9e9rDXJSSaT8/0m5zczIsIghYQjnKL6df4H+ASR1XlXMgyckwwLd2vhP3C7dIQB4N3SEAeAd3L9BYLWD3DrW3+B4BEHBfB24bh9cA032X6/B94qC7siv6YxmVJaxSvecBgRTSWrX1DHM2Zxh7mIuC+DIUWElFIDbSxHxAuklMYxjxm8Z8LLiHjql9TxgIls9grWcYsNNLCINVyhg7Ge3CzhGFWs4BpNjJY8sk10crfgM/EL7GHql/8xgjPUIsIHHE2U3O0YbCoAAAAASUVORK5CYII=");
     background-repeat: no-repeat;
     background-position: center;
   }
@@ -171,14 +170,10 @@
   }
 
   .export_control {
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAA3NCSVQICAjb4U/gAAAACXBIWXMAAABvAAAAbwHxotxDAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAF1QTFRF////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA10AP0gAAAB50Uk5TAAYPEBMXMENIVFVfZXCAiZCaoLPJzNDT3+D1/P3+qVowNgAAAGpJREFUGFdtz0cOgDAMRNGh997b3P+YGDCCCN7Cin42NgBEmYpwslkr2mdwCEXnL6TdwF5x6FLMNMx43mOQyHyFpWnNcPmG9RiuL9zjc0W1SSgmUUjYKsDyiDAXIehZumlcivhe/XOcef4O+KoRDdOtgKsAAAAASUVORK5CYII=");
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADeSURBVDiNndMxTgJBFAbgbxcqCysLEkugs/AIW9B5AzCx4x5cwANAzRHsJHgECypN6Oi0Fxsslo2zA6MsfzLJvD/v/TPvnzeZOi7xgAvHscEcu4poRwmP6GCVEBjti+cpgS4meEkIfKEfErHAf/iMiQw5hrjGGM9YnyBW+eFe2dc5a5Sj17CNAoP9vp83LIYWvqugqYmwCINzblBDG9uIe5IepBvcBfGW0sR3v84WfxxYBHlvysGrYXmCwDIkYg92SpdTaAk+EoevsMBUehK7mIVEdiTpFlcJgQ+8hsQPTFgym1kaFDIAAAAASUVORK5CYII=");
     background-repeat: no-repeat;
     background-position: center;
+    fill: red;
   }
 
-  /*.maplibregl-ctrl-fullscreen .maplibregl-ctrl-icon {
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAACxAAAAsQHGLUmNAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAOVJREFUSInt1L9KQzEUx/FPtXKxrYKbj+Ls5OrS13D2MXwXN5Hin4Id6ii+gaNb1UmHm0tza0BIAi79QSDnkPy+J+EkbPWHBpn7dnGYyK/wlV/OWnN8J8Yb9uKFw0zAtbZamOAkzI9D/J7p+0tjzPRPcVTL/AAPwfQWzzUBceV32mt5rAUY6Vc+CvlqgLOEOVziBjulgCFO0ZQaxRpjql9xlgZY4CrKTazv/LwU0ASjZYg3W3G/JiBuxXvtSYrVAV6lW7EaoBvdI8rW5nfd4DOKX/AR5nNclMA64JP0VzwrNd/qf/QD8R8/yqR307gAAAAASUVORK5CYII=") !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-  }*/
 </style>

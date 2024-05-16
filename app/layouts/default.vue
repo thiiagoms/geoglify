@@ -2,7 +2,7 @@
   <v-app>
     <!-- NavBar -->
     <v-app-bar color="white" class="d-flex w-100 align-center py-0 px-2">
-      <v-app-bar-title class="font-weight-black">
+      <v-app-bar-title class="font-weight-bold">
         <v-list>
           <v-list-item prepend-avatar="@/assets/logo.png" class="pa-0 ma-0">
             <v-list-item-title class="text-h5 font-weight-bold">Geoglify</v-list-item-title>
@@ -20,19 +20,19 @@
     </v-app-bar>
 
     <!-- Bar -->
-    <v-system-bar color="blue-grey-darken-3" dark class="d-flex w-100 align-center px-3">
+    <v-system-bar color="black" dark class="d-flex w-100 align-center px-3 text-body-2">
       <span v-if="!isMobile">{{ currentTime }}</span>
 
       <v-spacer v-if="!isMobile"></v-spacer>
 
       <div v-if="weather">
-        <v-icon icon="mdi-thermometer-minus" size="x-small" class="ml-3" />
+        <v-icon icon="mdi-thermometer-minus" size="small" class="ml-3" color="white"/>
         <span class="ms-1">{{ weather.main.temp_min.toFixed(0) }} °C</span>
-        <v-icon icon="mdi-thermometer-plus" size="x-small" class="ml-3" />
+        <v-icon icon="mdi-thermometer-plus" size="small" class="ml-3" />
         <span class="ms-1"> {{ weather.main.temp_max.toFixed(0) }} °C</span>
-        <v-icon icon="mdi-windsock" size="x-small" class="ml-3" />
+        <v-icon icon="mdi-windsock" size="small" class="ml-3" />
         <span class="ms-1">{{ (weather.wind.speed * 3.6).toFixed(0) }} km/h</span>
-        <v-icon icon="mdi-water-percent" size="x-small" class="ml-3" />
+        <v-icon icon="mdi-water-percent" size="small" class="ml-3" />
         <span class="ms-1">{{ weather.main.humidity }} %</span>
       </div>
     </v-system-bar>
@@ -43,7 +43,7 @@
     </v-main>
 
     <!-- Footer -->
-    <v-footer class="d-flex w-100 align-center text-caption px-3" color="blue-grey-darken-3" density="compact" app dark>
+    <v-footer class="d-flex w-100 align-center text-caption px-3" color="black" density="compact" app dark>
       <v-row justify="center" no-gutters>
         <AuthenticationStatus />
         <v-spacer></v-spacer>
@@ -55,7 +55,6 @@
 
 <script>
   export default {
-
     data() {
       return {
         currentTime: "",
@@ -102,9 +101,6 @@
 </script>
 
 <style>
-  .v-list-item__prepend > .v-avatar ~ .v-list-item__spacer {
-    width: 5px !important;
-  }
   .v-toolbar__content > .v-toolbar-title {
     margin-inline-start: 0px !important;
   }

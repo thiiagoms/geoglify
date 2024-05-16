@@ -1,13 +1,11 @@
 <template>
   <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1001" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="dialogOpened">
     <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
-      <v-toolbar-title class="text-h5 font-weight-black pl-4"> Layers </v-toolbar-title>
+      <v-toolbar-title class="text-h5 font-weight-bold pl-4"> Layers </v-toolbar-title>
 
       <v-spacer></v-spacer>
 
-      <v-btn icon @click="openLayerCreator()" density="compact">
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+      <v-btn icon @click="openLayerCreator()" density="compact" :disabled="!isAuthenticated"> <v-icon>mdi-plus</v-icon></v-btn>
 
       <v-btn icon @click="dialogOpened = false" density="compact" class="ml-1">
         <v-icon>mdi-close</v-icon>
@@ -19,46 +17,58 @@
 
     <v-data-table-server class="layers" density="compact" :items-per-page="itemsPerPage" :headers="headers" :items="layers" :items-length="total" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
       <template v-slot:item.id="{ item }">
-        <v-list-item>
+        <v-card class="ma-1" density="compact">
           <template v-slot:prepend>
-            <v-list-item-action>
-              <v-checkbox-btn v-model="item.selected" @change="handleLayerCheckboxChange(item)"></v-checkbox-btn>
-            </v-list-item-action>
-          </template>
-
-          <v-list-item-title>
             <div class="legend-container" v-if="!!item.style">
               <Legend :style.sync="item.style" :type.sync="item.type" :id="item._id" :mini="true"></Legend>
             </div>
-
-            <span class="text-subtitle-1 font-weight-bold">{{ item?.name }} </span>
-          </v-list-item-title>
-
-          <v-list-item-subtitle>{{ item?.description }}</v-list-item-subtitle>
+          </template>
+          <template v-slot:title>
+            <span class="font-weight-bold">{{ item?.name }}</span>
+          </template>
+          <template v-slot:subtitle>
+            <span class="text-subtitle-2">Datasource: {{ item?.datasource || "N/A" }}</span>
+          </template>
+          <v-card-text class="pt-1"> Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi, ratione debitis quis est labore voluptatibus! Eaque cupiditate minima, at placeat totam, magni doloremque veniam neque porro libero rerum unde voluptatem! </v-card-text>
 
           <template v-slot:append>
+            <v-checkbox-btn v-model="item.selected" @change="handleLayerCheckboxChange(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
+            <v-progress-circular indeterminate size="25" color="black" v-else class="mx-2"></v-progress-circular>
+
             <v-menu>
               <template v-slot:activator="{ props }">
                 <v-btn icon="mdi-dots-vertical" v-bind="props" variant="text" density="compact"></v-btn>
               </template>
 
-              <v-list density="compact">
-                <v-list-item @click="openLayerEditor(item.id, item)">
-                  <v-list-item-title>Edit Layer</v-list-item-title>
+              <v-list density="compact" :lines="false" class="px-0">
+                <v-list-item @click="openLayerEditor(item.id, item)" :disabled="!isAuthenticated">
+                  <template v-slot:prepend>
+                    <v-icon icon="mdi-pencil" color="black" size="small"></v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-1 ml-1">Edit</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerStyleEditor(item.id, item.type, item.style)">
-                  <v-list-item-title>Style Layer</v-list-item-title>
+                <v-list-item @click="openLayerStyleEditor(item.id, item.type, item.style)" :disabled="!isAuthenticated">
+                  <template v-slot:prepend>
+                    <v-icon icon="mdi-format-paint" color="black" size="small"></v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-1 ml-1">Style</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerUploader(item.id, item)">
-                  <v-list-item-title>Upload Data</v-list-item-title>
+                <v-list-item @click="openLayerUploader(item.id, item)" :disabled="!isAuthenticated">
+                  <template v-slot:prepend>
+                    <v-icon icon="mdi-upload" color="black" size="small"></v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-1 ml-1">Load data</v-list-item-title>
                 </v-list-item>
-                <v-list-item @click="openLayerDeletor(item.id)">
-                  <v-list-item-title>Delete Layer</v-list-item-title>
+                <v-list-item @click="openLayerDeletor(item.id)" :disabled="!isAuthenticated">
+                  <template v-slot:prepend>
+                    <v-icon icon="mdi-delete" color="red" size="small"></v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-1 ml-1">Delete</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
           </template>
-        </v-list-item>
+        </v-card>
       </template>
     </v-data-table-server>
   </v-navigation-drawer>
@@ -75,6 +85,8 @@
 </template>
 
 <script>
+  const { status } = useAuth();
+
   export default {
     props: ["map"],
 
@@ -104,6 +116,11 @@
     }),
 
     computed: {
+      // Check if the user is authenticated
+      isAuthenticated() {
+        return status.value === "authenticated";
+      },
+
       // Getter and setter for dialog opened state
       dialogOpened: {
         get() {
@@ -234,16 +251,22 @@
     padding: 0px !important;
   }
 
+  .layers .v-table__wrapper > table > tbody > tr:not(:last-child) > td,
+  .layers .v-table__wrapper > table > tbody > tr:not(:last-child) > th {
+    border-bottom: none !important;
+  }
+
   .legend-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #fdfdfd;
-    border-radius: 50%;
-    height: 30px;
-    width: 30px;
+    background-color: rgb(240, 238, 238);
+    height: 31px;
+    width: 31px;
     float: left;
-    margin-left: -5px;
-    margin-top: -1px;
+    border-radius: 5px;
+    margin-right: 5px;
+    margin-left: 0px;
+    margin-top: 0px;
   }
 </style>

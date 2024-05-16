@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 140px; z-index: 1000" size="small" @click="dialogOpened = true" prepend-icon="mdi-layers"> Layers </v-btn>
+  <v-btn class="position-absolute" style="top: 10px; left: 10px; z-index: 1000" density="comfortable" rounded="lg" size="small" @click="dialogOpened = true" icon="mdi-layers"></v-btn>
 </template>
 
 <script>
@@ -13,6 +13,7 @@
 
     data() {
       return {
+        tooltip: null,
         layers: new Map(),
         overlay: new MapboxOverlay({
           interleaved: false,
@@ -67,7 +68,6 @@
     methods: {
       // Add a layer to the map
       addLayer(id) {
-        
         const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
         let features = layer.features;
@@ -103,9 +103,12 @@
 
       // Update the overlay with the current layers
       updateOverlay() {
-
         this.overlay.setProps({
           layers: Array.from(this.layers.values()),
+        });
+
+        this.selected.forEach((id) => {
+          this.$store.dispatch("layers/SET_LAYER_LOADING", { layerId: id, loading: false });
         });
       },
 
@@ -114,7 +117,7 @@
         return new GeoJsonLayer({
           id: "layer-" + layer.id,
           data: data,
-          pickable: false,
+          pickable: true,
           filled: true,
           getPointRadius: layer.style?.radius || 4,
           getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
@@ -131,6 +134,13 @@
             getLineColor: layer.style?.lineColor,
             getLineWidth: layer.style?.lineWidth,
           },
+
+          onClick: (event) => {
+            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            return true;
+          },
+
+          onHover: (info) => this.showTooltip(info),
         });
       },
 
@@ -154,59 +164,132 @@
             getLineWidth: layer.style?.lineWidth,
             getDashArray: layer.style?.dashArray,
           },
+
+          onClick: (event) => {
+            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            return true;
+          },
+
+          onHover: (info) => this.showTooltip(info),
         });
       },
 
       // Get a GeoJSON polygon layer
       getGeoJSONPolygonLayer(layer, data) {
+        if (layer.style?.fillPattern === "none") {
+          return new GeoJsonLayer({
+            id: "layer-" + layer.id,
+            data: data,
+            pickable: true,
+            stroked: true,
+            filled: true,
+            extruded: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+            getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+            getLineWidth: layer.style?.lineWidth || 5,
+            lineWidthUnits: "pixels",
+            getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
+            updateTriggers: {
+              getFillColor: [layer.style?.fillColor, this.selectedFeature],
+              getLineColor: layer.style?.lineColor,
+              getLineWidth: layer.style?.lineWidth,
+              getDashArray: layer.style?.dashArray,
+            },
+            onClick: (event) => {
+              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              return true;
+            },
+            onHover: (info) => this.showTooltip(info),
+          });
+        } else {
+          return new GeoJsonLayer({
+            id: "layer-" + layer.id,
+            data: data,
+            pickable: true,
+            stroked: true,
+            filled: true,
+            extruded: false,
+            autoHighlight: true,
+            highlightColor: [255, 234, 0, 125],
+            getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
+            getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
+            getLineWidth: layer.style?.lineWidth || 5,
+            lineWidthUnits: "pixels",
 
-        return new GeoJsonLayer({
-          id: "layer-" + layer._id,
-          data: data,
-          pickable: true,
-          stroked: true,
-          filled: true,
-          extruded: false,
-          autoHighlight: true,
-          highlightColor: [255, 234, 0, 125],
-          getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
-          getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
-          getLineWidth: layer.style?.lineWidth || 5,
-          lineWidthUnits: "pixels",
+            //props added by PathStyleExtension
+            getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
+            dashJustified: true,
+            dashGapPickable: true,
 
-          //props added by PathStyleExtension
-          getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
-          dashJustified: true,
-          dashGapPickable: true,
+            // props added by FillStyleExtension
+            fillPatternAtlas: "./patterns/patterns.png",
+            fillPatternMapping: "./patterns/patterns.json",
+            getFillPattern: (f) => layer.style?.fillPattern,
+            getFillPatternScale: (f) => 100,
+            getFillPatternOffset: (f) => [0, 0],
 
-          // props added by FillStyleExtension
-          fillPatternAtlas: "./patterns/patterns.png",
-          fillPatternMapping: "./patterns/patterns.json",
-          getFillPattern: (f) => layer.style?.fillPattern,
-          getFillPatternScale: (f) => 100,
-          getFillPatternOffset: (f) => [0, 0],
+            extensions: [
+              new PathStyleExtension({ dash: true }),
+              new FillStyleExtension({
+                pattern: !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
+              }),
+            ],
 
-          extensions: [
-            new PathStyleExtension({ dash: true }),
-            new FillStyleExtension({
-              pattern: !!layer.style?.fillPattern && layer.style?.fillPattern !== "none",
-            }),
-          ],
+            updateTriggers: {
+              getFillColor: [layer.style?.fillColor, this.selectedFeature],
+              getLineColor: layer.style?.lineColor,
+              getLineWidth: layer.style?.lineWidth,
+              getDashArray: layer.style?.dashArray,
+              getFillPattern: layer.style?.fillPattern,
+              getFillPatternScale: layer.style?.fillPatternScale,
+              getFillPatternOffset: layer.style?.fillPatternOffset,
+            },
 
-          updateTriggers: {
-            getFillColor: [layer.style?.fillColor, this.selectedFeature],
-            getLineColor: layer.style?.lineColor,
-            getLineWidth: layer.style?.lineWidth,
-            getDashArray: layer.style?.dashArray,
-            getFillPattern: layer.style?.fillPattern,
-            getFillPatternScale: layer.style?.fillPatternScale,
-            getFillPatternOffset: layer.style?.fillPatternOffset,
-          },
-        });
+            onClick: (event) => {
+              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              return true;
+            },
+
+            onHover: (info) => this.showTooltip(info),
+          });
+        }
+      },
+
+      showTooltip({ object, x, y }) {
+        if (object) {
+          this.tooltip.style.display = "block";
+          this.tooltip.style.left = `${x}px`;
+          this.tooltip.style.top = `${y}px`;
+
+          this.tooltip.innerHTML = "";
+
+          for (const [key, value] of Object.entries(object.properties)) {
+            this.tooltip.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
+          }
+        } else {
+          this.tooltip.style.display = "none";
+        }
+      },
+
+      createTooltip() {
+        this.tooltip = document.createElement("div");
+        this.tooltip.className = "deck-tooltip";
+        this.tooltip.style.position = "absolute";
+        this.tooltip.style.zIndex = 1;
+        this.tooltip.style.pointerEvents = "none";
+        document.body.append(this.tooltip);
       },
     },
 
     async mounted() {
+
+      this.createTooltip();
+
       // Add the overlay to the map
       this.map.addControl(this.overlay);
     },

@@ -1,9 +1,9 @@
 <template>
-  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : undefined" style="z-index: 1000; left: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="selected">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : 'right'" style="z-index: 1003; right: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="selected">
     <v-card class="pa-0" flat>
       <!-- Toolbar with ship name and flag -->
       <v-toolbar color="white" dark>
-        <v-toolbar-title class="font-weight-black text-h6">
+        <v-toolbar-title class="font-weight-bold text-h6">
           <v-list density="compact">
             <v-list-item class="pa-2 ma-0">
               <template v-slot:prepend>
@@ -13,7 +13,7 @@
                 </v-avatar>
               </template>
               <!-- Display ship name and MMSI -->
-              <v-list-item-title class="font-weight-black">
+              <v-list-item-title class="font-weight-bold">
                 {{ selected?.mmsi ?? "N/A" }}
               </v-list-item-title>
               <v-list-item-subtitle>{{ selected?.shipname ?? "N/A" }}</v-list-item-subtitle>
@@ -73,7 +73,7 @@
         },
       },
       selected() {
-        return this.$store.state.ships.selected;
+        return JSON.parse(JSON.stringify(this.$store.state.ships.selected));
       },
     },
 
@@ -85,3 +85,9 @@
     },
   };
 </script>
+<style>
+  .flag {
+    width: 25px;
+    height: 25px;
+  }
+</style>

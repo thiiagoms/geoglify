@@ -1,7 +1,6 @@
 // Import MapboxDraw for drawing functionalities and MeasuresControl for measuring functionalities
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MeasuresControl from "~/helpers/measures";
-import html2canvas from "html2canvas";
 
 // Import configurations from a local module
 import configs from "~/helpers/configs";
@@ -118,7 +117,8 @@ export default class Toolbox {
         }
 
         this._map.addControl(this.draw, "top-right");
-        document.querySelector(".measures_control").style.display = "none";
+        document.querySelector(".draw_control").style.backgroundColor = "#ccc";
+        document.querySelector(".measures_control").disabled = true;
         break;
 
       case "measures":
@@ -127,7 +127,8 @@ export default class Toolbox {
         }
 
         this._map.addControl(this.measures, "top-right");
-        document.querySelector(".draw_control").style.display = "none";
+        document.querySelector(".measures_control").style.backgroundColor = "#ccc";
+        document.querySelector(".draw_control").disabled = true;
         break;
 
       case "none":
@@ -139,8 +140,11 @@ export default class Toolbox {
           this._map.removeControl(this.measures);
         }
 
-        document.querySelector(".draw_control").style.display = "block";
-        document.querySelector(".measures_control").style.display = "block";
+        document.querySelector(".draw_control").style.backgroundColor = "white";
+        document.querySelector(".measures_control").style.backgroundColor = "white";
+
+        document.querySelector(".draw_control").disabled = false;
+        document.querySelector(".measures_control").disabled = false;
 
         break;
     }

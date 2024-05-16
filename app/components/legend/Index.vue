@@ -1,18 +1,17 @@
 <template>
   <div id="svgPreview" ref="svgPreview" style="position: relative; width: 100%; height: 100%">
     <svg :style="{ width: '100%', height: '100%' }">
-      <defs  v-if="this.style.fillPattern != 'none'">
-        <pattern :id="'legend-' + style.fillPattern" patternUnits="userSpaceOnUse" width="100" height="100">
+      <defs v-if="this.style.fillPattern != 'none'">
+        <pattern :id="'legend-' + style.fillPattern" patternUnits="userSpaceOnUse" width="100%" height="100%">
           <image
             :xlink:href="fillPatternUrl"
             x="0"
             y="0"
-            width="15"
-            height="15"
+            width="100%"
+            height="100%"
             :style="{
               filter: 'url(#legend-colorize)',
-              opacity: 1,
-              scale: 0.3,
+              opacity: 1
             }"
           />
         </pattern>
@@ -27,7 +26,7 @@
       <!-- Render the legend based on the type and if not mini -->
       <circle v-if="type === 'point' && !mini" :style="circleStyle" cx="50%" cy="50%" :r="style.radius" />
       <line v-else-if="type === 'line' && !mini" :style="lineStyle" x1="20%" y1="50%" x2="80%" y2="50%" />
-      <rect v-else-if="type === 'polygon' && !mini" :style="rectStyle" x="25%" y="25%" width="50%" height="50%" />
+      <rect v-else-if="type === 'polygon' && !mini" :style="rectStyle" x="40%" y="25%" width="20%" height="50%" />
     </svg>
   </div>
 </template>
@@ -43,7 +42,7 @@
         return {
           fill: this.style.fillColor,
           stroke: this.style.lineColor,
-          strokeWidth: Math.min(2, this.style.lineWidth) + "px",
+          strokeWidth: this.mini ? Math.min(2, this.style.lineWidth) + "px" : this.style.lineWidth + "px",
           strokeDasharray: this.style.dashArray || "none",
         };
       },
@@ -59,14 +58,14 @@
           return {
             fill: this.style.fillColor,
             stroke: this.style.lineColor,
-            strokeWidth: Math.min(3, this.style.lineWidth) + "px",
+            strokeWidth: this.mini ? Math.min(3, this.style.lineWidth) + "px" : this.style.lineWidth + "px",
             strokeDasharray: this.style.dashArray || "none",
           };
         } else {
           return {
             fill: 'url("#legend-' + this.style.fillPattern + '")',
             stroke: this.style.lineColor,
-            strokeWidth: Math.min(3, this.style.lineWidth) + "px",
+            strokeWidth: this.mini ? Math.min(3, this.style.lineWidth) + "px" : this.style.lineWidth + "px",
             strokeDasharray: this.style.dashArray || "none",
           };
         }

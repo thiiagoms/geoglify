@@ -4,6 +4,8 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
+const { getAISShips, getAISShip, searchAISShips } = require("./mongodb");
+const { logError, logInfo, logSuccess, logWarning } = require("./logger");
 
 // Configurations
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
@@ -15,11 +17,26 @@ const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 25;
 const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 
+// Whitelist
+const whitelist = ["http://localhost:3000", "http://geoglify.com"];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
+
 // Create an Express app and an HTTP server
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
-  cors: { origins: "*" },
+  cors: {
+    origin: ["http://localhost:3000", "http://geoglify.com"],
+  },
 });
 
 // Create a route to handle the root URL
@@ -27,47 +44,44 @@ let messages = new Map();
 const messageQueue = [];
 let dispatchTimeout = null;
 
-app.use(cors());
+app.use(express.json());
+app.use(cors(corsOptions));
 
 server.listen(8080, () => {
   logSuccess("Server running on port 8080");
 });
 
-// Logging function for information messages
-function logInfo(message) {
-  console.info(
-    `\x1b[33m[${new Date().toLocaleString("en-GB", {
-      timeZone: "UTC",
-    })}]\x1b[0m ${message}`
-  );
-}
+// Default route
+app.get("/", (_, res) => {
+  res.json("Geoglify Naval API");
+});
 
-// Logging function for error messages
-function logError(message) {
-  console.error(
-    `\x1b[31m[${new Date().toLocaleString("en-GB", {
-      timeZone: "UTC",
-    })}]\x1b[0m ${message}`
-  );
-}
+//
+app.get("/ships", async (_, res) => {
+  const ships = await getAISShips();
+  res.json(ships);
+});
 
-// Logging function for success messages
-function logSuccess(message) {
-  console.info(
-    `\x1b[32m[${new Date().toLocaleString("en-GB", {
-      timeZone: "UTC",
-    })}]\x1b[0m ${message}`
-  );
-}
+app.get("/ship/:id", async (req, res) => {
+  const _id = req.params.id;
+  const ais_ship = await getAISShip(_id);
+  res.json(ais_ship);
+});
 
-// Logging function for warning messages
-function logWarning(message) {
-  console.info(
-    `\x1b[90m[${new Date().toLocaleString("en-GB", {
-      timeZone: "UTC",
-    })}]\x1b[0m ${message}`
-  );
-}
+app.post("/ships/search", async (req, res) => {
+  console.log(req.body);
+
+  const page = parseInt(req.body.page) || 1;
+  const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
+  const searchText = req.body.searchText || "";
+  const ships = await searchAISShips(page, itemsPerPage, searchText);
+  res.json(ships);
+});
+
+// This overrides the default error handler
+app.use(function customErrorHandler(err, req, res, next) {
+  res.status(400).send("Not allowed by CORS");
+});
 
 // Function to connect to MongoDB with retry mechanism
 async function connectToMongoDBWithRetry() {

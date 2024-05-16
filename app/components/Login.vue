@@ -4,7 +4,7 @@
       <v-card-title class="py-0 my-0">
         <v-list>
           <v-list-item>
-            <v-list-item-title class="text-h5 font-weight-black">Welcome to Geoglify!</v-list-item-title>
+            <v-list-item-title class="text-h5 font-weight-bold">Welcome to Geoglify!</v-list-item-title>
             <v-list-item-subtitle class="text-caption font-weight-bold">You're in the right sea</v-list-item-subtitle>
           </v-list-item>
         </v-list>
@@ -13,7 +13,7 @@
         <v-form v-model="form" @submit.prevent="onSubmit">
           <v-text-field v-model="email" :readonly="loading" :rules="[required]" class="mb-2" label="Email" placeholder="Enter your email" clearable variant="outlined"></v-text-field>
           <v-text-field v-model="password" type="password" :readonly="loading" :rules="[required]" label="Password" placeholder="Enter your password" clearable variant="outlined"></v-text-field>
-          <v-btn :disabled="!form" :loading="loading" color="blue-grey-darken-3" size="large" type="submit" variant="flat" block class="mt-2"> Login </v-btn>
+          <v-btn :disabled="!form" :loading="loading" color="black" size="large" type="submit" variant="flat" block class="mt-2"> Login </v-btn>
         </v-form>
         <v-alert class="mt-5" color="error" title="Login failed" text="Please check your email address and your password, then try again" v-if="failed"></v-alert>
       </v-card-text>
