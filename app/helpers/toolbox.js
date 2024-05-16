@@ -44,8 +44,8 @@ export default class Toolbox {
         line_string: true,
         polygon: true,
         trash: true,
-        combine_features: true,
-        uncombine_features: true,
+        combine_features: false,
+        uncombine_features: false,
       },
     });
 
