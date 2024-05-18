@@ -6,7 +6,10 @@ const WebSocket = require("ws");
 // Configurations
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
 const AISSTREAM_API_KEY = process.env.AISSTREAM_API_KEY || "7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b";
-const AIS_SERVER_HOST = process.env.AIS_SERVER_HOST || "aisstream.io"
+const AIS_SERVER_HOST = process.env.AIS_SERVER_HOST || "aisstream.io";
+
+const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 1000;
+const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 1000;
 
 // MongoDB client
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
@@ -19,26 +22,22 @@ let isProcessing = false;
 
 // Logging function for information messages
 function logInfo(message) {
-  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for error messages
 function logError(message) {
-  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for success messages
 function logSuccess(message) {
-  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Loggin function for warning messages
 function logWarning(message) {
-  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`
-  );
+  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Function to connect to MongoDB with retry mechanism
@@ -65,7 +64,7 @@ async function startProcessing() {
 
       const bulkOperations = [];
 
-      const bufferSize = Math.min(aisMessageBuffer.length, 200);
+      const bufferSize = Math.min(aisMessageBuffer.length, NUMBER_OF_EMITS);
 
       for (let i = 0; i < bufferSize; i++) {
         const mmsi = aisMessageBuffer[i];
@@ -75,8 +74,8 @@ async function startProcessing() {
 
         // Iterate through each attribute and delete if empty or null
         for (const key in message) {
-          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === '')) {
-              delete message[key];
+          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === "")) {
+            delete message[key];
           }
         }
 
@@ -90,9 +89,7 @@ async function startProcessing() {
       }
 
       try {
-        logInfo(
-          `Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`
-        );
+        logInfo(`Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`);
         await realtimeMessagesCollection.bulkWrite(bulkOperations, {
           ordered: false,
         });
@@ -108,15 +105,12 @@ async function startProcessing() {
     }
   }
 
-  // Set interval to process and save messages every 5 seconds
-  setInterval(processAndSaveMessages, 5000);
+  // Set interval to process and save messages every TIMEOUT_LOOP seconds
+  setInterval(processAndSaveMessages, TIMEOUT_LOOP);
 
   // Create an index for expire_at field if not already created
   if (!isIndexCreated) {
-    realtimeMessagesCollection.createIndex(
-      { expire_at: 1 },
-      { expireAfterSeconds: 0 }
-    );
+    realtimeMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
     isIndexCreated = true;
   }
 }
@@ -124,7 +118,6 @@ async function startProcessing() {
 // Function to connect to AIS stream with retry mechanism
 async function connectToAisStreamWithRetry() {
   try {
-
     logWarning("Connecting to AIS stream...\n");
     const socket = new WebSocket("wss://stream.aisstream.io/v0/stream");
 
@@ -133,12 +126,19 @@ async function connectToAisStreamWithRetry() {
       logInfo("Connected to AIS stream");
       let subscriptionMessage = {
         Apikey: AISSTREAM_API_KEY,
+        //Portugal + Spain
         BoundingBoxes: [
           [
-            [27.955591, -40.012207],
-            [44.574817, 1.801758],
+            [29.343875, -35.419922],
+            [45.690833, 6.394043],
           ],
         ],
+        /*BoundingBoxes: [
+          [
+            [-90, -180],
+            [90, 180],
+          ],
+        ]*/
       };
       socket.send(JSON.stringify(subscriptionMessage));
     };
@@ -155,7 +155,6 @@ async function connectToAisStreamWithRetry() {
     };
 
     startProcessing();
-    
   } catch (err) {
     logError("Failed to connect to AIS stream, retrying...");
     setTimeout(connectToAisStreamWithRetry, 5000);
@@ -168,8 +167,7 @@ function processAisMessage(message) {
 
   aisMessageDB.set(message.mmsi, message);
 
-  if (!aisMessageBuffer.includes(message.mmsi))
-    aisMessageBuffer.push(message.mmsi);
+  if (!aisMessageBuffer.includes(message.mmsi)) aisMessageBuffer.push(message.mmsi);
 }
 
 function decodeStreamMessage(message) {
@@ -177,7 +175,7 @@ function decodeStreamMessage(message) {
   message.expire_at = new Date(now.getTime() + 30 * 60 * 1000); // Set expiration time to 30 minutes in the future
 
   logSuccess("Decoded AIS message MMSI: \x1b[32m" + message.MetaData.MMSI + "\n\x1b[0m");
-  
+
   let ship = {
     immsi: parseInt(message.MetaData.MMSI),
     mmsi: message.MetaData.MMSI.toString(),
@@ -205,15 +203,7 @@ function decodeStreamMessage(message) {
   };
 
   let etaObj = message?.Message?.ShipStaticData?.Eta;
-  let eta = etaObj
-    ? new Date(
-        etaObj.Year ?? new Date().getFullYear(),
-        etaObj.Month,
-        etaObj.Day,
-        etaObj.Hour,
-        etaObj.Minute
-      )
-    : null;
+  let eta = etaObj ? new Date(etaObj.Year ?? new Date().getFullYear(), etaObj.Month, etaObj.Day, etaObj.Hour, etaObj.Minute) : null;
 
   ship.eta = eta;
 

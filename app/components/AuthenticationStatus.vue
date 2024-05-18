@@ -20,11 +20,11 @@
     computed: {
 
       user() {
-        return data.value;
+        return data?.value;
       },
 
       status() {
-        return status.value;
+        return status?.value;
       },
     },
 

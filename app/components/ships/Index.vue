@@ -16,11 +16,10 @@
   const ZOOM_AIS_THRESHOLD = 14;
 
   export default {
-    props: ["map"],
+    props: ["map", "tooltip"],
 
     data() {
       return {
-        tooltip: null,
         socket: null,
         serviceStatus: "connecting",
         messageBuffer: [],
@@ -29,7 +28,7 @@
         legendLayer: null,
         aisGeoJSONLayer: null,
         overlay: new MapboxOverlay({
-          interleaved: true,
+          interleaved: false,
           layers: [],
           layerFilter: (filter) => {
             // Set up a zoom listener to re-render the layers when the zoom crosses the AIS threshold
@@ -57,7 +56,7 @@
       },
 
       filteredShips() {
-        return JSON.parse(JSON.stringify(this.$store.state.ships.list));
+        return this.$store.state.ships.list;
       },
 
       selected() {
@@ -100,6 +99,15 @@
             return "Connecting";
         }
       },
+
+      tooltipInfo: {
+        get() {
+          return this.tooltip;
+        },
+        set(value) {
+          this.$emit("update:tooltip", value);
+        },
+      },
     },
 
     methods: {
@@ -108,6 +116,7 @@
         this.log("Socket connected");
         this.serviceStatus = "online";
         this.socket.on("message", this.onSocketMessage);
+        this.socket.on("messagesChunk", this.onSocketMessagesChunk);
       },
 
       onSocketDisconnect() {
@@ -132,10 +141,16 @@
         this.messageBuffer.push(args[0]);
       },
 
+      onSocketMessagesChunk(...args) {
+        // Add the received messages to the buffer for later processing
+        this.messageBuffer = this.messageBuffer.concat(args[0]);
+      },
+
       async processMessageBatch() {
         // Process each message in the buffer and update ships data
         if (this.messageBuffer.length > 0) {
-          this.$store.dispatch("ships/CREATE_OR_REPLACE", this.messageBuffer);
+          let ships = JSON.parse(JSON.stringify(this.messageBuffer));
+          this.$store.dispatch("ships/CREATE_OR_REPLACE", ships);
           this.messageBuffer = [];
         }
       },
@@ -171,7 +186,15 @@
               getLineWidth: 0.3,
               getLineColor: [0, 0, 0, 255],
               highlightColor: [255, 234, 0, 255],
-              onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object.properties),
+              onClick: ({ object }) => {
+                // Fly to the selected ship
+                this.$store.dispatch("ships/SET_SELECTED", object.properties);
+
+                // Unset the selected feature
+                this.$store.dispatch("features/SET_SELECTED", null);
+
+                return true;
+              },
 
               onHover: (info) => this.showTooltip(info),
             });
@@ -229,7 +252,15 @@
             extensions: [new CollisionFilterExtension()],
             collisionGroup: "visualization",
             pickable: true,
-            onClick: ({ object }) => this.$store.dispatch("ships/SET_SELECTED", object),
+            onClick: ({ object }) => {
+              // Fly to the selected ship
+              this.$store.dispatch("ships/SET_SELECTED", object);
+
+              // Unset the selected feature
+              this.$store.dispatch("features/SET_SELECTED", null);
+
+              return true;
+            },
 
             onHover: (info) => this.showTooltip(info),
           });
@@ -257,52 +288,43 @@
       },
 
       showTooltip({ object, x, y }) {
-        this.tooltip.style.display = "none";
+        this.tooltipInfo.style.display = "none";
 
         if (object) {
-          this.tooltip.style.display = "block";
-          this.tooltip.style.left = `${x}px`;
-          this.tooltip.style.top = `${y}px`;
+          this.tooltipInfo.style.display = "block";
+          this.tooltipInfo.style.left = `${x}px`;
+          this.tooltipInfo.style.top = `${y}px`;
 
-          this.tooltip.innerHTML = "";
+          this.tooltipInfo.innerHTML = "";
 
           let properties = object.properties || object;
 
           if (!!properties.mmsi) {
             let img = "https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=" + properties.mmsi;
-            this.tooltip.innerHTML += `<div><img src="${img}" style="width: 100%; height: 100px; object-fit: cover; object-position: center"></div>`;
+            this.tooltipInfo.innerHTML += `<div><img src="${img}" style="width: 100%; height: 100px; object-fit: cover; object-position: center"></div>`;
 
-            this.tooltip.querySelector("img").onerror = () => {
-              this.tooltip.querySelector("img").src = "https://placehold.co/600x400?text=No+Photo";
+            this.tooltipInfo.querySelector("img").onerror = () => {
+              if (this.tooltipInfo && !!this.tooltipInfo.querySelector("img")) this.tooltipInfo.querySelector("img").src = "https://placehold.co/600x400?text=No+Photo";
             };
           }
 
           //name
           if (properties.shipname) {
-            this.tooltip.innerHTML += `<div><b>Ship Name</b>: ${properties.shipname}</div>`;
+            this.tooltipInfo.innerHTML += `<div><b>Ship Name</b>: ${properties.shipname}</div>`;
           }
 
           //mmsi
           if (properties.mmsi) {
-            this.tooltip.innerHTML += `<div><b>MMSI</b>: ${properties.mmsi}</div>`;
+            this.tooltipInfo.innerHTML += `<div><b>MMSI</b>: ${properties.mmsi}</div>`;
           }
 
           //utc
           if (properties.utc) {
-            this.tooltip.innerHTML += `<div><b>UTC</b>: ${this.formatDate(properties.utc)}</div>`;
+            this.tooltipInfo.innerHTML += `<div><b>UTC</b>: ${this.formatDate(properties.utc)}</div>`;
           }
         } else {
-          this.tooltip.style.display = "none";
+          this.tooltipInfo.style.display = "none";
         }
-      },
-
-      createTooltip() {
-        this.tooltip = document.createElement("div");
-        this.tooltip.className = "deck-tooltip";
-        this.tooltip.style.position = "absolute";
-        this.tooltip.style.zIndex = 1;
-        this.tooltip.style.pointerEvents = "none";
-        document.body.append(this.tooltip);
       },
 
       // Helper method to format date
@@ -312,8 +334,6 @@
     },
 
     async mounted() {
-      this.createTooltip();
-
       // Add the overlay to the map
       this.map.addControl(this.overlay);
 

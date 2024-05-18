@@ -4,6 +4,7 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
+const expressCache = require("cache-express");
 const { getAISShips, getAISShip, searchAISShips } = require("./mongodb");
 const { logError, logInfo, logSuccess, logWarning } = require("./logger");
 
@@ -18,7 +19,7 @@ const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 25;
 const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 
 // Whitelist
-const whitelist = ["http://localhost:3000", "http://geoglify.com"];
+const whitelist = ["http://localhost:3000", "http://geoglify.com", "https://geoglify.com"];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -35,7 +36,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://geoglify.com"],
+    origin: ["http://localhost:3000", "http://geoglify.com", "https://geoglify.com"],
   },
 });
 
@@ -57,10 +58,13 @@ app.get("/", (_, res) => {
 });
 
 //
-app.get("/ships", async (_, res) => {
-  const ships = await getAISShips();
-  res.json(ships);
-});
+app.get(
+  "/ships",
+  async (_, res) => {
+    const ships = await getAISShips();
+    res.json(ships);
+  }
+);
 
 app.get("/ship/:id", async (req, res) => {
   const _id = req.params.id;
@@ -69,8 +73,6 @@ app.get("/ship/:id", async (req, res) => {
 });
 
 app.post("/ships/search", async (req, res) => {
-  console.log(req.body);
-
   const page = parseInt(req.body.page) || 1;
   const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
   const searchText = req.body.searchText || "";
@@ -159,14 +161,18 @@ async function startDispatchLoop() {
 
   logInfo(`Dispatching \x1b[32m${chunk.length}\x1b[0m. Remaining: \x1b[31m${currentLength - chunk.length}\x1b[0m`);
 
+  let messagesToEmit = [];
+
   // Dispatch the messages
   for (let i = 0; i < chunk.length; i++) {
     let key = chunk[i];
     let message = messages.get(key);
     if (!message) continue;
-    await emitMessage(message);
+    messagesToEmit.push(message);
     messages.delete(key);
   }
+
+  await emitMessageChunk(messagesToEmit);
 
   // Schedule the next dispatch loop
   dispatchTimeout = setTimeout(startDispatchLoop.bind(this), TIMEOUT_LOOP);
@@ -176,6 +182,15 @@ async function startDispatchLoop() {
 function emitMessage(msg) {
   return new Promise((resolve) => {
     io.sockets.emit("message", msg, () => {
+      resolve();
+    });
+  });
+}
+
+// Define the emitMessageChunk function
+function emitMessageChunk(msgs) {
+  return new Promise((resolve) => {
+    io.sockets.emit("messagesChunk", msgs, () => {
       resolve();
     });
   });

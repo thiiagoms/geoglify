@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-card-title class="font-weight-bold">Upload Data into Layer</v-card-title>
+      <v-card-title class="font-weight-bold py-4">Upload Data into Layer</v-card-title>
 
       <v-divider></v-divider>
 

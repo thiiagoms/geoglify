@@ -55,6 +55,8 @@ export default class MeasuresControl {
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
             "circle-color": this.options?.style?.common?.midPointColor ?? "#0197f6",
+            "circle-stroke-color": this.options?.style?.common?.midPointStrokeColor ?? "#fff",
+            "circle-stroke-width": this.options?.style?.common?.midPointStrokeWidth ?? 2,
           },
         },
         // polygon outline stroke
@@ -81,6 +83,8 @@ export default class MeasuresControl {
           paint: {
             "circle-radius": this.options?.style?.common?.midPointHaloRadius ?? 3,
             "circle-color": this.options?.style?.common?.midPointHaloColor ?? "#0197f6",
+            "circle-stroke-color": this.options?.style?.common?.midPointStrokeColor ?? "#fff",
+            "circle-stroke-width": this.options?.style?.common?.midPointStrokeWidth ?? 2,
           },
         },
         // vertex points
@@ -91,6 +95,8 @@ export default class MeasuresControl {
           paint: {
             "circle-radius": this.options?.style?.common?.midPointRadius ?? 3,
             "circle-color": this.options?.style?.common?.midPointColor ?? "#0197f6",
+            "circle-stroke-color": this.options?.style?.common?.midPointStrokeColor ?? "#fff",
+            "circle-stroke-width": this.options?.style?.common?.midPointStrokeWidth ?? 2,
           },
         },
 
@@ -295,6 +301,9 @@ export default class MeasuresControl {
   }
 
   _updateLabels() {
+
+    if(!this._map) return;
+    
     let source = this._map.getSource(DRAW_LABELS_SOURCE_ID);
 
     if (!source && this._map) {
@@ -330,9 +339,7 @@ export default class MeasuresControl {
             features.push(centroid);
           });
         }
-      } catch (e) {
-        console.log(e);
-      }
+      } catch (e) {}
     });
     let data = {
       type: "FeatureCollection",

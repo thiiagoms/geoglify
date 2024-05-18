@@ -31,8 +31,11 @@ export default class Toolbox {
     this._container = document.createElement("div");
     this._container.className = "maplibregl-ctrl mapboxgl-ctrl maplibregl-measures maplibregl-ctrl-group mapboxgl-ctrl-group";
 
+    // Get the options for the MeasuresControl
+    let measuresOptions = configs.getMeasuresOptions();
+
     // Initialize the MeasuresControl
-    this.measures = new MeasuresControl();
+    this.measures = new MeasuresControl(measuresOptions);
 
     // Initialize the MapboxDraw control
     this.draw = new MapboxDraw({

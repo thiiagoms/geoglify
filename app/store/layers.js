@@ -11,18 +11,23 @@ export const actions = {
     return new Promise(async (resolve) => {
       const config = useRuntimeConfig();
 
-      // Fetch the search results from the server
-      const results = await $fetch(config.public.API_URL + "/layers/search", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      try {
+        // Fetch the search results from the server
+        const results = await $fetch(config.public.API_URL + "/layers/search", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
 
-      commit("setList", results.items);
+        commit("setList", results.items);
 
-      commit("setTotal", results.total);
+        commit("setTotal", results.total);
 
-      // Resolve the promise with the search results
-      resolve(results);
+        // Resolve the promise with the search results
+        resolve(results);
+      } catch (error) {
+        // Resolve the promise with the search results
+        resolve({ items: [], total: 0 });
+      }
     });
   },
 
@@ -30,6 +35,9 @@ export const actions = {
   async GET_FEATURES({ commit }, layerId) {
     return new Promise(async (resolve) => {
       const config = useRuntimeConfig();
+
+      // Remove layerId from selected layers
+      commit("unsetSelected", layerId);
 
       // Set the layer loading state to true
       commit("setLayerLoading", { layerId, loading: true });
@@ -74,11 +82,15 @@ export const actions = {
   async CREATE({ commit }, { data }) {
     return new Promise(async (resolve) => {
       const config = useRuntimeConfig();
+      const token = useCookie("auth.token");
 
       // Fetch the search results from the server
       const results = await $fetch(config.public.API_URL + "/layers", {
         method: "POST",
         body: JSON.stringify(data),
+        headers: {
+          Authorization: "Bearer " + token.value,
+        },
       });
 
       // Resolve the promise with the search results
@@ -89,11 +101,15 @@ export const actions = {
   async UPDATE({ commit }, { layerId, data }) {
     return new Promise(async (resolve) => {
       const config = useRuntimeConfig();
+      const token = useCookie("auth.token");
 
       // Fetch the search results from the server
       const results = await $fetch(config.public.API_URL + `/layers/${layerId}`, {
         method: "PUT",
         body: JSON.stringify(data),
+        headers: {
+          Authorization: "Bearer " + token.value,
+        },
       });
 
       // Resolve the promise with the search results
@@ -103,12 +119,15 @@ export const actions = {
 
   async DELETE({ commit }, { layerId }) {
     return new Promise(async (resolve) => {
-            
       const config = useRuntimeConfig();
+      const token = useCookie("auth.token");
 
       // Fetch the search results from the server
       const results = await $fetch(config.public.API_URL + `/layers/${layerId}`, {
         method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token.value,
+        },
       });
 
       // Resolve the promise with the search results
@@ -118,16 +137,19 @@ export const actions = {
 
   async UPLOAD_DATA({ commit }, { layerId, file }) {
     return new Promise(async (resolve) => {
-
       const config = useRuntimeConfig();
+      const token = useCookie("auth.token");
 
       const formData = new FormData();
       formData.append("file", file);
 
       // Fetch the search results from the server
-      const results = await $fetch(config.public.API_URL + `/layers/${layerId}/features/upload`, {
+      const results = await $fetch(config.public.API_URL + `/layers/${layerId}/features`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: "Bearer " + token.value,
+        },
       });
 
       // Resolve the promise with the results
@@ -137,13 +159,16 @@ export const actions = {
 
   async UPDATE_STYLE({ commit }, { layerId, style }) {
     return new Promise(async (resolve) => {
-
       const config = useRuntimeConfig();
+      const token = useCookie("auth.token");
 
       // Fetch the search results from the server
       const results = await $fetch(config.public.API_URL + `/layers/${layerId}/style`, {
         method: "POST",
         body: JSON.stringify(style),
+        headers: {
+          Authorization: "Bearer " + token.value,
+        },
       });
 
       // Resolve the promise with the search results
@@ -159,18 +184,6 @@ export const actions = {
 export const mutations = {
   // Action to create or replace the layer list
   setList(state, list) {
-    if (!!list) {
-      list.map((layer) => {
-        if (state.selected.includes(layer.id)) {
-          layer.selected = true;
-        } else {
-          layer.selected = false;
-        }
-
-        layer.loading = false;
-      });
-    }
-
     state.list = list;
   },
 

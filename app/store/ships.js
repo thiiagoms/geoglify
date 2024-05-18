@@ -11,19 +11,38 @@ export const state = () => ({
 
 export const actions = {
   // Action to fetch the ship list
-  async FETCH({ commit }) {
+  async FETCH({ commit, dispatch }) {
     const config = useRuntimeConfig();
 
     return new Promise(async (resolve) => {
-      const ships = await $fetch(config.public.REALTIME_URL + "/ships");
-      commit("createOrReplace", ships);
-      resolve(ships);
+      try {
+        const ships = await $fetch(config.public.EXP_API_URL + "/ships");
+
+        dispatch("PROCESS_ALL", ships);
+
+        resolve();
+      } catch (error) {
+        commit("createOrReplace", []);
+        resolve([]);
+      }
     });
+  },
+
+  async PROCESS_ALL({ dispatch }, ships) {
+    for (let i = 0; i < ships.length; i += 100) {
+      let chunk = ships.slice(i, i + 100);
+      await dispatch("CREATE_OR_REPLACE", chunk);
+    }
   },
 
   // Action to create or replace the ship list
   async CREATE_OR_REPLACE({ commit }, ships) {
-    commit("createOrReplace", ships);
+    return new Promise(async (resolve) => {
+      commit("createOrReplace", ships);
+      setTimeout(() => {
+        resolve();
+      }, 10);
+    });
   },
 
   // Action to set the selected ship
@@ -32,7 +51,7 @@ export const actions = {
       const config = useRuntimeConfig();
 
       if (ship?._id) {
-        const data = await $fetch(config.public.REALTIME_URL + "/ship/" + ship?._id);
+        const data = await $fetch(config.public.EXP_API_URL + "/ship/" + ship?._id);
         data.countrycode = configs.getCountryCode(data.mmsi);
         commit("setSelectedShip", data);
         resolve();
@@ -46,25 +65,28 @@ export const actions = {
   // Action to search for ships
   async SEARCH(_, payload) {
     return new Promise(async (resolve) => {
-
       const config = useRuntimeConfig();
 
-      // Fetch the search results from the server
-      const results = await $fetch(config.public.REALTIME_URL + "/ships/search", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      try {
+        // Fetch the search results from the server
+        const results = await $fetch(config.public.EXP_API_URL + "/ships/search", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
 
-      // Process the ship data and add country code
-      if (!results.items) return resolve([]);
+        // Process the ship data and add country code
+        if (!results.items) return resolve([]);
 
-      results.items = results.items.map((ship) => {
-        ship.countrycode = configs.getCountryCode(ship.mmsi);
-        return ship;
-      });
+        results.items = results.items.map((ship) => {
+          ship.countrycode = configs.getCountryCode(ship.mmsi);
+          return ship;
+        });
 
-      // Resolve the promise with the search results
-      resolve(results);
+        // Resolve the promise with the search results
+        resolve(results);
+      } catch (error) {
+        resolve([]);
+      }
     });
   },
 };
@@ -99,7 +121,7 @@ export const mutations = {
     });
 
     // State mutation to update the ship list
-    state.list = Object.freeze([...list]);
+    state.list = [...list];
   },
 };
 

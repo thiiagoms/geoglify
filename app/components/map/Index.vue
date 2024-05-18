@@ -1,12 +1,13 @@
 <template>
   <div id="map" class="map"></div>
+  
+  <Layers v-if="!!ready" :map="map" :tooltip="tooltip"></Layers>
+  <LayersList v-if="!!ready" :map="map"></LayersList>
 
-  <Ships v-if="!!ready" :map="map"></Ships>
+  <Ships v-if="!!ready" :map="map" :tooltip="tooltip"></Ships>
   <ShipsList v-if="!!ready" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 
-  <Layers v-if="!!ready" :map="map"></Layers>
-  <LayersList v-if="!!ready" :map="map"></LayersList>
 
   <Feature></Feature>
 </template>
@@ -42,8 +43,6 @@
       return {
         ready: false,
         map: null,
-        deck: null,
-        mapDraw: null,
         currentViewState: { ...INITIAL_VIEW_STATE },
         basemaps: configs.getBaseMaps(),
       };
@@ -58,6 +57,10 @@
 
     // When the component is mounted, create the map
     async mounted() {
+
+      // Create a tooltip
+      this.createTooltip();
+
       // Create a Mapbox GL map
       this.map = new maplibregl.Map({
         container: "map",
@@ -113,6 +116,17 @@
 
       // set the ready flag to true
       this.ready = true;
+    },
+
+    methods: {
+      createTooltip() {
+        this.tooltip = document.createElement("div");
+        this.tooltip.className = "deck-tooltip";
+        this.tooltip.style.position = "absolute";
+        this.tooltip.style.zIndex = 1;
+        this.tooltip.style.pointerEvents = "none";
+        document.body.append(this.tooltip);
+      },
     },
   };
 </script>
@@ -173,7 +187,5 @@
     background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAdgAAAHYBTnsmCAAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADeSURBVDiNndMxTgJBFAbgbxcqCysLEkugs/AIW9B5AzCx4x5cwANAzRHsJHgECypN6Oi0Fxsslo2zA6MsfzLJvD/v/TPvnzeZOi7xgAvHscEcu4poRwmP6GCVEBjti+cpgS4meEkIfKEfErHAf/iMiQw5hrjGGM9YnyBW+eFe2dc5a5Sj17CNAoP9vp83LIYWvqugqYmwCINzblBDG9uIe5IepBvcBfGW0sR3v84WfxxYBHlvysGrYXmCwDIkYg92SpdTaAk+EoevsMBUehK7mIVEdiTpFlcJgQ+8hsQPTFgym1kaFDIAAAAASUVORK5CYII=");
     background-repeat: no-repeat;
     background-position: center;
-    fill: red;
   }
-
 </style>

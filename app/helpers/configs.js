@@ -20,7 +20,7 @@ export default {
           color: cargo.color,
           name: category,
           cargos: [],
-          isActive: true,
+          is_active: true,
         });
       }
       categorizedCargos.get(category).cargos.push(cargo);
@@ -272,10 +272,10 @@ export default {
         type: "circle",
         filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "true"]],
         paint: {
-          "circle-radius": 4,
+          "circle-radius": 5,
           "circle-stroke-color": "#FFF",
           "circle-stroke-width": 2,
-          "circle-color": "#0197f6",
+          "circle-color": "#C62828",
         },
       },
       {
@@ -284,7 +284,7 @@ export default {
         filter: ["all", ["==", "$type", "Point"], ["==", "meta", "feature"], ["==", "active", "false"]],
         paint: {
           "circle-radius": 5,
-          "circle-color": "#0197f6",
+          "circle-color": "#C62828",
         },
       },
       {
@@ -296,9 +296,8 @@ export default {
           "line-join": "round",
         },
         paint: {
-          "line-color": "#0197f6",
-          "line-dasharray": [0.2, 2],
-          "line-width": 2,
+          "line-color": "#C62828",
+          "line-width": 4,
         },
       },
       // polygon fill
@@ -307,8 +306,8 @@ export default {
         type: "fill",
         filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
         paint: {
-          "fill-color": "#0197f6",
-          "fill-outline-color": "#0197f6",
+          "fill-color": "#C62828",
+          "fill-outline-color": "#C62828",
           "fill-opacity": 0.1,
         },
       },
@@ -318,10 +317,10 @@ export default {
         type: "circle",
         filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
         paint: {
-          "circle-radius": 4,
+          "circle-radius": 5,
           "circle-stroke-color": "#FFF",
           "circle-stroke-width": 2,
-          "circle-color": "#0197f6",
+          "circle-color": "#C62828",
         },
       },
       // polygon outline stroke
@@ -335,9 +334,8 @@ export default {
           "line-join": "round",
         },
         paint: {
-          "line-color": "#0197f6",
-          "line-dasharray": [0.2, 2],
-          "line-width": 2,
+          "line-color": "#C62828",
+          "line-width": 5,
         },
       },
       // vertex point halos
@@ -347,7 +345,9 @@ export default {
         filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
         paint: {
           "circle-radius": 5,
-          "circle-color": "#FFF",
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#C62828",
         },
       },
       // vertex points
@@ -356,8 +356,10 @@ export default {
         type: "circle",
         filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
         paint: {
-          "circle-radius": 3,
-          "circle-color": "#0197f6",
+          "circle-radius": 5,
+          "circle-stroke-color": "#FFF",
+          "circle-stroke-width": 2,
+          "circle-color": "#C62828",
         },
       },
 
@@ -373,7 +375,7 @@ export default {
         },
         paint: {
           "line-color": "#000",
-          "line-width": 3,
+          "line-width": 5,
         },
       },
       // polygon fill
@@ -398,7 +400,7 @@ export default {
         },
         paint: {
           "line-color": "#000",
-          "line-width": 3,
+          "line-width": 5,
         },
       },
     ];
@@ -413,30 +415,31 @@ export default {
         clearMeasurementsButtonTitle: "Clear measurements",
       },
       units: "metric", //or metric, the default
-      unitsGroupingSeparator: " ", // optional. use a space instead of ',' for separating thousands (3 digits group). Do not send this to use the browser default
+      unitsGroupingSeparator: "", // optional. use a space instead of ',' for separating thousands (3 digits group). Do not send this to use the browser default
       style: {
         text: {
-          radialOffset: 0.9,
-          letterSpacing: 0.05,
+          radialOffset: 1,
+          letterSpacing: 0,
           color: "#0197f6",
           haloColor: "#fff",
-          haloWidth: 0,
-          font: "Nunito",
+          haloWidth: 2,
         },
         common: {
-          midPointRadius: 3,
+          midPointRadius: 5,
           midPointColor: "#0197f6",
           midPointHaloRadius: 5,
           midPointHaloColor: "#FFF",
+          midPointStrokeColor: "#fff",
+          midPointStrokeWidth: 2,
         },
         areaMeasurement: {
           fillColor: "#0197f6",
           fillOutlineColor: "#0197f6",
-          fillOpacity: 0.01,
-          lineWidth: 2,
+          fillOpacity: 0.1,
+          lineWidth: 4,
         },
         lengthMeasurement: {
-          lineWidth: 2,
+          lineWidth: 4,
           lineColor: "#0197f6",
         },
       },

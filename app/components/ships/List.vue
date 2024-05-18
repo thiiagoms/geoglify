@@ -93,6 +93,10 @@
 
       // Select a ship and view details
       selectShip(ship) {
+
+        // Close the dialog of feature details
+        this.$store.state.features.selected = null;
+
         // Fly to the selected ship
         this.map.flyTo({
           center: ship.location.coordinates,
@@ -102,6 +106,9 @@
 
         // Set the selected ship
         this.$store.dispatch("ships/SET_SELECTED", ship);
+
+        // Unset the selected feature
+        this.$store.dispatch("features/SET_SELECTED", null);
       },
     },
   };

@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="confirmDelete" max-width="500px">
     <v-card>
-      <v-card-title class="font-weight-bold">Delete Layer</v-card-title>
+      <v-card-title class="font-weight-bold py-4">Delete Layer</v-card-title>
 
       <v-divider></v-divider>
 

@@ -4,7 +4,7 @@ export const state = () => ({
 
 export const actions = {
   // Action to set the selected feature
-  SELECTED_FEATURE({ commit }, feature) {
+  SET_SELECTED({ commit }, feature) {
     commit("setSelected", feature);
   },
 };

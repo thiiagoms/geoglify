@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-card-title class="font-weight-bold">Edit Layer</v-card-title>
+      <v-card-title class="font-weight-bold py-4">Edit Layer</v-card-title>
 
       <v-divider></v-divider>
 
@@ -14,12 +14,14 @@
           <v-select v-model="updatedLayer.type" :items="layerTypes" label="Type" placeholder="Select Type" required variant="outlined" :rules="typeRules" class="mb-2" readonly disabled></v-select>
 
           <v-text-field v-model="updatedLayer.datasource" label="Datasource" placeholder="Enter Datasource" variant="outlined" class="mb-2"></v-text-field>
+          
         </v-form>
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions>
+        <v-checkbox v-model="updatedLayer.is_active" label="Is Active" density="comfortable" hide-details></v-checkbox>
         <v-spacer></v-spacer>
         <v-btn text @click="closeDialog" :disabled="loading">Cancel</v-btn>
         <v-btn text @click="saveLayer" :loading="loading" :disabled="loading">Save</v-btn>
