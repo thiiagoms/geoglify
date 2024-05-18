@@ -27,12 +27,12 @@
             <span class="font-weight-bold">{{ item?.name }}</span>
           </template>
           <template v-slot:subtitle>
-            <span class="text-subtitle-2">Datasource: {{ item?.datasource || "N/A" }}</span>
+            <span class="text-subtitle-2">{{ item?.datasource || "N/A" }}</span>
           </template>
-          <v-card-text class="pt-1"> Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi, ratione debitis quis est labore voluptatibus! Eaque cupiditate minima, at placeat totam, magni doloremque veniam neque porro libero rerum unde voluptatem! </v-card-text>
+          <v-card-text class="pt-1" v-if="item?.description"> {{ item?.description }} </v-card-text>
 
           <template v-slot:append>
-            <v-checkbox-btn v-model="item.selected" @change="handleLayerCheckboxChange(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
+            <v-checkbox-btn v-model="item.is_active" @change="updateLayerFeatures(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
             <v-progress-circular indeterminate size="25" color="black" v-else class="mx-2"></v-progress-circular>
 
             <v-menu>
@@ -91,7 +91,7 @@
     props: ["map"],
 
     data: () => ({
-      itemsPerPage: 20,
+      itemsPerPage: 100,
       headers: [
         {
           title: "Layer",
@@ -165,13 +165,19 @@
         // Fetch layers from server
         await this.$store.dispatch("layers/SEARCH", { page, itemsPerPage, searchText: this.search });
 
+        if (this.layers && this.layers.length > 0) {
+          this.layers.forEach((layer) => {
+            this.updateLayerFeatures(layer);
+          });
+        }
+
         // Set loading state
         this.loading = false;
       },
 
       // Handle layer checkbox change
-      async handleLayerCheckboxChange(layer) {
-        if (layer.selected) {
+      async updateLayerFeatures(layer) {
+        if (layer.is_active) {
           await this.$store.dispatch("layers/GET_FEATURES", layer.id);
         } else {
           await this.$store.dispatch("layers/CLEAR_FEATURES", layer.id);
@@ -234,6 +240,10 @@
       updateOpenStyleDialogState(value) {
         this.openStyleDialog = value;
       },
+    },
+
+    mounted() {
+      this.loadItems({ page: 1, itemsPerPage: this.itemsPerPage });
     },
   };
 </script>

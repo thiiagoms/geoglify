@@ -9,11 +9,10 @@
   import configs from "~/helpers/configs";
 
   export default {
-    props: ["map"],
+    props: ["map", "tooltip"],
 
     data() {
       return {
-        tooltip: null,
         layers: new Map(),
         overlay: new MapboxOverlay({
           interleaved: false,
@@ -40,6 +39,15 @@
       selected() {
         return JSON.parse(JSON.stringify(this.$store.state.layers.selected));
       },
+
+      tooltipInfo: {
+        get() {
+          return this.tooltip;
+        },
+        set(value) {
+          this.$emit("update:tooltip", value);
+        },
+      },
     },
 
     watch: {
@@ -58,6 +66,14 @@
           oldLayers.forEach((oldLayer) => {
             if (!newLayers || !newLayers.includes(oldLayer)) {
               this.removeLayer(oldLayer);
+            }
+          });
+
+          // Remove and Add layers
+          newLayers.forEach((newLayer) => {
+            if (oldLayers.includes(newLayer)) {
+              this.removeLayer(newLayer);
+              this.addLayer(newLayer);
             }
           });
         },
@@ -136,7 +152,12 @@
           },
 
           onClick: (event) => {
-            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            // set the selected feature
+            this.$store.dispatch("features/SET_SELECTED", event.object);
+
+            // unset the selected ship
+            this.$store.dispatch("ships/SET_SELECTED", null);
+
             return true;
           },
 
@@ -166,7 +187,11 @@
           },
 
           onClick: (event) => {
-            this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+            // set the selected feature
+            this.$store.dispatch("features/SET_SELECTED", event.object);
+
+            // unset the selected ship
+            this.$store.dispatch("ships/SET_SELECTED", null);
             return true;
           },
 
@@ -201,7 +226,11 @@
               getDashArray: layer.style?.dashArray,
             },
             onClick: (event) => {
-              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              // set the selected feature
+              this.$store.dispatch("features/SET_SELECTED", event.object);
+
+              // unset the selected ship
+              this.$store.dispatch("ships/SET_SELECTED", null);
               return true;
             },
             onHover: (info) => this.showTooltip(info),
@@ -251,7 +280,11 @@
             },
 
             onClick: (event) => {
-              this.$store.dispatch("features/SELECTED_FEATURE", event.object);
+              //  set the selected feature
+              this.$store.dispatch("features/SET_SELECTED", event.object);
+
+              // unset the selected ship
+              this.$store.dispatch("ships/SET_SELECTED", null);
               return true;
             },
 
@@ -262,34 +295,22 @@
 
       showTooltip({ object, x, y }) {
         if (object) {
-          this.tooltip.style.display = "block";
-          this.tooltip.style.left = `${x}px`;
-          this.tooltip.style.top = `${y}px`;
+          this.tooltipInfo.style.display = "block";
+          this.tooltipInfo.style.left = `${x}px`;
+          this.tooltipInfo.style.top = `${y}px`;
 
-          this.tooltip.innerHTML = "";
+          this.tooltipInfo.innerHTML = "";
 
           for (const [key, value] of Object.entries(object.properties)) {
-            this.tooltip.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
+            this.tooltipInfo.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
           }
         } else {
-          this.tooltip.style.display = "none";
+          this.tooltipInfo.style.display = "none";
         }
-      },
-
-      createTooltip() {
-        this.tooltip = document.createElement("div");
-        this.tooltip.className = "deck-tooltip";
-        this.tooltip.style.position = "absolute";
-        this.tooltip.style.zIndex = 1;
-        this.tooltip.style.pointerEvents = "none";
-        document.body.append(this.tooltip);
       },
     },
 
     async mounted() {
-
-      this.createTooltip();
-
       // Add the overlay to the map
       this.map.addControl(this.overlay);
     },

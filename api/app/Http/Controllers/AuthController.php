@@ -34,6 +34,18 @@ class AuthController extends Controller
     }
 
     /**
+     * Update the authenticated User.
+     */
+    public function update()
+    {
+        $user = auth()->user();
+
+        $user->update(request()->all());
+
+        return response()->json($user);
+    }
+
+    /**
      * Get the authenticated User.
      *
      * @return \Illuminate\Http\JsonResponse

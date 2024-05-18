@@ -6,9 +6,19 @@ BASEDIR=/opt/api
 # Flag to check if it's a fresh install
 FIRST_INSTALL=false
 
+# Remove the old composer.lock
+rm -rf composer.lock
+
 # Check if the .env file exists
 if [ ! -f "$BASEDIR/.env" ]; then
    FIRST_INSTALL=true
+fi
+
+# Install composer dependencies
+if [ "$PRODUCTION" = "1" ]; then
+    composer install --no-dev --no-interaction --no-scripts
+else
+    composer install --no-interaction --no-scripts
 fi
 
 # Use FIRST_INSTALL variable as needed in the rest of your script
@@ -28,6 +38,9 @@ if [ "$FIRST_INSTALL" = true ]; then
     echo "File .env generated."
 fi
 
+# Run the composer dump-autoload command
+composer dump-autoload
+
 # Run the migrations and seed the database
 if [ "$FIRST_INSTALL" = true ]; then
     php artisan migrate --seed --force
@@ -41,13 +54,6 @@ php artisan clear-compiled
 php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
 
 php artisan jwt:secret --force
-
-# Install composer dependencies
-if [ "$PRODUCTION" = "1" ]; then
-    composer install --no-dev --no-interaction --no-scripts
-else
-    composer install --no-interaction --no-scripts
-fi
 
 echo "Generating app key..."
 # Generate an application key

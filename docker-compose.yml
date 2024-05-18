@@ -79,8 +79,8 @@ services:
       - 8082:80
     volumes:
       - ./api:/opt/api
-      - vendor-data:/opt/api/vendor
-      - storage-data:/opt/api/storage
+      - vendor_data:/opt/api/vendor
+      - storage_data:/opt/api/storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api/"]
       interval: 30s
@@ -108,7 +108,7 @@ services:
       - database_data:/var/lib/postgresql/data
 
 volumes:
-  vendor-data:
-  storage-data:
+  vendor_data:
+  storage_data:
   mongodb_data:
   database_data:

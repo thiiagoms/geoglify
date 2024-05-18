@@ -76,8 +76,6 @@
         // Convert hexadecimal color to RGB
         const hexToRgb = (hex) => {
 
-          console.log(hex)
-
           // Remove '#' if present
           hex = hex.replace("#", "");
 

@@ -13,6 +13,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       REALTIME_URL: process.env.REALTIME_URL || "http://localhost:8080",
+      EXP_API_URL: process.env.EXP_API_URL || "http://localhost:8080",
       API_URL: process.env.API_URL || "http://localhost:8082/api",
       MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
       OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,

@@ -1,7 +1,7 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <v-card>
-      <v-card-title class="font-weight-bold">Create Layer</v-card-title>
+      <v-card-title class="font-weight-bold py-4">Create Layer</v-card-title>
 
       <v-divider></v-divider>
 
@@ -20,6 +20,7 @@
       <v-divider></v-divider>
 
       <v-card-actions>
+        <v-checkbox v-model="newLayer.is_active" label="Is Active" density="comfortable" hide-details></v-checkbox>
         <v-spacer></v-spacer>
         <v-btn text @click="closeDialog" :disabled="loading">Cancel</v-btn>
         <v-btn text @click="saveLayer" :loading="loading" :disabled="loading">Create</v-btn>
@@ -43,6 +44,7 @@
           description: null,
           type: null,
           datasource: null,
+          is_active: true,
           style: configs.getDefaultGeoJSONStyle(),
         },
         nameRules: [
@@ -86,6 +88,7 @@
           description: null,
           type: null,
           datasource: null,
+          is_active: true,
           style: configs.getDefaultGeoJSONStyle(),
         };
         this.$refs.form.resetValidation();

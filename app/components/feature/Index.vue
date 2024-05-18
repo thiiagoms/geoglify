@@ -39,7 +39,6 @@
       },
       feature: {
         get() {
-            console.log(this.$store.state.features.selected);
           return JSON.parse(JSON.stringify(this.$store.state.features.selected));
         },
       },

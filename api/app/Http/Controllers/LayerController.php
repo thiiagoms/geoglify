@@ -38,6 +38,8 @@ class LayerController extends Controller
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->type = $request->type;
+        $layer->is_active = $request->is_active;
+        $layer->style = $request->style;
         $layer->datasource = $request->datasource;
         $layer->updated_by = auth()->user()->id;
         $layer->created_by = auth()->user()->id;
@@ -59,6 +61,7 @@ class LayerController extends Controller
         $layer->name = $request->name;
         $layer->description = $request->description;
         $layer->datasource = $request->datasource;
+        $layer->is_active = $request->is_active;
         $layer->updated_by = auth()->user()->id;
         $layer->save();
 

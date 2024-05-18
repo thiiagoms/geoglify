@@ -12,12 +12,13 @@ async function getAISShips() {
     .db("geoglify")
     .collection("realtime")
     .find(
-      {
+      {},
+      /*{
         $and: [
           { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
           { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
         ],
-      },
+      },*/
       {
         projection: {
           _id: 1,
@@ -38,6 +39,7 @@ async function getAISShips() {
         },
       }
     )
+    .limit(30000)
     .toArray();
 
   return results;
@@ -45,12 +47,14 @@ async function getAISShips() {
 
 // Search for ships
 async function searchAISShips(page, itemsPerPage, searchText) {
-  let filter = {
+  /*let filter = {
     $and: [
       { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
       { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
     ],
-  };
+  };*/
+
+  let filter = {};
 
   if (searchText) {
     filter.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }, { imo: { $regex: searchText, $options: "i" } }];

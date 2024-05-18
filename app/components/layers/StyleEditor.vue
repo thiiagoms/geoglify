@@ -2,7 +2,7 @@
   <v-dialog v-model="dialogVisible" max-width="800px" persistent scrollable>
     <!-- Dialog content -->
     <v-card>
-      <v-card-title class="font-weight-bold">Edit Layer Style</v-card-title>
+      <v-card-title class="font-weight-bold py-4">Edit Layer Style</v-card-title>
 
       <v-divider></v-divider>
 
