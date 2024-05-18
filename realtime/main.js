@@ -18,27 +18,10 @@ const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 25;
 const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 
-// Whitelist
-const whitelist = ["http://localhost:3000", "http://geoglify.com", "https://geoglify.com"];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-
 // Create an Express app and an HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: ["http://localhost:3000", "http://geoglify.com", "https://geoglify.com"],
-  },
-});
+const io = socketIo(server);
 
 // Create a route to handle the root URL
 let messages = new Map();
@@ -46,7 +29,7 @@ const messageQueue = [];
 let dispatchTimeout = null;
 
 app.use(express.json());
-app.use(cors(corsOptions));
+app.use(cors());
 
 server.listen(8080, () => {
   logSuccess("Server running on port 8080");
