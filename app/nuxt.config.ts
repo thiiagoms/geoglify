@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     },
   ],
   auth: {
-    baseURL: process.env.API_URL,
+    baseURL: process.env.AUTH_API_URL || "http://localhost:8082/api",
     provider: {
       type: "local",
       endpoints: {

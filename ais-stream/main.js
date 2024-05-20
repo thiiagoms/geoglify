@@ -22,22 +22,22 @@ let isProcessing = false;
 
 // Logging function for information messages
 function logInfo(message) {
-  console.info(`\x1b[33m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
+  console.info(`\x1b[33m[${new Date().toLocaleString( { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for error messages
 function logError(message) {
-  console.error(`\x1b[31m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
+  console.error(`\x1b[31m[${new Date().toLocaleString( { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Logging function for success messages
 function logSuccess(message) {
-  console.info(`\x1b[32m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
+  console.info(`\x1b[32m[${new Date().toLocaleString( { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Loggin function for warning messages
 function logWarning(message) {
-  console.info(`\x1b[90m[${new Date().toLocaleString("en-GB", { timeZone: "UTC" })}]\x1b[0m ${message}`);
+  console.info(`\x1b[90m[${new Date().toLocaleString( { timeZone: "UTC" })}]\x1b[0m ${message}`);
 }
 
 // Function to connect to MongoDB with retry mechanism

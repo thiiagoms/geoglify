@@ -78,7 +78,7 @@
     methods: {
       // Helper method to format date
       formatDate(date) {
-        return date ? new Date(date).toLocaleString("en-GB", { timeZone: "UTC" }) : "";
+        return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
       },
 
       async logout() {

@@ -9,9 +9,6 @@ services:
     working_dir: /opt/app
     ports:
       - "3000:3000"
-    depends_on:
-      - realtime
-      - api
       
   mongodb:
     container_name: mongodb
