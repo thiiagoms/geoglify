@@ -19,12 +19,8 @@ export default defineNuxtConfig({
         OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
       },
     },
-    googleSignIn: {
-      clientId: "CLIENT ID OBTAINED FROM GOOGLE API CONSOLE",
-    },
     modules: [
       "@sidebase/nuxt-auth",
-      "nuxt-vue3-google-signin",
       "nuxt3-vuex-module",
       "nuxt-gtag",
       "nuxt-svgo",
@@ -37,7 +33,7 @@ export default defineNuxtConfig({
       },
     ],
     auth: {
-      baseURL: "http://geoglify.com/php/api/auth",
+      baseURL: "https://geoglify.com/php/api/auth",
       provider: {
         type: "local",
         endpoints: {
@@ -91,12 +87,8 @@ export default defineNuxtConfig({
         OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
       },
     },
-    googleSignIn: {
-      clientId: "CLIENT ID OBTAINED FROM GOOGLE API CONSOLE",
-    },
     modules: [
       "@sidebase/nuxt-auth",
-      "nuxt-vue3-google-signin",
       "nuxt3-vuex-module",
       "nuxt-gtag",
       "nuxt-svgo",
