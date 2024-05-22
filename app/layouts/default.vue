@@ -74,7 +74,7 @@
     methods: {
       async updateTime() {
         const date = new Date();
-        this.currentTime = date.toLocaleString("en-GB");
+        this.currentTime = date.toLocaleString();
       },
       async getCurrentPosition() {
         return new Promise((resolve, reject) => {

@@ -6,9 +6,6 @@ BASEDIR=/opt/api
 # Flag to check if it's a fresh install
 FIRST_INSTALL=false
 
-# Remove the old composer.lock
-rm -rf composer.lock
-
 # Check if the .env file exists
 if [ ! -f "$BASEDIR/.env" ]; then
    FIRST_INSTALL=true
