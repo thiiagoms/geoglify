@@ -56,7 +56,12 @@
       },
 
       filteredShips() {
-        return this.$store.state.ships.list;
+        return this.$store.state.ships.list.filter((s) => 
+          s.location 
+          && s.location.coordinates 
+          && this.$store.state.ships.cargos.some((c) => c.code === (s.cargo ?? 0) 
+          && c.is_active
+        ));
       },
 
       selected() {
@@ -179,13 +184,14 @@
               data: visibleFeatures.map((s) => s.geojson),
               pickable: true,
               filled: true,
-              getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.color),
+              getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.colorGeoJson),
               lineJointRounded: true,
               lineCapRounded: true,
               autoHighlight: true,
-              getLineWidth: 0.3,
-              getLineColor: [0, 0, 0, 255],
-              highlightColor: [255, 234, 0, 255],
+              getLineWidth: 0.5,
+              lineWidthMinPixels: 2,
+              getLineColor: [128, 128, 128, 255],
+              highlightColor: [255, 234, 0, 125],
               onClick: ({ object }) => {
                 // Fly to the selected ship
                 this.$store.dispatch("ships/SET_SELECTED", object.properties);
@@ -287,10 +293,17 @@
           .map((f) => f.object);
       },
 
+      isMobile() {
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+          return true;
+        } else {
+          return false;
+        }
+      },
+
       showTooltip({ object, x, y }) {
         this.tooltipInfo.style.display = "none";
-
-        if (object) {
+        if (object && !this.isMobile()) {
           this.tooltipInfo.style.display = "block";
           this.tooltipInfo.style.left = `${x}px`;
           this.tooltipInfo.style.top = `${y}px`;
@@ -329,7 +342,7 @@
 
       // Helper method to format date
       formatDate(date) {
-        return date ? new Date(date).toLocaleString( { timeZone: "UTC" }) : "";
+        return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
       },
     },
 

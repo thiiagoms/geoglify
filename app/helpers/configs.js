@@ -145,6 +145,7 @@ export default {
   // Get the ship geojson
   processGeoJSON(ship) {
     try {
+
       // Check if the ship is valid
       let originalCoords = ship.location.coordinates;
       let hdg = ship?.hdg;
@@ -186,9 +187,9 @@ export default {
         const center = this.convertCoordsToMeters(originalCoords, source);
 
         // Calculate the four points of the ship in meters
-        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - Math.min(10, xOffsetA)];
+        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - ((xOffsetA + xOffsetB) * 0.1)];
         let pointE = [center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA];
-        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - Math.min(10, xOffsetA)];
+        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - ((xOffsetA + xOffsetB) * 0.1)];
         let pointBD = [center[0] + yOffsetD, center[1] - xOffsetB];
         let pointBC = [center[0] - yOffsetC, center[1] - xOffsetB];
 
@@ -218,6 +219,7 @@ export default {
       // Add properties to the GeoJSON
       geojson.properties = {
         color: ship.color,
+        colorGeoJson: ship.colorGeoJson,
         shipname: ship.shipname,
         mmsi: ship.mmsi,
         utc: ship.utc,

@@ -21,7 +21,11 @@ const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 500;
 // Create an Express app and an HTTP server
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 // Create a route to handle the root URL
 let messages = new Map();
@@ -41,13 +45,10 @@ app.get("/", (_, res) => {
 });
 
 //
-app.get(
-  "/ships",
-  async (_, res) => {
-    const ships = await getAISShips();
-    res.json(ships);
-  }
-);
+app.get("/ships", async (_, res) => {
+  const ships = await getAISShips();
+  res.json(ships);
+});
 
 app.get("/ship/:id", async (req, res) => {
   const _id = req.params.id;
@@ -59,7 +60,8 @@ app.post("/ships/search", async (req, res) => {
   const page = parseInt(req.body.page) || 1;
   const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
   const searchText = req.body.searchText || "";
-  const ships = await searchAISShips(page, itemsPerPage, searchText);
+  const cargos = req.body.cargos || [];
+  const ships = await searchAISShips(page, itemsPerPage, searchText, cargos);
   res.json(ships);
 });
 

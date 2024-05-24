@@ -46,29 +46,24 @@ async function getAISShips() {
 }
 
 // Search for ships
-async function searchAISShips(page, itemsPerPage, searchText) {
-  /*let filter = {
-    $and: [
-      { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
-      { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
-    ],
-  };*/
-
-  let filter = {};
+async function searchAISShips(page, itemsPerPage, searchText, cargos = []) {
+  let match = {};
 
   if (searchText) {
-    filter.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }, { imo: { $regex: searchText, $options: "i" } }];
+    match.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }, { imo: { $regex: searchText, $options: "i" } }];
   }
 
-  let ships = await mongoClient
-    .db("geoglify")
-    .collection("realtime")
-    .find(filter, {
-      projection: {
+  if (cargos.length > 0) {
+    match.cargo = { $in: cargos };
+  }
+
+  let pipeline = [
+    {
+      $project: {
         _id: 1,
         mmsi: 1,
         shipname: 1,
-        cargo: 1,
+        cargo: { $ifNull: ["$cargo", 0] },
         hdg: 1,
         location: 1,
         utc: 1,
@@ -81,14 +76,35 @@ async function searchAISShips(page, itemsPerPage, searchText) {
         length: 1,
         width: 1,
       },
-    })
-    .skip((page - 1) * itemsPerPage)
-    .limit(itemsPerPage)
-    .toArray();
+    },
+    { $match: match },
+    { $skip: (page - 1) * itemsPerPage },
+    { $limit: itemsPerPage },
+  ];
 
-  let count = await mongoClient.db("geoglify").collection("realtime").countDocuments(filter);
+  let ships = await mongoClient.db("geoglify").collection("realtime").aggregate(pipeline).toArray();
 
-  return { items: ships, total: count };
+  let countPipeline = [
+    {
+      $project: {
+        _id: 1,
+        cargo: { $ifNull: ["$cargo", 0] },
+        lat: 1,
+        lon: 1,
+        mmsi: 1,
+        shipname: 1,
+        imo: 1,
+      },
+    },
+    { $match: match },
+    { $count: "total" },
+  ];
+
+  let countResult = await mongoClient.db("geoglify").collection("realtime").aggregate(countPipeline).toArray();
+
+  let total = countResult.length > 0 ? countResult[0].total : 0;
+
+  return { items: ships, total: total };
 }
 
 // Get a ship by ID

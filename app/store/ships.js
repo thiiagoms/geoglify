@@ -5,7 +5,7 @@ export const state = () => ({
   list: [],
   selected: null,
   selectedDetails: null,
-  selectedCargos: configs.getCargos(),
+  cargos: configs.getCargos(),
   listOpened: false,
 });
 
@@ -127,6 +127,10 @@ export const mutations = {
 
 // Process the ship data and return the processed ship object
 function processShipData(ship) {
+
+  // Check if the ship object is valid
+  if (!ship || !ship.location || !ship.location.coordinates) return null;
+
   // Extract the necessary data from the ship object
   const { hdg, cargo, mmsi } = ship;
 
@@ -137,10 +141,10 @@ function processShipData(ship) {
   if (isHeadingValid) {
     ship.icon = "models/boat.svg";
     ship.size = 16;
-    ship.width = 41;
+    ship.width = 44;
     ship.height = 96;
   } else {
-    ship.icon = "models/circle.png";
+    ship.icon = "models/circle.svg";
     ship.size = 10;
     ship.width = 20;
     ship.height = 20;
@@ -149,7 +153,7 @@ function processShipData(ship) {
   // Determine the color and priority of the ship based on the cargo type
   const cargoType = configs.getCargoType(cargo);
   ship.color = configs.hexToRgb(cargoType.color, 1);
-  ship.colorGeoJson = configs.hexToRgb(cargoType.color, 0.5);
+  ship.colorGeoJson = configs.hexToRgb(cargoType.color, 0.8);
   ship.priority = -(isHeadingValid ? cargoType.priority * -100 : -100);
 
   // Get the country code from the MMSI

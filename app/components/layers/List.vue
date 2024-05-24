@@ -17,19 +17,18 @@
 
     <v-data-table-server class="layers" density="compact" :items-per-page="itemsPerPage" :headers="headers" :items="layers" :items-length="total" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
       <template v-slot:item.id="{ item }">
-        <v-card class="ma-1" density="compact">
+        <v-card class="mt-1 mx-1 border" variant="outlined" density="comfortable">
           <template v-slot:prepend>
             <div class="legend-container" v-if="!!item.style">
               <Legend :style.sync="item.style" :type.sync="item.type" :id="item._id" :mini="true"></Legend>
             </div>
           </template>
           <template v-slot:title>
-            <span class="font-weight-bold">{{ item?.name }}</span>
+            <span class="font-weight-bold text-subtitle-1">{{ item?.name }}</span>
           </template>
           <template v-slot:subtitle>
             <span class="text-subtitle-2">{{ item?.datasource || "N/A" }}</span>
           </template>
-          <v-card-text class="pt-1" v-if="item?.description"> {{ item?.description }} </v-card-text>
 
           <template v-slot:append>
             <v-checkbox-btn v-model="item.is_active" @change="updateLayerFeatures(item)" :disabled="item.loading" v-if="!item.loading"></v-checkbox-btn>
@@ -254,7 +253,7 @@
   }
 
   .layers .v-table__wrapper {
-    height: calc(100vh - 305px) !important;
+    height: calc(100dvh - 305px) !important;
   }
 
   .layers .v-data-table__tr td {

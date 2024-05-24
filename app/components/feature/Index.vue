@@ -12,7 +12,7 @@
     </v-toolbar>
     <!-- Divider between toolbar and ship information -->
     <v-divider></v-divider>
-    <v-card-text class="pa-0" style="height: calc(100vh - 140px); overflow: auto">
+    <v-card-text class="pa-0" style="height: calc(100dvh - 140px); overflow: auto">
       <v-table>
         <tbody>
           <tr v-for="(value, key) in feature.properties" :key="key">
