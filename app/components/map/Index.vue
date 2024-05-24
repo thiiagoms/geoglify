@@ -132,7 +132,7 @@
 </script>
 <style>
   .map {
-    height: calc(100vh - 64px - 24px - 48px);
+    height: calc(100dvh - 64px - 24px - 48px);
     width: 100%;
   }
 

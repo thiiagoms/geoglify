@@ -27,7 +27,7 @@
       </v-toolbar>
       <!-- Divider between toolbar and ship information -->
       <v-divider></v-divider>
-      <v-card-text class="pa-0" style="height: calc(100vh - 200px); overflow: auto">
+      <v-card-text class="pa-0" style="height: calc(100dvh - 200px); overflow: auto">
         <!-- Display ship icon -->
         <v-img :src="'https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=' + selected.mmsi">
           <template v-slot:error> <v-img class="mx-auto" src="https://placehold.co/600x400?text=No+Photo"></v-img> </template
@@ -61,6 +61,8 @@
 </template>
 
 <script>
+  import configs from "~/helpers/configs";
+
   export default {
     computed: {
       // Computed property for dialog state
@@ -73,14 +75,20 @@
         },
       },
       selected() {
-        return JSON.parse(JSON.stringify(this.$store.state.ships.selected));
+        let ship = JSON.parse(JSON.stringify(this.$store.state.ships.selected));
+
+        if (!!ship) {
+          ship.cargo = configs.getCargoType(ship.cargo).name;
+        }
+        
+        return ship;
       },
     },
 
     methods: {
       // Helper method to format date
       formatDate(date) {
-        return date ? new Date(date).toLocaleString( { timeZone: "UTC" }) : "";
+        return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
       },
     },
   };

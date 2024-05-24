@@ -86,16 +86,6 @@ services:
     depends_on:
       - database
 
-  mongodb-seed:
-    build: ./mongodb-seed
-    container_name: mongodb-seed
-    restart: always
-    environment:
-      - MONGODB_CONNECTION_STRING=mongodb://root:root@mongodb:27778/?directConnection=true&authMechanism=DEFAULT
-    command: "node main.js"
-    depends_on:
-      - mongodb
-
   database:
     build: ./database
     image: database

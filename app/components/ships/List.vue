@@ -4,6 +4,14 @@
       <v-toolbar-title class="text-h5 font-weight-black pl-4"> Ships </v-toolbar-title>
 
       <v-spacer></v-spacer>
+
+      <v-btn icon @click="openFiltersDialog = true" density="compact">
+        <v-badge color="red" dot v-if="this.cargosSelected.length != this.$store.state.ships.cargos.length">
+          <v-icon>mdi-filter-outline</v-icon>
+        </v-badge>
+        <v-icon v-else>mdi-filter-outline</v-icon>
+      </v-btn>
+
       <v-btn icon @click="dialogOpened = false" density="compact">
         <v-icon>mdi-close</v-icon>
       </v-btn>
@@ -14,7 +22,7 @@
 
     <v-data-table-server class="ships" :items-per-page="itemsPerPage" :headers="headers" :items="serverItems" :items-length="totalItems" :loading="loading" :search="search" item-value="_id" @update:options="loadItems">
       <template v-slot:item.mmsi="{ item }">
-        <v-card class="ma-1" density="comfortable" @click="selectShip(item)">
+        <v-card class="mt-1 mx-1 border" variant="outlined" density="comfortable" @click="selectShip(item)">
           <template v-slot:prepend>
             <v-avatar size="30">
               <component :is="item.flag" filled class="flag"></component>
@@ -24,15 +32,23 @@
             <span class="font-weight-bold text-subtitle-1">{{ item?.shipname || item?.mmsi || "N/A" }}</span>
           </template>
           <template v-slot:subtitle>
-            <span class="text-subtitle-2">{{ formatDate(item?.utc) || 'N/A' }}</span>
+            <p class="text-subtitle-2">{{ item?.cargo_name || "N/A" }}</p>
+            <p class="text-subtitle-2">{{ formatDate(item?.utc) || "N/A" }}</p>
+          </template>
+          <template v-slot:append>
+            <v-icon :color="item.cargo_color">mdi-label</v-icon>
           </template>
         </v-card>
       </template>
     </v-data-table-server>
   </v-navigation-drawer>
+
+  <ShipsFilters :open="openFiltersDialog" @update:open="updateOpenFiltersDialogState"></ShipsFilters>
 </template>
 
 <script>
+  import configs from "~/helpers/configs";
+
   export default {
     props: ["map"],
 
@@ -50,6 +66,7 @@
       loading: true,
       totalItems: 0,
       search: "",
+      openFiltersDialog: false,
     }),
 
     computed: {
@@ -62,6 +79,18 @@
           this.$store.state.ships.listOpened = value;
         },
       },
+
+      cargosSelected: {
+        get() {
+          return this.$store.state.ships.cargos.filter((cargo) => cargo.is_active).map((cargo) => cargo.code);
+        },
+      },
+    },
+
+    watch: {
+      cargosSelected() {
+        this.loadItems({ page: 1, itemsPerPage: 20 });
+      },
     },
 
     methods: {
@@ -70,10 +99,12 @@
         this.loading = true;
 
         this.$store
-          .dispatch("ships/SEARCH", { page, itemsPerPage, searchText: this.search })
+          .dispatch("ships/SEARCH", { page, itemsPerPage, searchText: this.search, cargos: this.cargosSelected })
           .then(({ items, total }) => {
             this.serverItems = items.map((ship) => {
               ship.flag = "svgo-" + (ship?.countrycode || "xx").toLowerCase();
+              ship.cargo_name = configs.getCargoType(ship.cargo).name;
+              ship.cargo_color = configs.getCargoType(ship.cargo).color;
               return ship;
             });
             this.totalItems = total;
@@ -88,12 +119,11 @@
 
       // Helper method to format date
       formatDate(date) {
-        return date ? new Date(date).toLocaleString( { timeZone: "UTC" }) : "";
+        return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
       },
 
       // Select a ship and view details
       selectShip(ship) {
-
         // Close the dialog of feature details
         this.$store.state.features.selected = null;
 
@@ -110,6 +140,10 @@
         // Unset the selected feature
         this.$store.dispatch("features/SET_SELECTED", null);
       },
+
+      updateOpenFiltersDialogState(value) {
+        this.openFiltersDialog = value;
+      },
     },
   };
 </script>
@@ -125,7 +159,7 @@
   }
 
   .ships .v-table__wrapper {
-    height: calc(100vh - 305px) !important;
+    height: calc(100dvh - 305px) !important;
   }
 
   .ships .v-data-table__tr td {
