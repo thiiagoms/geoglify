@@ -4,7 +4,6 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
-const expressCache = require("cache-express");
 const { getAISShips, getAISShip, searchAISShips } = require("./mongodb");
 const { logError, logInfo, logSuccess, logWarning } = require("./logger");
 
@@ -61,7 +60,8 @@ app.post("/ships/search", async (req, res) => {
   const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
   const searchText = req.body.searchText || "";
   const cargos = req.body.cargos || [];
-  const ships = await searchAISShips(page, itemsPerPage, searchText, cargos);
+  const geom = req.body.geom || null;
+  const ships = await searchAISShips(page, itemsPerPage, searchText, cargos, geom);
   res.json(ships);
 });
 
@@ -89,6 +89,9 @@ async function startApplication() {
     // Connect to the "geoglify" database and the "realtime" collection
     const database = mongoClient.db("geoglify");
     const realtimeMessagesCollection = database.collection("realtime");
+
+    // Create a 2dsphere index on the "location" field
+    realtimeMessagesCollection.createIndex({ location: "2dsphere" });
 
     io.on("connection", (socket) => {
       logSuccess(`Client connected: \x1b[32m${socket.id}\x1b[0m`);
