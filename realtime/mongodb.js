@@ -46,7 +46,7 @@ async function getAISShips() {
 }
 
 // Search for ships
-async function searchAISShips(page, itemsPerPage, searchText, cargos = []) {
+async function searchAISShips(page, itemsPerPage, searchText, cargos = [], featureCollection = null) {
   let match = {};
 
   if (searchText) {
@@ -55,6 +55,16 @@ async function searchAISShips(page, itemsPerPage, searchText, cargos = []) {
 
   if (cargos.length > 0) {
     match.cargo = { $in: cargos };
+  } else {
+    return { items: [], total: 0 };
+  }
+
+  if (featureCollection) {
+    match.location = {
+      $geoIntersects: {
+        $geometry: featureCollection,
+      },
+    };
   }
 
   let pipeline = [
@@ -84,21 +94,7 @@ async function searchAISShips(page, itemsPerPage, searchText, cargos = []) {
 
   let ships = await mongoClient.db("geoglify").collection("realtime").aggregate(pipeline).toArray();
 
-  let countPipeline = [
-    {
-      $project: {
-        _id: 1,
-        cargo: { $ifNull: ["$cargo", 0] },
-        lat: 1,
-        lon: 1,
-        mmsi: 1,
-        shipname: 1,
-        imo: 1,
-      },
-    },
-    { $match: match },
-    { $count: "total" },
-  ];
+  let countPipeline = [{ $match: match }, { $count: "total" }];
 
   let countResult = await mongoClient.db("geoglify").collection("realtime").aggregate(countPipeline).toArray();
 

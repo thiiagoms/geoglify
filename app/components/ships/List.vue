@@ -5,6 +5,10 @@
 
       <v-spacer></v-spacer>
 
+      <v-btn icon @click="toggleGeofencerSearch" density="compact" :color="geofencerSearchEnabled ? 'primary' : 'default'">
+        <v-icon>mdi-magnify-expand</v-icon>
+      </v-btn>
+
       <v-btn icon @click="openFiltersDialog = true" density="compact">
         <v-badge color="red" dot v-if="this.cargosSelected.length != this.$store.state.ships.cargos.length">
           <v-icon>mdi-filter-outline</v-icon>
@@ -44,9 +48,18 @@
   </v-navigation-drawer>
 
   <ShipsFilters :open="openFiltersDialog" @update:open="updateOpenFiltersDialogState"></ShipsFilters>
+
+  <v-snackbar color="primary" elevation="24" v-model="geofencerSearchEnabled" location="bottom" location-strategy="connected" timeout="-1" style="position: absolute; bottom: 50px">
+    Draw a polygon on the map to search for ships within the area.<br />And click search to find the ships in the area.
+
+    <template v-slot:actions>
+      <v-btn variant="outlined" @click="searchByArea"> Search </v-btn>
+    </template>
+  </v-snackbar>
 </template>
 
 <script>
+  import MapboxDraw from "@mapbox/mapbox-gl-draw";
   import configs from "~/helpers/configs";
 
   export default {
@@ -67,6 +80,9 @@
       totalItems: 0,
       search: "",
       openFiltersDialog: false,
+      geofencerSearchEnabled: false,
+      geofencerDraw: null,
+      geofencerFeatures: null,
     }),
 
     computed: {
@@ -99,7 +115,13 @@
         this.loading = true;
 
         this.$store
-          .dispatch("ships/SEARCH", { page, itemsPerPage, searchText: this.search, cargos: this.cargosSelected })
+          .dispatch("ships/SEARCH", {
+            page: page,
+            itemsPerPage: itemsPerPage,
+            searchText: this.search,
+            cargos: this.cargosSelected,
+            geom: this.geofencerFeatures,
+          })
           .then(({ items, total }) => {
             this.serverItems = items.map((ship) => {
               ship.flag = "svgo-" + (ship?.countrycode || "xx").toLowerCase();
@@ -144,6 +166,147 @@
       updateOpenFiltersDialogState(value) {
         this.openFiltersDialog = value;
       },
+
+      toggleGeofencerSearch() {
+        this.geofencerSearchEnabled = !this.geofencerSearchEnabled;
+        this.geofencerDraw.changeMode("draw_polygon");
+      },
+
+      searchByArea() {
+        this.geofencerFeatures = this.geofencerDraw.getAll()['features'][0]['geometry'];
+        this.loadItems({ page: 1, itemsPerPage: 20 });
+      },
+    },
+
+    mounted() {
+      // Init geofencer drawer for search
+      this.geofencerDraw = new MapboxDraw({
+        displayControlsDefault: false,
+        styles: [
+          // ACTIVE (being drawn)
+          // line stroke
+          {
+            id: "gl-draw-line",
+            type: "line",
+            filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#1867c0",
+              "line-dasharray": [0.2, 2],
+              "line-width": 5,
+            },
+          },
+          // polygon fill
+          {
+            id: "gl-draw-polygon-fill",
+            type: "fill",
+            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+            paint: {
+              "fill-color": "#1867c0",
+              "fill-outline-color": "#1867c0",
+              "fill-opacity": 0.1,
+            },
+          },
+          // polygon mid points
+          {
+            id: "gl-draw-polygon-midpoint",
+            type: "circle",
+            filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#1867c0",
+              "circle-stroke-color": "#fff",
+              "circle-stroke-width": 2,
+            },
+          },
+          // polygon outline stroke
+          // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+          {
+            id: "gl-draw-polygon-stroke-active",
+            type: "line",
+            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#1867c0",
+              "line-dasharray": [0.2, 2],
+              "line-width": 5
+            },
+          },
+          // vertex point halos
+          {
+            id: "gl-draw-polygon-and-line-vertex-halo-active",
+            type: "circle",
+            filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#1867c0",
+              "circle-stroke-color": "#fff",
+              "circle-stroke-width": 2,
+            },
+          },
+          // vertex points
+          {
+            id: "gl-draw-polygon-and-line-vertex-active",
+            type: "circle",
+            filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#1867c0",
+              "circle-stroke-color": "#fff",
+              "circle-stroke-width": 2,
+            },
+          },
+
+          // INACTIVE (static, already drawn)
+          // line stroke
+          {
+            id: "gl-draw-line-static",
+            type: "line",
+            filter: ["all", ["==", "$type", "LineString"], ["==", "mode", "static"]],
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#1867c0",
+              "line-width": 5,
+            },
+          },
+          // polygon fill
+          {
+            id: "gl-draw-polygon-fill-static",
+            type: "fill",
+            filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+            paint: {
+              "fill-color": "#1867c0",
+              "fill-outline-color": "#1867c0",
+              "fill-opacity": 0.1,
+            },
+          },
+          // polygon outline
+          {
+            id: "gl-draw-polygon-stroke-static",
+            type: "line",
+            filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#1867c0",
+              "line-width": 5,
+            },
+          },
+        ],
+      });
+
+      this.map.addControl(this.geofencerDraw);
     },
   };
 </script>

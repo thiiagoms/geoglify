@@ -8,7 +8,6 @@
   <ShipsList v-if="!!ready" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready"></ShipsDetails>
 
-
   <Feature></Feature>
 </template>
 <script>
