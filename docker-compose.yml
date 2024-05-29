@@ -77,7 +77,6 @@ services:
     volumes:
       - ./api:/opt/api
       - vendor_data:/opt/api/vendor
-      - storage_data:/opt/api/storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://api/"]
       interval: 30s
@@ -94,8 +93,15 @@ services:
     volumes:
       - database_data:/var/lib/postgresql/data
 
+  tileserver:
+    build: ./tileserver
+    restart: always
+    container_name: tileserver
+    working_dir: /opt/tileserver
+    ports:
+      - "8083:8080"
+
 volumes:
   vendor_data:
-  storage_data:
   mongodb_data:
   database_data:

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LayerController;
+use App\Http\Controllers\PMTilesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,7 @@ Route::get('/layers/{id}', [LayerController::class, 'show']);
 // Route to display all features of a layer
 Route::get('/layers/{id}/features', [LayerController::class, 'features']);
 
+// Protected routes
 Route::group(['middleware' => 'auth:api'], function () {
 
    // refresh

@@ -1,6 +1,6 @@
 <template>
   <div id="map" class="map"></div>
-  
+
   <Layers v-if="!!ready" :map="map" :tooltip="tooltip"></Layers>
   <LayersList v-if="!!ready" :map="map"></LayersList>
 
@@ -19,11 +19,12 @@
 
   import configs from "~/helpers/configs";
   import Toolbox from "~/helpers/toolbox";
+  import { Protocol } from "pmtiles";
 
   // Default map parameters
-  const DEFAULT_MAP_CENTER = [0, 0];
+  const DEFAULT_MAP_CENTER = [-11.4752463, 37.1016133];
   const DEFAULT_MAP_BEARING = 0;
-  const DEFAULT_MAP_ZOOM = 1;
+  const DEFAULT_MAP_ZOOM = 5;
   const DEFAULT_MAP_PITCH = 0;
 
   // Initial view state for the map
@@ -56,7 +57,6 @@
 
     // When the component is mounted, create the map
     async mounted() {
-
       // Create a tooltip
       this.createTooltip();
 
@@ -74,7 +74,6 @@
         zoom: this.currentViewState.zoom,
         bearing: this.currentViewState.bearing,
         pitch: this.currentViewState.pitch,
-        maxPitch: 0,
         preserveDrawingBuffer: true,
       });
 
@@ -94,7 +93,7 @@
       // Add the basemap control to the map
       this.baseMapControl = new BasemapsControl({
         basemaps: this.basemaps,
-        initialBasemap: "google_road",
+        initialBasemap: "geoglify_mapbox",
         expandDirection: "bottom",
       });
 
@@ -115,6 +114,9 @@
 
       // set the ready flag to true
       this.ready = true;
+
+      // add pmtiles layers to the map
+      this.addPMTilesLayers();
     },
 
     methods: {
@@ -125,6 +127,102 @@
         this.tooltip.style.zIndex = 1;
         this.tooltip.style.pointerEvents = "none";
         document.body.append(this.tooltip);
+      },
+
+      addPMTilesLayers() {
+        
+        // Add the protocol to the map
+        let protocol = new Protocol();
+        maplibregl.addProtocol("pmtiles", protocol.tile);
+
+        // Add the PMTiles layers to the map
+        const PMTILES_BUILDINGS_URL = this.$config.public.TILESERVER_URL + "/pmtiles/buildings.pmtiles";
+        const PMTILES_LANDUSE_URL = this.$config.public.TILESERVER_URL + "/pmtiles/landuse.pmtiles";
+        const PMTILES_LAND_URL = this.$config.public.TILESERVER_URL + "/pmtiles/land.pmtiles";
+        const PMTILES_INFRASTRUCTURE_URL = this.$config.public.TILESERVER_URL + "/pmtiles/infrastructure.pmtiles";
+
+        // add landuse layer
+        this.map.addSource("landuse", {
+          type: "vector",
+          url: `pmtiles://${PMTILES_LANDUSE_URL}`,
+        });
+
+        // parks
+        this.map.addLayer({
+          id: "parks",
+          type: "fill",
+          source: "landuse",
+          "source-layer": "landuse",
+          filter: ["match", ["get", "subtype"], ["park"], true, false],
+          minzoom: 0,
+          maxzoom: 24,
+          paint: {
+            "fill-color": "#38a269",
+            "fill-opacity": 0.2,
+          },
+        });
+
+        // add land layer
+        this.map.addSource("land", {
+          type: "vector",
+          url: `pmtiles://${PMTILES_LAND_URL}`,
+        });
+
+        this.map.addLayer({
+          id: "land",
+          type: "fill",
+          source: "land",
+          "source-layer": "land",
+          filter: ["match", ["get", "subtype"], ["grass", "forest", "tree"], true, false],
+          minzoom: 0,
+          maxzoom: 24,
+          paint: {
+            "fill-color": "#38a269",
+            "fill-opacity": 0.2,
+          },
+        });
+
+        // add infrastructure layer
+        this.map.addSource("infrastructure", {
+          type: "vector",
+          url: `pmtiles://${PMTILES_INFRASTRUCTURE_URL}`,
+        });
+
+        this.map.addLayer({
+          id: "infrastructure",
+          type: "line",
+          source: "infrastructure",
+          "source-layer": "infrastructure",
+          filter: ["match", ["get", "subtype"], ["transit", "bridge"], true, false],
+          minzoom: 13,
+          maxzoom: 24,
+          paint: {
+            "line-color": "#f0f0f0",
+            "line-opacity": 0.8,
+            "line-width": 3,
+          },
+        });
+
+        // add buildings layer
+        this.map.addSource("buildings", {
+          type: "vector",
+          url: `pmtiles://${PMTILES_BUILDINGS_URL}`,
+        });
+
+        this.map.addLayer({
+          id: "buildings",
+          type: "fill-extrusion",
+          source: "buildings",
+          minzoom: 13,
+          maxzoom: 24,
+          "source-layer": "buildings",
+          paint: {
+            "fill-extrusion-color": "#f0f0f0",
+            "fill-extrusion-opacity": 0.8,
+            "fill-extrusion-base": 0,
+            "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"]], 5],
+          },
+        });
       },
     },
   };
