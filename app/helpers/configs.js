@@ -145,7 +145,6 @@ export default {
   // Get the ship geojson
   processGeoJSON(ship) {
     try {
-
       // Check if the ship is valid
       let originalCoords = ship.location.coordinates;
       let hdg = ship?.hdg;
@@ -187,9 +186,9 @@ export default {
         const center = this.convertCoordsToMeters(originalCoords, source);
 
         // Calculate the four points of the ship in meters
-        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - ((xOffsetA + xOffsetB) * 0.1)];
+        let pointAC = [center[0] - yOffsetC, center[1] + xOffsetA - (xOffsetA + xOffsetB) * 0.1];
         let pointE = [center[0] + (yOffsetD - yOffsetC) / 2, center[1] + xOffsetA];
-        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - ((xOffsetA + xOffsetB) * 0.1)];
+        let pointAD = [center[0] + yOffsetD, center[1] + xOffsetA - (xOffsetA + xOffsetB) * 0.1];
         let pointBD = [center[0] + yOffsetD, center[1] - xOffsetB];
         let pointBC = [center[0] - yOffsetC, center[1] - xOffsetB];
 
@@ -478,5 +477,130 @@ export default {
 
     // Return array with values [r, g, b, a]
     return [r, g, b, a];
+  },
+
+  getGeofencerStyle() {
+    return [
+      // ACTIVE (being drawn)
+      // line stroke
+      {
+        id: "gl-draw-line",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#1867c0",
+          "line-dasharray": [0.2, 2],
+          "line-width": 5,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        paint: {
+          "fill-color": "#1867c0",
+          "fill-outline-color": "#1867c0",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon mid points
+      {
+        id: "gl-draw-polygon-midpoint",
+        type: "circle",
+        filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#1867c0",
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 2,
+        },
+      },
+      // polygon outline stroke
+      // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+      {
+        id: "gl-draw-polygon-stroke-active",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#1867c0",
+          "line-dasharray": [0.2, 2],
+          "line-width": 5,
+        },
+      },
+      // vertex point halos
+      {
+        id: "gl-draw-polygon-and-line-vertex-halo-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#1867c0",
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 2,
+        },
+      },
+      // vertex points
+      {
+        id: "gl-draw-polygon-and-line-vertex-active",
+        type: "circle",
+        filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#1867c0",
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 2,
+        },
+      },
+
+      // INACTIVE (static, already drawn)
+      // line stroke
+      {
+        id: "gl-draw-line-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "LineString"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#1867c0",
+          "line-width": 5,
+        },
+      },
+      // polygon fill
+      {
+        id: "gl-draw-polygon-fill-static",
+        type: "fill",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        paint: {
+          "fill-color": "#1867c0",
+          "fill-outline-color": "#1867c0",
+          "fill-opacity": 0.1,
+        },
+      },
+      // polygon outline
+      {
+        id: "gl-draw-polygon-stroke-static",
+        type: "line",
+        filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#1867c0",
+          "line-width": 5,
+        },
+      },
+    ];
   },
 };

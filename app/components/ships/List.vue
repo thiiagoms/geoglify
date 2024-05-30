@@ -50,7 +50,8 @@
   <ShipsFilters :open="openFiltersDialog" @update:open="updateOpenFiltersDialogState"></ShipsFilters>
 
   <v-snackbar color="primary" elevation="24" v-model="geofencerSearchEnabled" location="bottom" location-strategy="connected" timeout="-1" style="position: absolute; bottom: 50px">
-    Draw a polygon on the map to search for ships within the area.<br />And click search to find the ships in the area.
+    Draw a polygon on the map to search for ships within the area.<br />
+    Area: {{ geofencerArea }} km<sup>2</sup>
 
     <template v-slot:actions>
       <v-btn variant="outlined" @click="searchByArea"> Search </v-btn>
@@ -59,6 +60,7 @@
 </template>
 
 <script>
+  import * as turf from "@turf/turf";
   import MapboxDraw from "@mapbox/mapbox-gl-draw";
   import configs from "~/helpers/configs";
 
@@ -83,6 +85,7 @@
       geofencerSearchEnabled: false,
       geofencerDraw: null,
       geofencerFeatures: null,
+      geofencerArea: 0,
     }),
 
     computed: {
@@ -168,145 +171,88 @@
       },
 
       toggleGeofencerSearch() {
+        // Toggle the geofencer search
         this.geofencerSearchEnabled = !this.geofencerSearchEnabled;
-        this.geofencerDraw.changeMode("draw_polygon");
+
+        // Initialize or remove the geofencer search
+        if (this.geofencerSearchEnabled) {
+          this.initGeofencerSearch();
+        } else {
+          this.removeGeofencerSearch();
+        }
       },
 
       searchByArea() {
-        this.geofencerFeatures = this.geofencerDraw.getAll()['features'][0]['geometry'];
+        // Get the geofencer features
+        this.geofencerFeatures = this.geofencerDraw.getAll()["features"][0]["geometry"];
+
+        // Load the items
         this.loadItems({ page: 1, itemsPerPage: 20 });
       },
-    },
 
-    mounted() {
-      // Init geofencer drawer for search
-      this.geofencerDraw = new MapboxDraw({
-        displayControlsDefault: false,
-        styles: [
-          // ACTIVE (being drawn)
-          // line stroke
-          {
-            id: "gl-draw-line",
-            type: "line",
-            filter: ["all", ["==", "$type", "LineString"], ["!=", "mode", "static"]],
-            layout: {
-              "line-cap": "round",
-              "line-join": "round",
-            },
-            paint: {
-              "line-color": "#1867c0",
-              "line-dasharray": [0.2, 2],
-              "line-width": 5,
-            },
-          },
-          // polygon fill
-          {
-            id: "gl-draw-polygon-fill",
-            type: "fill",
-            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-            paint: {
-              "fill-color": "#1867c0",
-              "fill-outline-color": "#1867c0",
-              "fill-opacity": 0.1,
-            },
-          },
-          // polygon mid points
-          {
-            id: "gl-draw-polygon-midpoint",
-            type: "circle",
-            filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
-            paint: {
-              "circle-radius": 5,
-              "circle-color": "#1867c0",
-              "circle-stroke-color": "#fff",
-              "circle-stroke-width": 2,
-            },
-          },
-          // polygon outline stroke
-          // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
-          {
-            id: "gl-draw-polygon-stroke-active",
-            type: "line",
-            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
-            layout: {
-              "line-cap": "round",
-              "line-join": "round",
-            },
-            paint: {
-              "line-color": "#1867c0",
-              "line-dasharray": [0.2, 2],
-              "line-width": 5
-            },
-          },
-          // vertex point halos
-          {
-            id: "gl-draw-polygon-and-line-vertex-halo-active",
-            type: "circle",
-            filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
-            paint: {
-              "circle-radius": 5,
-              "circle-color": "#1867c0",
-              "circle-stroke-color": "#fff",
-              "circle-stroke-width": 2,
-            },
-          },
-          // vertex points
-          {
-            id: "gl-draw-polygon-and-line-vertex-active",
-            type: "circle",
-            filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ["!=", "mode", "static"]],
-            paint: {
-              "circle-radius": 5,
-              "circle-color": "#1867c0",
-              "circle-stroke-color": "#fff",
-              "circle-stroke-width": 2,
-            },
-          },
+      // Update the area of the geofencer search
+      updateArea() {
 
-          // INACTIVE (static, already drawn)
-          // line stroke
-          {
-            id: "gl-draw-line-static",
-            type: "line",
-            filter: ["all", ["==", "$type", "LineString"], ["==", "mode", "static"]],
-            layout: {
-              "line-cap": "round",
-              "line-join": "round",
-            },
-            paint: {
-              "line-color": "#1867c0",
-              "line-width": 5,
-            },
-          },
-          // polygon fill
-          {
-            id: "gl-draw-polygon-fill-static",
-            type: "fill",
-            filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
-            paint: {
-              "fill-color": "#1867c0",
-              "fill-outline-color": "#1867c0",
-              "fill-opacity": 0.1,
-            },
-          },
-          // polygon outline
-          {
-            id: "gl-draw-polygon-stroke-static",
-            type: "line",
-            filter: ["all", ["==", "$type", "Polygon"], ["==", "mode", "static"]],
-            layout: {
-              "line-cap": "round",
-              "line-join": "round",
-            },
-            paint: {
-              "line-color": "#1867c0",
-              "line-width": 5,
-            },
-          },
-        ],
-      });
+        // geojson object of the drawn area
+        let area = turf.area(this.geofencerDraw.getAll());
 
-      this.map.addControl(this.geofencerDraw);
+        // Calculate the area in km^2
+        this.geofencerArea = Math.round(area / 1000000);
+      },
+
+      // Initialize the geofencer search
+      initGeofencerSearch() {
+        // Initialize the geofencer draw object
+        this.geofencerDraw = new MapboxDraw({
+          displayControlsDefault: false,
+          styles: configs.getGeofencerStyle(),
+        });
+
+        // Add the geofencer draw control
+        this.map.addControl(this.geofencerDraw);
+
+        // Disable the draw and measures control (other controls are disabled when geofencer is enabled)
+        document.querySelector(".draw_control").style.backgroundColor = "#ccc";
+        document.querySelector(".measures_control").style.backgroundColor = "#ccc";
+
+        document.querySelector(".draw_control").disabled = true;
+        document.querySelector(".measures_control").disabled = true;
+
+        // Change the mode to draw polygon
+        this.geofencerDraw.changeMode("draw_polygon");
+
+        // Add the event listeners
+        this.map.on("draw.create", this.updateArea);
+        this.map.on("draw.delete", this.updateArea);
+        this.map.on("draw.update", this.updateArea);
+      },
+
+      // Remove the geofencer search
+      removeGeofencerSearch() {
+        // Remove the geofencer draw control
+        if (this.geofencerDraw) this.map.removeControl(this.geofencerDraw);
+
+        // Reset the draw control (other controls are disabled when geofencer is enabled)
+        document.querySelector(".draw_control").style.backgroundColor = "white";
+        document.querySelector(".measures_control").style.backgroundColor = "white";
+
+        document.querySelector(".draw_control").disabled = false;
+        document.querySelector(".measures_control").disabled = false;
+
+        // Reset the geofencer draw object
+        this.geofencerDraw = null;
+
+        // Reset the geofencer features
+        this.geofencerFeatures = null;
+
+        // Reset the geofencer area
+        this.geofencerArea = 0;
+
+        // Remove event listeners
+        this.map.off("draw.create", this.updateArea);
+        this.map.off("draw.delete", this.updateArea);
+        this.map.off("draw.update", this.updateArea);
+      },
     },
   };
 </script>
