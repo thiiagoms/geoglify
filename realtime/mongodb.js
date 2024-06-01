@@ -107,7 +107,7 @@ async function searchAISShips(page, itemsPerPage, searchText, cargos = [], geome
 
 // Get a ship by ID
 async function getAISShip(shipId) {
-  return await mongoClient
+  let data = await mongoClient
     .db("geoglify")
     .collection("realtime")
     .findOne(
@@ -137,10 +137,33 @@ async function getAISShip(shipId) {
         },
       }
     );
+
+  data.path = await getHistoricalPath(data.mmsi);
+  return data;
+}
+
+async function getHistoricalPath(mmsi) {
+  let data = await mongoClient
+    .db("geoglify")
+    .collection("historical")
+    .find(
+      { mmsi: mmsi },
+      {
+        projection: {
+          _id: 0,  // Exclude the _id field from the projection
+          location: 1,
+        },
+      }
+    )
+    .toArray();
+
+  // Extract coordinates from each location point
+  return data.map((d) => d.location.coordinates);
 }
 
 module.exports = {
   getAISShips,
   getAISShip,
   searchAISShips,
+  getHistoricalPath,
 };

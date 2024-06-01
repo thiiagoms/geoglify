@@ -9,8 +9,8 @@
 
 <script>
   import { io } from "socket.io-client";
-  import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
-  import { CollisionFilterExtension } from "@deck.gl/extensions";
+  import { IconLayer, TextLayer, GeoJsonLayer, PathLayer } from "@deck.gl/layers";
+  import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
 
   const ZOOM_AIS_THRESHOLD = 14;
@@ -27,6 +27,8 @@
         aisLayer: null,
         legendLayer: null,
         aisGeoJSONLayer: null,
+        pathLayer: null,
+        pathLayerOffset: null,
         overlay: new MapboxOverlay({
           interleaved: false,
           layers: [],
@@ -56,16 +58,15 @@
       },
 
       filteredShips() {
-        return this.$store.state.ships.list.filter((s) => 
-          s.location 
-          && s.location.coordinates 
-          && this.$store.state.ships.cargos.some((c) => c.code === (s.cargo ?? 0) 
-          && c.is_active
-        ));
+        return this.$store.state.ships.list.filter((s) => s.location && s.location.coordinates && this.$store.state.ships.cargos.some((c) => c.code === (s.cargo ?? 0) && c.is_active));
       },
 
       selected() {
         return this.$store.state.ships.selected;
+      },
+
+      selectedPath() {
+        return this.$store.state.ships.selectedPath;
       },
 
       serviceStatusIcon() {
@@ -273,7 +274,7 @@
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathLayerOffset],
           });
         }
 
@@ -361,6 +362,41 @@
 
       // Render the layers
       window.requestAnimationFrame(this.render.bind(this));
+    },
+
+    watch: {
+      selectedPath(path) {
+        if (!!path) {
+          console.log(path);
+          this.pathLayer = new PathLayer({
+            id: "dashed",
+            data: [{ path }],
+            coordinateOrigin: [0, 0],
+            getPath: (d) => d.path,
+            getWidth: 25,
+            getColor: [255, 255, 0],
+
+            // props added by PathStyleExtension
+            getDashArray: [6, 3],
+            dashJustified: false,
+            
+
+            extensions: [new PathStyleExtension({ highPrecisionDash: true })],
+          });
+
+          
+
+          // Update the layers in the overlay
+          this.overlay.setProps({
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathLayerOffset],
+          });
+        } else {
+          // Update the layers in the overlay
+          this.overlay.setProps({
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+          });
+        }
+      },
     },
   };
 </script>
