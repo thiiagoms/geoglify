@@ -9,7 +9,7 @@
 
 <script>
   import { io } from "socket.io-client";
-  import { IconLayer, TextLayer, GeoJsonLayer, PathLayer } from "@deck.gl/layers";
+  import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
   import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
 
@@ -28,7 +28,7 @@
         legendLayer: null,
         aisGeoJSONLayer: null,
         pathLayer: null,
-        pathLayerOffset: null,
+        pathTextLayer: null,
         overlay: new MapboxOverlay({
           interleaved: false,
           layers: [],
@@ -274,7 +274,7 @@
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathLayerOffset],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathTextLayer],
           });
         }
 
@@ -365,30 +365,51 @@
     },
 
     watch: {
-      selectedPath(path) {
-        if (!!path) {
-          console.log(path);
-          this.pathLayer = new PathLayer({
-            id: "dashed",
-            data: [{ path }],
-            coordinateOrigin: [0, 0],
-            getPath: (d) => d.path,
-            getWidth: 25,
-            getColor: [255, 255, 0],
+      selectedPath(value) {
+        if (!!value) {
+          this.pathLayer = new GeoJsonLayer({
+            id: "GeoJsonLayer",
+            data: value,
 
-            // props added by PathStyleExtension
-            getDashArray: [6, 3],
-            dashJustified: false,
-            
+            stroked: false,
+            filled: true,
+            pickable: true,
 
-            extensions: [new PathStyleExtension({ highPrecisionDash: true })],
+            getLineColor: (f) => [7, 87, 152, 125],
+            getTextColor: [0, 0, 0],
+            getLineWidth: 25,
+            getPointRadius: 4,
+            getTextSize: 10,
+            getDashArray: [3, 2],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [new PathStyleExtension({ dash: true })],
           });
 
-          
+          this.pathTextLayer = new GeoJsonLayer({
+            id: "GeoJsonLayer",
+            data: value,
+
+            stroked: false,
+            filled: true,
+            pointType: "circle+text",
+            pickable: true,
+
+            getText: (f) =>  f.properties.sog + " knots" + "\n" + f.properties.updated_at,
+            fontFamily: "Monaco, monospace",
+            fontWeight: "bold",
+
+            getPointRadius: 4,
+            getTextSize: 11,
+            getDashArray: [3, 2],
+            dashJustified: true,
+            dashGapPickable: true,
+            extensions: [ new CollisionFilterExtension()]
+          });
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathLayerOffset],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathTextLayer],
           });
         } else {
           // Update the layers in the overlay

@@ -105,6 +105,9 @@ async function startProcessing() {
           insertOne: {
             mmsi: message.mmsi,
             location: message.location,
+            cog: message.cog,
+            hdg: message.hdg,
+            sog: message.sog,
             expire_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
             updated_at: new Date(),
           },

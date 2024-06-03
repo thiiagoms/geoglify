@@ -143,6 +143,7 @@ async function getAISShip(shipId) {
 }
 
 async function getHistoricalPath(mmsi) {
+  // Fetch historical data from MongoDB
   let data = await mongoClient
     .db("geoglify")
     .collection("historical")
@@ -150,15 +151,73 @@ async function getHistoricalPath(mmsi) {
       { mmsi: mmsi },
       {
         projection: {
-          _id: 0,  // Exclude the _id field from the projection
+          _id: 0, // Exclude the _id field from the projection
           location: 1,
+          cog: 1,
+          hdg: 1,
+          sog: 1,
+          updated_at: 1,
         },
       }
     )
     .toArray();
 
-  // Extract coordinates from each location point
-  return data.map((d) => d.location.coordinates);
+  // Check if data was found
+  if (data.length === 0) {
+    // Return an empty FeatureCollection if no data found
+    return {
+      type: "FeatureCollection",
+      features: [],
+    };
+  }
+
+  // Create an array to hold GeoJSON features
+  const features = [];
+
+  // Extract coordinates from each location point and filter points with valid sog
+  const validPoints = data.filter((d) => d.sog !== null && d.sog > 0);
+  const coordinates = validPoints.map((d) => d.location.coordinates);
+
+  // Create the GeoJSON LineString feature
+  const lineFeature = {
+    type: "Feature",
+    properties: {
+      mmsi: mmsi,
+    },
+    geometry: {
+      type: "LineString",
+      coordinates: coordinates,
+    },
+  };
+
+  // Push the LineString feature to the features array
+  features.push(lineFeature);
+
+  // Create GeoJSON Point features for each location point with valid sog
+  validPoints.forEach((d) => {
+    const pointFeature = {
+      type: "Feature",
+      properties: {
+        cog: d.cog,
+        hdg: d.hdg,
+        sog: d.sog,
+        updated_at: d.updated_at,
+      },
+      geometry: {
+        type: "Point",
+        coordinates: d.location.coordinates,
+      },
+    };
+
+    // Push each Point feature to the features array
+    features.push(pointFeature);
+  });
+
+  // Return the GeoJSON FeatureCollection
+  return {
+    type: "FeatureCollection",
+    features: features,
+  };
 }
 
 module.exports = {
