@@ -28,7 +28,7 @@
         legendLayer: null,
         aisGeoJSONLayer: null,
         pathLayer: null,
-        pathTextLayer: null,
+        checkPointPathLayer: null,
         overlay: new MapboxOverlay({
           interleaved: false,
           layers: [],
@@ -66,7 +66,7 @@
       },
 
       selectedPath() {
-        return this.$store.state.ships.selectedPath;
+        return JSON.parse(JSON.stringify(this.$store.state.ships.selectedPath));
       },
 
       serviceStatusIcon() {
@@ -191,7 +191,7 @@
               autoHighlight: true,
               getLineWidth: 0.5,
               lineWidthMinPixels: 2,
-              getLineColor: [128, 128, 128, 255],
+              getLineColor: [255, 255, 255, 255],
               highlightColor: [255, 234, 0, 125],
               onClick: ({ object }) => {
                 // Fly to the selected ship
@@ -215,22 +215,25 @@
               fontSettings: {
                 sdf: true,
                 fontSize: 128,
-                buffer: 20,
+                buffer: 64,
                 radius: 64,
               },
               fontWeight: "bold",
-              getAngle: 0,
+              //angle is in degrees (if you want to rotate the text, you can use the getAngle prop to rotate the text based on the heading of the ship)
+              //invert angle to get the correct rotation to read text from the top
+              getAngle: (f) => (f.hdg > 511 || f.hdg === undefined ? 0 : f.hdg >= 270 ? 270 - f.hdg : 90 - f.hdg),
+              billboard: false,
               getBackgroundColor: [255, 255, 255],
               getColor: [0, 0, 0],
-              getPosition: (f) => f.location.coordinates,
-              getSize: 16,
-              getText: (f) => (!!f.shipname ? f.shipname.trim() : "N/A"),
+              getPosition: (f) => f.center.coordinates,
+              getSize: (f) => 14,
+              getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
               getTextAnchor: "middle",
               getColor: [0, 0, 0],
               outlineColor: [255, 255, 255],
               outlineWidth: 30,
-              getTextAnchor: "start",
-              getPixelOffset: [15, 0],
+              extensions: [new CollisionFilterExtension()],
+              collisionGroup: "text",
             });
           } else {
             // Clear the layers if the zoom is below the threshold
@@ -274,7 +277,7 @@
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathTextLayer],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.checkPointPathLayer],
           });
         }
 
@@ -345,6 +348,42 @@
       formatDate(date) {
         return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
       },
+
+      filterPoints(featureCollection) {
+        // Check if the input is a valid GeoJSON FeatureCollection
+        if (!featureCollection || featureCollection.type !== "FeatureCollection" || !Array.isArray(featureCollection.features)) {
+          throw new Error("Invalid GeoJSON FeatureCollection");
+        }
+
+        // Filter the features to include only those with geometry type "Point"
+        const filteredFeatures = featureCollection.features.filter((feature) => {
+          return feature.geometry && feature.geometry.type === "Point";
+        });
+
+        // Return a new FeatureCollection with the filtered features
+        return {
+          type: "FeatureCollection",
+          features: filteredFeatures,
+        };
+      },
+
+      filterLineStrings(featureCollection) {
+        // Check if the input is a valid GeoJSON FeatureCollection
+        if (!featureCollection || featureCollection.type !== "FeatureCollection" || !Array.isArray(featureCollection.features)) {
+          throw new Error("Invalid GeoJSON FeatureCollection");
+        }
+
+        // Filter the features to include only those with geometry type "LineString"
+        const filteredFeatures = featureCollection.features.filter((feature) => {
+          return feature.geometry && feature.geometry.type === "LineString";
+        });
+
+        // Return a new FeatureCollection with the filtered features
+        return {
+          type: "FeatureCollection",
+          features: filteredFeatures,
+        };
+      },
     },
 
     async mounted() {
@@ -365,51 +404,41 @@
     },
 
     watch: {
-      selectedPath(value) {
-        if (!!value) {
+      selectedPath(geojson) {
+        if (!!geojson) {
+          const pointsOnly = this.filterPoints(geojson);
+          const lineStringsOnly = this.filterLineStrings(geojson);
+
+          console.log(lineStringsOnly);
+
           this.pathLayer = new GeoJsonLayer({
-            id: "GeoJsonLayer",
-            data: value,
-
-            stroked: false,
-            filled: true,
-            pickable: true,
-
-            getLineColor: (f) => [7, 87, 152, 125],
-            getTextColor: [0, 0, 0],
-            getLineWidth: 25,
-            getPointRadius: 4,
-            getTextSize: 10,
+            id: "PathLayer",
+            data: lineStringsOnly,
+            getLineColor: [7, 87, 152, 125],
             getDashArray: [3, 2],
+            lineWidthMinPixels: 2,
             dashJustified: true,
             dashGapPickable: true,
             extensions: [new PathStyleExtension({ dash: true })],
           });
 
-          this.pathTextLayer = new GeoJsonLayer({
-            id: "GeoJsonLayer",
-            data: value,
-
+          this.checkPointPathLayer = new GeoJsonLayer({
+            id: "CheckPointPathLayer",
+            data: pointsOnly,
             stroked: false,
             filled: true,
-            pointType: "circle+text",
-            pickable: true,
-
-            getText: (f) =>  f.properties.sog + " knots" + "\n" + f.properties.updated_at,
+            pointType: "circle",
+            getText: (f) => f.properties.sog + " knots" + "\n" + f.properties.updated_at,
             fontFamily: "Monaco, monospace",
             fontWeight: "bold",
-
             getPointRadius: 4,
             getTextSize: 11,
-            getDashArray: [3, 2],
-            dashJustified: true,
-            dashGapPickable: true,
-            extensions: [ new CollisionFilterExtension()]
+            extensions: [new CollisionFilterExtension()],
           });
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.pathTextLayer],
+            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.checkPointPathLayer],
           });
         } else {
           // Update the layers in the overlay

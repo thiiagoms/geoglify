@@ -174,5 +174,7 @@ function processShipData(ship) {
   // Process the GeoJSON data
   ship.geojson = configs.processGeoJSON(ship);
 
+  ship.center = configs.getCenter(ship.geojson);
+
   return ship;
 }
