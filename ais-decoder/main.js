@@ -2,6 +2,7 @@ const readline = require("readline");
 const { MongoClient } = require("mongodb");
 const net = require("net");
 const { log } = require("console");
+const exp = require("constants");
 const AisDecode = require("ggencoder").AisDecode;
 const session = {};
 
@@ -55,13 +56,15 @@ async function connectToMongoDBWithRetry() {
 async function startProcessing() {
   const database = mongoClient.db("geoglify");
   const realtimeMessagesCollection = database.collection("realtime");
+  const historicalMessagesCollection = database.collection("historical");
 
   // Function to process and save messages in the database
   async function processAndSaveMessages() {
     if (!isProcessing && aisMessageBuffer.length > 0) {
       isProcessing = true;
 
-      const bulkOperations = [];
+      const bulkRealtimeOperations = [];
+      const bulkHistoricalOperations = [];
 
       const bufferSize = Math.min(aisMessageBuffer.length, 200);
 
@@ -86,12 +89,27 @@ async function startProcessing() {
           };
         }
 
-        // Push update operation to bulk operations array
-        bulkOperations.push({
+        // Save realtime messages (all attributes)
+        bulkRealtimeOperations.push({
           updateOne: {
             filter: { mmsi: mmsi },
-            update: { $set: message }, // Update only the attributes with new values
+            update: { $set: message },
             upsert: true,
+          },
+        });
+
+        let now = new Date();
+        
+        // insert all messages (only mmsi and location) and set expiration time to 7 days
+        bulkHistoricalOperations.push({
+          insertOne: {
+            mmsi: message.mmsi,
+            location: message.location,
+            cog: message.cog,
+            hdg: message.hdg,
+            sog: message.sog,
+            expire_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+            updated_at: new Date(),
           },
         });
       }
@@ -99,8 +117,17 @@ async function startProcessing() {
       aisMessageBuffer.splice(0, bufferSize);
 
       try {
-        logInfo(`Inserting or Updating ${bulkOperations.length} operations into the realtime collection...`);
-        await realtimeMessagesCollection.bulkWrite(bulkOperations);
+        logInfo(`Inserting or Updating ${bulkRealtimeOperations.length} operations into the realtime collection...`);
+        await realtimeMessagesCollection.bulkWrite(bulkRealtimeOperations, {
+          ordered: false,
+        });
+        logSuccess("Realtime messages saved successfully!");
+
+        logInfo(`Inserting or Updating ${bulkHistoricalOperations.length} operations into the historical collection...`);
+        await historicalMessagesCollection.bulkWrite(bulkHistoricalOperations, {
+          ordered: false,
+        });
+        logSuccess("Historical messages saved successfully!");
 
         logInfo(`Remaining in aisMessageBuffer: ${aisMessageBuffer.length}`);
       } catch (error) {
@@ -118,7 +145,13 @@ async function startProcessing() {
 
   // Create an index for expire_at field if not already created
   if (!isIndexCreated) {
+
     realtimeMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
+    historicalMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
+
+    realtimeMessagesCollection.createIndex({ location: "2dsphere" });
+    historicalMessagesCollection.createIndex({ location: "2dsphere" });
+
     isIndexCreated = true;
   }
 }
@@ -170,6 +203,7 @@ function processAisMessage(message) {
       ...decMsg,
       utc: new Date(now.getTime() - decMsg.utc),
       expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
+      updated_at: new Date(),
       ais_server_host: AIS_SERVER_HOST,
     };
 

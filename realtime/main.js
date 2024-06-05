@@ -90,9 +90,6 @@ async function startApplication() {
     const database = mongoClient.db("geoglify");
     const realtimeMessagesCollection = database.collection("realtime");
 
-    // Create a 2dsphere index on the "location" field
-    realtimeMessagesCollection.createIndex({ location: "2dsphere" });
-
     io.on("connection", (socket) => {
       logSuccess(`Client connected: \x1b[32m${socket.id}\x1b[0m`);
       socket.on("disconnect", () => logError(`Client disconnected: \x1b[31m${socket.id}\x1b[0m`));

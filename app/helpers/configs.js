@@ -232,6 +232,11 @@ export default {
     }
   },
 
+  // Get the center of the GeoJSON
+  getCenter(geojson) {
+    return turf.centerOfMass(geojson).geometry;
+  },
+
   //get utm-zone from longitude degrees
   utmzone_from_lon(lon_deg) {
     return 1 + Math.floor((lon_deg + 180) / 6);
