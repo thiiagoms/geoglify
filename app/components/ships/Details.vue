@@ -37,7 +37,7 @@
           <tbody>
             <!-- Use v-for to loop through ship information -->
             <template v-for="(value, label) in selected">
-              <template v-if="value !== null && value !== undefined && value !== '' && label != '_id' && label != 'countrycode'">
+              <template v-if="value !== null && value !== undefined && value !== '' && label != '_id' && label != 'countrycode' && label != 'path'">
                 <tr :key="label">
                   <!-- Display label in bold -->
                   <td class="font-weight-bold text-uppercase">{{ label }}</td>
@@ -58,7 +58,7 @@
       </v-card-text>
       <v-card-actions>
         <!-- toggle show path button -->
-        <v-btn @click="showPath = true" :color="showPath ? 'blue' : 'grey'" variant="tonal" block>
+        <v-btn @click="showPath = !showPath" :color="showPath ? 'blue' : 'grey'" variant="tonal" block>
           <v-icon>mdi-map-marker-path</v-icon>
           {{ showPath ? "Hide Path" : "Show Path" }}
         </v-btn>
@@ -102,6 +102,13 @@
         if (value) {
           this.$store.dispatch("ships/SET_SELECTED_PATH", this.selected.path);
         } else {
+          this.$store.dispatch("ships/SET_SELECTED_PATH", null);
+        }
+      },
+
+      selected(value) {
+        if (!value) {
+          this.showPath = false;
           this.$store.dispatch("ships/SET_SELECTED_PATH", null);
         }
       },

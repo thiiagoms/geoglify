@@ -225,13 +225,12 @@
               billboard: false,
               getBackgroundColor: [255, 255, 255],
               getColor: [0, 0, 0],
+              outlineColor: [255, 255, 255],
+              outlineWidth: 30,
               getPosition: (f) => f.center.coordinates,
               getSize: (f) => 14,
               getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
               getTextAnchor: "middle",
-              getColor: [0, 0, 0],
-              outlineColor: [255, 255, 255],
-              outlineWidth: 30,
               extensions: [new CollisionFilterExtension()],
               collisionGroup: "text",
             });
@@ -277,7 +276,7 @@
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.checkPointPathLayer],
+            layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
           });
         }
 
@@ -409,8 +408,6 @@
           const pointsOnly = this.filterPoints(geojson);
           const lineStringsOnly = this.filterLineStrings(geojson);
 
-          console.log(lineStringsOnly);
-
           this.pathLayer = new GeoJsonLayer({
             id: "PathLayer",
             data: lineStringsOnly,
@@ -427,20 +424,35 @@
             data: pointsOnly,
             stroked: false,
             filled: true,
-            pointType: "circle",
-            getText: (f) => f.properties.sog + " knots" + "\n" + f.properties.updated_at,
+            pointType: "text",
             fontFamily: "Monaco, monospace",
+            fontSettings: {
+              sdf: true,
+              fontSize: 128,
+              buffer: 64,
+              radius: 64,
+            },
             fontWeight: "bold",
-            getPointRadius: 4,
+            getText: (f) => f.properties.sog + " knots" + "\n" + f.properties.updated_at,
+            getPointRadius: 2,
+            getFillColor: [7, 87, 152, 125],
+            getBackgroundColor: [255, 255, 255],
+            getColor: [7, 87, 152],
+            outlineColor: [255, 255, 255],
+            outlineWidth: 30,
             getTextSize: 11,
             extensions: [new CollisionFilterExtension()],
+            collisionGroup: "text",
           });
 
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.pathLayer, this.checkPointPathLayer],
+            layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
           });
         } else {
+          this.pathLayer = null;
+          this.checkPointPathLayer = null;
+
           // Update the layers in the overlay
           this.overlay.setProps({
             layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
