@@ -15,7 +15,6 @@
 <script>
   import { io } from "socket.io-client";
   import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
-  import { ScenegraphLayer } from "@deck.gl/mesh-layers";
   import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
   import { MapboxOverlay } from "@deck.gl/mapbox";
 
@@ -70,10 +69,6 @@
 
       selected() {
         return this.$store.state.ships.selected;
-      },
-
-      selectedPath() {
-        return JSON.parse(JSON.stringify(this.$store.state.ships.selectedPath));
       },
 
       serviceStatusIcon() {
@@ -175,80 +170,79 @@
 
       render(now) {
         // Process the message buffer every second
-        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp >= 2 * 1000) {
+        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp > 1000) {
           // Process the message buffer every second
           this.processMessageBatch();
 
           // Update the timestamp to right now
           this.lastIntervalTimestamp = now;
 
+          let visibleFeatures = [];
+
           if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
             // Get the visible features from the overlay
-            let visibleFeatures = this.getVisibleShips();
+            visibleFeatures = this.getVisibleShips();
+          }
 
-            if (this.mapMode == "2D") {
-              // Create a new GeoJsonLayer for the AIS data
-              this.aisGeoJSONLayer = new GeoJsonLayer({
-                id: "aisgeojson-layer",
-                data: visibleFeatures.map((s) => s.geojson),
-                pickable: true,
-                filled: true,
-                getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.colorGeoJson),
-                lineJointRounded: true,
-                lineCapRounded: true,
-                autoHighlight: true,
-                getLineWidth: 0.5,
-                lineWidthMinPixels: 2,
-                getLineColor: [255, 255, 255, 255],
-                highlightColor: [255, 234, 0, 125],
-                onClick: ({ object }) => {
-                  // Fly to the selected ship
-                  this.$store.dispatch("ships/SET_SELECTED", object.properties);
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
+            // Create a new GeoJsonLayer for the AIS data
+            this.aisGeoJSONLayer = new GeoJsonLayer({
+              id: "aisgeojson-layer",
+              data: visibleFeatures.map((s) => s.geojson),
+              pickable: true,
+              filled: true,
+              getFillColor: (f) => (f.properties._id == this.selected?._id ? [255, 234, 0, 255] : f.properties.colorGeoJson),
+              lineJointRounded: true,
+              lineCapRounded: true,
+              autoHighlight: true,
+              getLineWidth: 0.5,
+              lineWidthMinPixels: 2,
+              getLineColor: [255, 255, 255, 255],
+              highlightColor: [255, 234, 0, 125],
+              onClick: ({ object }) => {
+                // Fly to the selected ship
+                this.$store.dispatch("ships/SET_SELECTED", object.properties);
 
-                  // Unset the selected feature
-                  this.$store.dispatch("features/SET_SELECTED", null);
+                // Unset the selected feature
+                this.$store.dispatch("features/SET_SELECTED", null);
 
-                  return true;
-                },
+                return true;
+              },
 
-                onHover: (info) => this.showTooltip(info),
-              });
-
-              // Create a new TextLayer for the ship names
-              this.legendLayer = new TextLayer({
-                id: "aislegend-layer",
-                data: visibleFeatures,
-
-                fontFamily: "Monaco, monospace",
-                fontSettings: {
-                  sdf: true,
-                  fontSize: 128,
-                  buffer: 64,
-                  radius: 64,
-                },
-                fontWeight: "bold",
-                //angle is in degrees (if you want to rotate the text, you can use the getAngle prop to rotate the text based on the heading of the ship)
-                //invert angle to get the correct rotation to read text from the top
-                getAngle: (f) => (f.hdg == 511 || f.hdg === undefined ? 0 : f.hdg >= 180 ? 270 - (f.hdg + 180) : 90 - f.hdg),
-                billboard: false,
-                getBackgroundColor: [255, 255, 255],
-                getColor: [0, 0, 0],
-                outlineColor: [255, 255, 255],
-                outlineWidth: 30,
-                getPosition: (f) => f.center.coordinates,
-                getSize: (f) => (f.dimC + f.dimD) * 0.8,
-                sizeMinPixels: 14,
-                sizeMaxPixels: 22,
-                getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
-                getTextAnchor: "middle",
-                extensions: [new CollisionFilterExtension()],
-                collisionGroup: "text",
-              });
-            }
-
+              onHover: (info) => this.showTooltip(info),
+            });
           } else {
-            // Clear the layers if the zoom is below the threshold
             this.aisGeoJSONLayer = null;
+          }
+
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD + 3) {
+            // Create a new TextLayer for the ship names
+            this.legendLayer = new TextLayer({
+              id: "aislegend-layer",
+              data: visibleFeatures,
+              fontFamily: "Monaco, monospace",
+              fontSettings: {
+                sdf: true,
+                fontSize: 128,
+                buffer: 64,
+                radius: 64,
+              },
+              fontWeight: "bold",
+              //fip text to the right angle to legible angle for the user
+              getAngle: (f) => (f.hdg == 511 || f.hdg === undefined ? 0 : f.hdg > 180 ? 270 - f.hdg : 90 - f.hdg),
+              billboard: false,
+              getBackgroundColor: [255, 255, 255],
+              getColor: [0, 0, 0],
+              outlineColor: [255, 255, 255],
+              outlineWidth: 30,
+              getPosition: (f) => f.center.coordinates,
+              getSize: (f) => 14,
+              getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
+              getTextAnchor: "middle",
+              extensions: [new CollisionFilterExtension()],
+              collisionGroup: "visualization",
+            });
+          } else {
             this.legendLayer = null;
           }
 
@@ -267,7 +261,7 @@
             }),
             getPosition: (f) => f.location.coordinates,
             getAngle: (f) => 360 - f.hdg,
-            getSize: (f) => (this.map.getZoom() < ZOOM_AIS_THRESHOLD ? f.size : 5),
+            getSize: (f) => f.size,
             getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
             getCollisionPriority: (f) => f.priority,
             extensions: [new CollisionFilterExtension()],
@@ -286,18 +280,6 @@
             onHover: (info) => this.showTooltip(info),
           });
 
-          //@TODO: Add 3D ships (refs #32)
-          /*this.ships3D = new ScenegraphLayer({
-            id: "ais-3d",
-            data: this.filteredShips,
-            getPosition: (f) => f.location.coordinates,
-            getOrientation: (f) => [0, 180 - f.hdg, 90],
-            translation: [0, 0, -10],
-            scenegraph: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb",
-            sizeScale: 100,
-            _lighting: "pbr",
-          });*/
-
           // Update the layers in the overlay
           this.overlay.setProps({
             layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.ships3D].filter(Boolean),
@@ -309,16 +291,18 @@
 
       // Get the visible features from the overlay
       getVisibleShips() {
-        return this.overlay
+        let data = this.overlay
           .pickMultipleObjects({
             x: this.overlay._deck.width / 2,
             y: this.overlay._deck.height / 2,
             radius: Math.max(this.overlay._deck.width, this.overlay._deck.height) / 2,
             depth: 100,
             layerIds: ["ais-layer"],
-            unproject3D: true,
+            unproject3D: false,
           })
           .map((f) => f.object);
+
+        return JSON.parse(JSON.stringify(data));
       },
 
       isMobile() {
@@ -432,15 +416,23 @@
     },
 
     watch: {
-      selectedPath(geojson) {
-        if (!!geojson) {
-          const pointsOnly = this.filterPoints(geojson);
-          const lineStringsOnly = this.filterLineStrings(geojson);
+      selected(ship) {
+        // Get the GeoJSON data for the selected ship
+        let pathGeoJSON = ship?.path;
 
+        // Check if the GeoJSON data is valid
+        if (!!pathGeoJSON) {
+          // Filter the GeoJSON data to include only points and line strings
+          const pointsOnly = this.filterPoints(pathGeoJSON);
+
+          // Filter the GeoJSON data to include only line strings
+          const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
+
+          // Create a new GeoJsonLayer for the line strings
           this.pathLayer = new GeoJsonLayer({
-            id: "PathLayer",
+            id: "path-layer",
             data: lineStringsOnly,
-            getLineColor: [7, 87, 152, 125],
+            getLineColor: [255, 234, 0, 255],
             getDashArray: [3, 2],
             lineWidthMinPixels: 2,
             dashJustified: true,
@@ -448,34 +440,38 @@
             extensions: [new PathStyleExtension({ dash: true })],
           });
 
-          this.checkPointPathLayer = new GeoJsonLayer({
-            id: "CheckPointPathLayer",
-            data: pointsOnly,
-            stroked: false,
-            filled: true,
-            pointType: "text",
-            fontFamily: "Monaco, monospace",
-            fontSettings: {
-              sdf: true,
-              fontSize: 128,
-              buffer: 64,
-              radius: 64,
-            },
-            fontWeight: "bold",
-            getText: (f) => f.properties.sog + " knots" + "\n" + f.properties.updated_at,
-            getPointRadius: 2,
-            getFillColor: [7, 87, 152, 125],
-            getBackgroundColor: [255, 255, 255],
-            getColor: [7, 87, 152],
-            outlineColor: [255, 255, 255],
-            outlineWidth: 30,
-            getTextSize: 11,
-            extensions: [new CollisionFilterExtension()],
-            collisionGroup: "text",
-          });
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
+            // Create a new GeoJsonLayer for the points
+            this.checkPointPathLayer = new TextLayer({
+              id: "checkpoint-path-layer",
+              data: pointsOnly.features,
+              fontFamily: "Monaco, monospace",
+              fontSettings: {
+                sdf: true,
+                fontSize: 128,
+                buffer: 64,
+                radius: 64,
+              },
+              fontWeight: "bold",
+              getBackgroundColor: [255, 234, 0, 255],
+              getColor: [0, 0, 0],
+              outlineColor: [255, 255, 255],
+              outlineWidth: 30,
+              getPosition: (f) => f.geometry.coordinates,
+              getSize: (f) => 12,
+              getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
+              getTextAnchor: "middle",
+              extensions: [new CollisionFilterExtension()],
+              collisionGroup: "visualization",
+            });
+          } else {
+            this.checkPointPathLayer = null;
+          }
+
         } else {
-          this.pathLayer = null;
+          // Clear the layers if the GeoJSON data is invalid
           this.checkPointPathLayer = null;
+          this.pathLayer = null;
         }
       },
     },

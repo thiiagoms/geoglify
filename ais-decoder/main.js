@@ -100,7 +100,7 @@ async function startProcessing() {
 
         let now = new Date();
         
-        // insert all messages (only mmsi and location) and set expiration time to 7 days
+        // insert all messages (only mmsi and location) and set expiration time to 24 hours in the future
         bulkHistoricalOperations.push({
           insertOne: {
             mmsi: message.mmsi,
@@ -108,7 +108,7 @@ async function startProcessing() {
             cog: message.cog,
             hdg: message.hdg,
             sog: message.sog,
-            expire_at: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+            expire_at: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Set expiration time to 24 hours in the future
             updated_at: new Date(),
           },
         });

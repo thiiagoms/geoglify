@@ -27,7 +27,7 @@
       </v-toolbar>
       <!-- Divider between toolbar and ship information -->
       <v-divider></v-divider>
-      <v-card-text class="pa-0" style="height: calc(100dvh - 250px); overflow: auto">
+      <v-card-text class="pa-0" style="height: calc(100dvh - 200px); overflow: auto">
         <!-- Display ship icon -->
         <v-img :src="'https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=' + selected.mmsi">
           <template v-slot:error> <v-img class="mx-auto" src="https://placehold.co/600x400?text=No+Photo"></v-img> </template
@@ -56,13 +56,6 @@
           </tbody>
         </v-table>
       </v-card-text>
-      <v-card-actions>
-        <!-- toggle show path button -->
-        <v-btn @click="showPath = !showPath" :color="showPath ? 'blue' : 'grey'" variant="tonal" block>
-          <v-icon>mdi-map-marker-path</v-icon>
-          {{ showPath ? "Hide Path" : "Show Path" }}
-        </v-btn>
-      </v-card-actions>
     </v-card>
   </v-navigation-drawer>
 </template>
@@ -71,9 +64,6 @@
   import configs from "~/helpers/configs";
 
   export default {
-    data: () => ({
-      showPath: false,
-    }),
     computed: {
       // Computed property for dialog state
       dialogOpened: {
@@ -93,24 +83,6 @@
         }
 
         return ship;
-      },
-    },
-
-    watch: {
-      // Watch for showPath changes
-      showPath(value) {
-        if (value) {
-          this.$store.dispatch("ships/SET_SELECTED_PATH", this.selected.path);
-        } else {
-          this.$store.dispatch("ships/SET_SELECTED_PATH", null);
-        }
-      },
-
-      selected(value) {
-        if (!value) {
-          this.showPath = false;
-          this.$store.dispatch("ships/SET_SELECTED_PATH", null);
-        }
       },
     },
 

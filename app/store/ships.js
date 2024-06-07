@@ -4,14 +4,12 @@ import configs from "@/helpers/configs";
 export const state = () => ({
   list: [],
   selected: null,
-  selectedPath: null,
   selectedDetails: null,
   cargos: configs.getCargos(),
   listOpened: false,
 });
 
 export const actions = {
-
   // Action to fetch the ship list
   async FETCH({ commit, dispatch }) {
     const config = useRuntimeConfig();
@@ -91,19 +89,9 @@ export const actions = {
       }
     });
   },
-
-  SET_SELECTED_PATH({ commit }, value) {
-    commit("setSelectedPath", value);
-  },
-
 };
 
 export const mutations = {
-
-  // Action to set the selected path
-  setSelectedPath(state, value) {
-    state.selectedPath = value;
-  },
 
   // Action to set the selected ship
   setSelectedShip(state, ship) {
