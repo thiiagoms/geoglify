@@ -287,7 +287,7 @@
           });
 
           //@TODO: Add 3D ships (refs #32)
-          this.ships3D = new ScenegraphLayer({
+          /*this.ships3D = new ScenegraphLayer({
             id: "ais-3d",
             data: this.filteredShips,
             getPosition: (f) => f.location.coordinates,
@@ -296,7 +296,7 @@
             scenegraph: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF-Binary/Duck.glb",
             sizeScale: 100,
             _lighting: "pbr",
-          });
+          });*/
 
           // Update the layers in the overlay
           this.overlay.setProps({
