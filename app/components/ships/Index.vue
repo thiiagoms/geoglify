@@ -240,7 +240,7 @@
               getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
               getTextAnchor: "middle",
               extensions: [new CollisionFilterExtension()],
-              collisionGroup: "visualization",
+              collisionGroup: "aislegend-layer",
             });
           } else {
             this.legendLayer = null;
@@ -265,7 +265,7 @@
             getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
             getCollisionPriority: (f) => f.priority,
             extensions: [new CollisionFilterExtension()],
-            collisionGroup: "visualization",
+            collisionGroup: "ais-layer",
             pickable: true,
             onClick: ({ object }) => {
               // Fly to the selected ship
@@ -279,6 +279,57 @@
 
             onHover: (info) => this.showTooltip(info),
           });
+
+          // Get the GeoJSON data for the selected ship
+          let pathGeoJSON = this.selected?.path;
+
+          // Check if the GeoJSON data is valid
+          if (!!pathGeoJSON) {
+            // Filter the GeoJSON data to include only points and line strings
+            const pointsOnly = this.filterPoints(pathGeoJSON);
+
+            // Filter the GeoJSON data to include only line strings
+            const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
+
+            // Create a new GeoJsonLayer for the line strings
+            this.pathLayer = new GeoJsonLayer({
+              id: "path-layer",
+              data: lineStringsOnly,
+              getLineColor: [255, 234, 0, 255],
+              getDashArray: [3, 2],
+              lineWidthMinPixels: 2,
+              dashJustified: true,
+              dashGapPickable: true,
+              extensions: [new PathStyleExtension({ dash: true })],
+            });
+
+            // Create a new GeoJsonLayer for the points
+            this.checkPointPathLayer = new TextLayer({
+              id: "checkpoint-path-layer",
+              data: pointsOnly.features,
+              fontFamily: "Monaco, monospace",
+              fontSettings: {
+                sdf: true,
+                fontSize: 128,
+                buffer: 64,
+                radius: 64,
+              },
+              fontWeight: "bold",
+              getBackgroundColor: [255, 234, 0, 255],
+              getColor: [0, 0, 0],
+              outlineColor: [255, 255, 255],
+              outlineWidth: 30,
+              getPosition: (f) => f.geometry.coordinates,
+              getSize: (f) => 12,
+              getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
+              extensions: [new CollisionFilterExtension()],
+              collisionGroup: "visualization",
+            });
+          } else {
+            // Clear the layers if the GeoJSON data is invalid
+            this.checkPointPathLayer = null;
+            this.pathLayer = null;
+          }
 
           // Update the layers in the overlay
           this.overlay.setProps({
@@ -413,67 +464,6 @@
 
       // Render the layers
       window.requestAnimationFrame(this.render.bind(this));
-    },
-
-    watch: {
-      selected(ship) {
-        // Get the GeoJSON data for the selected ship
-        let pathGeoJSON = ship?.path;
-
-        // Check if the GeoJSON data is valid
-        if (!!pathGeoJSON) {
-          // Filter the GeoJSON data to include only points and line strings
-          const pointsOnly = this.filterPoints(pathGeoJSON);
-
-          // Filter the GeoJSON data to include only line strings
-          const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
-
-          // Create a new GeoJsonLayer for the line strings
-          this.pathLayer = new GeoJsonLayer({
-            id: "path-layer",
-            data: lineStringsOnly,
-            getLineColor: [255, 234, 0, 255],
-            getDashArray: [3, 2],
-            lineWidthMinPixels: 2,
-            dashJustified: true,
-            dashGapPickable: true,
-            extensions: [new PathStyleExtension({ dash: true })],
-          });
-
-          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
-            // Create a new GeoJsonLayer for the points
-            this.checkPointPathLayer = new TextLayer({
-              id: "checkpoint-path-layer",
-              data: pointsOnly.features,
-              fontFamily: "Monaco, monospace",
-              fontSettings: {
-                sdf: true,
-                fontSize: 128,
-                buffer: 64,
-                radius: 64,
-              },
-              fontWeight: "bold",
-              getBackgroundColor: [255, 234, 0, 255],
-              getColor: [0, 0, 0],
-              outlineColor: [255, 255, 255],
-              outlineWidth: 30,
-              getPosition: (f) => f.geometry.coordinates,
-              getSize: (f) => 12,
-              getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
-              getTextAnchor: "middle",
-              extensions: [new CollisionFilterExtension()],
-              collisionGroup: "visualization",
-            });
-          } else {
-            this.checkPointPathLayer = null;
-          }
-
-        } else {
-          // Clear the layers if the GeoJSON data is invalid
-          this.checkPointPathLayer = null;
-          this.pathLayer = null;
-        }
-      },
     },
   };
 </script>
