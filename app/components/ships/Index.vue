@@ -240,7 +240,7 @@
               getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
               getTextAnchor: "middle",
               extensions: [new CollisionFilterExtension()],
-              collisionGroup: "aislegend-layer",
+              collisionGroup: "visualization",
             });
           } else {
             this.legendLayer = null;
@@ -265,7 +265,7 @@
             getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
             getCollisionPriority: (f) => f.priority,
             extensions: [new CollisionFilterExtension()],
-            collisionGroup: "ais-layer",
+            collisionGroup: "visualization",
             pickable: true,
             onClick: ({ object }) => {
               // Fly to the selected ship
@@ -295,7 +295,7 @@
             this.pathLayer = new GeoJsonLayer({
               id: "path-layer",
               data: lineStringsOnly,
-              getLineColor: [255, 234, 0, 255],
+              getLineColor: [255, 234, 0, 125],
               getDashArray: [3, 2],
               lineWidthMinPixels: 2,
               dashJustified: true,
@@ -315,12 +315,12 @@
                 radius: 64,
               },
               fontWeight: "bold",
-              getBackgroundColor: [255, 234, 0, 255],
+              getBackgroundColor: [255, 255, 255],
               getColor: [0, 0, 0],
-              outlineColor: [255, 255, 255],
+              outlineColor:  [255, 234, 0, 200],
               outlineWidth: 30,
               getPosition: (f) => f.geometry.coordinates,
-              getSize: (f) => 12,
+              getSize: (f) => 11,
               getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
               extensions: [new CollisionFilterExtension()],
               collisionGroup: "visualization",
