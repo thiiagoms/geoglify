@@ -1,5 +1,10 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 45px; z-index: 1000" rounded="lg" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; right: 45px; z-index: 1000" rounded="md" size="small" @click="toggleMapMode" :color="mapMode === '3D' ? 'green' : 'white'">
+    <v-icon>mdi-cube-outline</v-icon>
+    3D
+  </v-btn>
+
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 45px; z-index: 1000" rounded="md" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
     </template>
@@ -20,6 +25,7 @@
 
     data() {
       return {
+        mapMode: "2D",
         socket: null,
         serviceStatus: "connecting",
         messageBuffer: [],
@@ -63,10 +69,6 @@
 
       selected() {
         return this.$store.state.ships.selected;
-      },
-
-      selectedPath() {
-        return JSON.parse(JSON.stringify(this.$store.state.ships.selectedPath));
       },
 
       serviceStatusIcon() {
@@ -168,17 +170,21 @@
 
       render(now) {
         // Process the message buffer every second
-        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp >= 1 * 1000) {
+        if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp > 1000) {
           // Process the message buffer every second
           this.processMessageBatch();
 
           // Update the timestamp to right now
           this.lastIntervalTimestamp = now;
 
+          let visibleFeatures = [];
+
           if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
             // Get the visible features from the overlay
-            let visibleFeatures = this.getVisibleShips();
+            visibleFeatures = this.getVisibleShips();
+          }
 
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD) {
             // Create a new GeoJsonLayer for the AIS data
             this.aisGeoJSONLayer = new GeoJsonLayer({
               id: "aisgeojson-layer",
@@ -205,12 +211,15 @@
 
               onHover: (info) => this.showTooltip(info),
             });
+          } else {
+            this.aisGeoJSONLayer = null;
+          }
 
+          if (this.map.getZoom() > ZOOM_AIS_THRESHOLD + 3) {
             // Create a new TextLayer for the ship names
             this.legendLayer = new TextLayer({
               id: "aislegend-layer",
               data: visibleFeatures,
-
               fontFamily: "Monaco, monospace",
               fontSettings: {
                 sdf: true,
@@ -219,9 +228,8 @@
                 radius: 64,
               },
               fontWeight: "bold",
-              //angle is in degrees (if you want to rotate the text, you can use the getAngle prop to rotate the text based on the heading of the ship)
-              //invert angle to get the correct rotation to read text from the top
-              getAngle: (f) => (f.hdg > 511 || f.hdg === undefined ? 0 : f.hdg >= 270 ? 270 - f.hdg : 90 - f.hdg),
+              //fip text to the right angle to legible angle for the user
+              getAngle: (f) => (f.hdg == 511 || f.hdg === undefined ? 0 : f.hdg > 180 ? 270 - f.hdg : 90 - f.hdg),
               billboard: false,
               getBackgroundColor: [255, 255, 255],
               getColor: [0, 0, 0],
@@ -232,11 +240,9 @@
               getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
               getTextAnchor: "middle",
               extensions: [new CollisionFilterExtension()],
-              collisionGroup: "text",
+              collisionGroup: "visualization",
             });
           } else {
-            // Clear the layers if the zoom is below the threshold
-            this.aisGeoJSONLayer = null;
             this.legendLayer = null;
           }
 
@@ -255,7 +261,7 @@
             }),
             getPosition: (f) => f.location.coordinates,
             getAngle: (f) => 360 - f.hdg,
-            getSize: (f) => (this.map.getZoom() < ZOOM_AIS_THRESHOLD ? f.size : 5),
+            getSize: (f) => f.size,
             getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
             getCollisionPriority: (f) => f.priority,
             extensions: [new CollisionFilterExtension()],
@@ -274,9 +280,60 @@
             onHover: (info) => this.showTooltip(info),
           });
 
+          // Get the GeoJSON data for the selected ship
+          let pathGeoJSON = this.selected?.path;
+
+          // Check if the GeoJSON data is valid
+          if (!!pathGeoJSON) {
+            // Filter the GeoJSON data to include only points and line strings
+            const pointsOnly = this.filterPoints(pathGeoJSON);
+
+            // Filter the GeoJSON data to include only line strings
+            const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
+
+            // Create a new GeoJsonLayer for the line strings
+            this.pathLayer = new GeoJsonLayer({
+              id: "path-layer",
+              data: lineStringsOnly,
+              getLineColor: [255, 234, 0, 125],
+              getDashArray: [3, 2],
+              lineWidthMinPixels: 2,
+              dashJustified: true,
+              dashGapPickable: true,
+              extensions: [new PathStyleExtension({ dash: true })],
+            });
+
+            // Create a new GeoJsonLayer for the points
+            this.checkPointPathLayer = new TextLayer({
+              id: "checkpoint-path-layer",
+              data: pointsOnly.features,
+              fontFamily: "Monaco, monospace",
+              fontSettings: {
+                sdf: true,
+                fontSize: 128,
+                buffer: 64,
+                radius: 64,
+              },
+              fontWeight: "bold",
+              getBackgroundColor: [255, 255, 255],
+              getColor: [0, 0, 0],
+              outlineColor:  [255, 234, 0, 200],
+              outlineWidth: 30,
+              getPosition: (f) => f.geometry.coordinates,
+              getSize: (f) => 11,
+              getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
+              extensions: [new CollisionFilterExtension()],
+              collisionGroup: "visualization",
+            });
+          } else {
+            // Clear the layers if the GeoJSON data is invalid
+            this.checkPointPathLayer = null;
+            this.pathLayer = null;
+          }
+
           // Update the layers in the overlay
           this.overlay.setProps({
-            layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
+            layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer, this.ships3D].filter(Boolean),
           });
         }
 
@@ -285,15 +342,18 @@
 
       // Get the visible features from the overlay
       getVisibleShips() {
-        return this.overlay
-          .pickObjects({
-            x: 0,
-            y: 0,
-            width: this.overlay._deck.width,
-            height: this.overlay._deck.height,
+        let data = this.overlay
+          .pickMultipleObjects({
+            x: this.overlay._deck.width / 2,
+            y: this.overlay._deck.height / 2,
+            radius: Math.max(this.overlay._deck.width, this.overlay._deck.height) / 2,
+            depth: 100,
             layerIds: ["ais-layer"],
+            unproject3D: false,
           })
           .map((f) => f.object);
+
+        return JSON.parse(JSON.stringify(data));
       },
 
       isMobile() {
@@ -383,6 +443,10 @@
           features: filteredFeatures,
         };
       },
+
+      toggleMapMode() {
+        this.mapMode = this.mapMode === "2D" ? "3D" : "2D";
+      },
     },
 
     async mounted() {
@@ -400,65 +464,6 @@
 
       // Render the layers
       window.requestAnimationFrame(this.render.bind(this));
-    },
-
-    watch: {
-      selectedPath(geojson) {
-        if (!!geojson) {
-          const pointsOnly = this.filterPoints(geojson);
-          const lineStringsOnly = this.filterLineStrings(geojson);
-
-          this.pathLayer = new GeoJsonLayer({
-            id: "PathLayer",
-            data: lineStringsOnly,
-            getLineColor: [7, 87, 152, 125],
-            getDashArray: [3, 2],
-            lineWidthMinPixels: 2,
-            dashJustified: true,
-            dashGapPickable: true,
-            extensions: [new PathStyleExtension({ dash: true })],
-          });
-
-          this.checkPointPathLayer = new GeoJsonLayer({
-            id: "CheckPointPathLayer",
-            data: pointsOnly,
-            stroked: false,
-            filled: true,
-            pointType: "text",
-            fontFamily: "Monaco, monospace",
-            fontSettings: {
-              sdf: true,
-              fontSize: 128,
-              buffer: 64,
-              radius: 64,
-            },
-            fontWeight: "bold",
-            getText: (f) => f.properties.sog + " knots" + "\n" + f.properties.updated_at,
-            getPointRadius: 2,
-            getFillColor: [7, 87, 152, 125],
-            getBackgroundColor: [255, 255, 255],
-            getColor: [7, 87, 152],
-            outlineColor: [255, 255, 255],
-            outlineWidth: 30,
-            getTextSize: 11,
-            extensions: [new CollisionFilterExtension()],
-            collisionGroup: "text",
-          });
-
-          // Update the layers in the overlay
-          this.overlay.setProps({
-            layers: [this.pathLayer, this.checkPointPathLayer, this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
-          });
-        } else {
-          this.pathLayer = null;
-          this.checkPointPathLayer = null;
-
-          // Update the layers in the overlay
-          this.overlay.setProps({
-            layers: [this.aisLayer, this.aisGeoJSONLayer, this.legendLayer],
-          });
-        }
-      },
     },
   };
 </script>
