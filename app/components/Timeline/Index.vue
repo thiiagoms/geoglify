@@ -10,51 +10,47 @@
     </template>
 
     <v-card class="pa-2">
-      <v-card-title class="text-center">{{ formatDate(new Date(sliderVal)) }}</v-card-title>
+      <v-card-title class="text-center font-weight-bold">{{ formatDate(new Date(sliderVal)) }}</v-card-title>
       <v-slider v-model="sliderVal" track-color="grey" always-dirty :max="max" :min="min" hide-details
         @end="setSliderValue">
         <template v-slot:prepend>
-          <v-btn depressed @click.stop="togglePlayPause" :color="isPlaying ? 'warning' : 'black'" size="small" icon dark
+          <v-btn depressed @click.stop="togglePlayPause" :color="isPlaying ? 'warning' : 'black'" icon dark size="large"
             elevation="0" :title="isPlaying ? 'Stop' : 'Start'">
             <v-icon> {{ isPlaying ? "mdi-pause" : "mdi-play" }}</v-icon>
           </v-btn>
 
-          <v-btn depressed @click="decrease(1440)" class="mx-2" elevation="0" icon title="Rewind 24 hours">
+          <v-btn depressed @click="decrease(1440)" class="mx-2" elevation="0" icon title="Rewind 24 hours" rounded="lg">
             <v-icon> mdi-rewind </v-icon>
           </v-btn>
 
-          <v-btn depressed @click="decrease(60)" class="mx-2" elevation="0" icon title="Rewind 30 minutes">
-            <v-icon> mdi-rewind-60 </v-icon>
-          </v-btn>
-
-          <v-btn depressed @click="decrease(30)" class="mx-2" elevation="0" icon title="Rewind 15 minutes">
+          <v-btn depressed @click="decrease(30)" class="mx-2" elevation="0" icon title="Rewind 15 minutes" rounded="lg">
             <v-icon> mdi-rewind-30 </v-icon>
           </v-btn>
 
-          <v-btn depressed @click="decrease(5)" class="mx-2" elevation="0" icon title="Rewind 5 minutes">
+          <v-btn depressed @click="decrease(5)" class="mx-2" elevation="0" icon title="Rewind 5 minutes" rounded="lg">
             <v-icon> mdi-rewind-5 </v-icon>
           </v-btn>
         </template>
 
         <template v-slot:append>
-          <v-btn depressed @click="increase(5)" class="mx-2" elevation="0" icon title="Fast forward 5 minutes">
+          <v-btn depressed @click="increase(5)" class="mx-2" elevation="0" icon title="Fast forward 5 minutes"
+            rounded="lg">
             <v-icon> mdi-fast-forward-5 </v-icon>
           </v-btn>
 
-          <v-btn depressed @click="increase(30)" class="mx-2" elevation="0" icon title="Fast forward 30 minutes">
+          <v-btn depressed @click="increase(30)" class="mx-2" elevation="0" icon title="Fast forward 30 minutes"
+            rounded="lg">
             <v-icon> mdi-fast-forward-30 </v-icon>
           </v-btn>
 
-          <v-btn depressed @click="increase(60)" class="mx-2" elevation="0" icon title="Fast forward 1 hour">
-            <v-icon> mdi-fast-forward-60 </v-icon>
-          </v-btn>
 
-          <v-btn depressed @click="increase(1440)" class="mx-2" elevation="0" icon title="Time now">
+          <v-btn depressed @click="increase(1440)" class="mx-2" elevation="0" icon title="Time now" rounded="lg">
             <v-icon> mdi-fast-forward </v-icon>
           </v-btn>
 
           <!-- increase speed -->
-          <v-btn depressed @click="toggleSpeed()" class="mx-2 font-weight-black" elevation="0" icon title="Toggle speed">
+          <v-btn depressed @click="toggleSpeed()" class="mx-2 font-weight-black" elevation="0" icon title="Toggle speed"
+            size="small" variant="tonal" rounded="lg">
             x{{ speed }}
           </v-btn>
 
@@ -93,7 +89,11 @@ export default {
   },
   watch: {
     sliderVal(val) {
-      this.$store.dispatch('GET_HISTORY', val);
+      fetch(`https://api.example.com/v1/history?timestamp=${val}`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+        });
     },
     isEnable(val) {
       if (val) {
