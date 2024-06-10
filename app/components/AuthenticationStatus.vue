@@ -27,15 +27,5 @@
         return status?.value;
       },
     },
-
-    methods: {
-      updateOpenedLoginDialogState(value) {
-        this.openedLoginDialog = value;
-      },
-
-      updateOpenedProfileDialogState(value) {
-        this.openedProfileDialog = value;
-      },
-    },
   };
 </script>

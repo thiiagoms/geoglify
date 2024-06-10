@@ -42,14 +42,6 @@
       <slot />
     </v-main>
 
-    <!-- Footer -->
-    <v-footer class="d-flex w-100 align-center text-caption px-3" color="black" density="compact" app dark>
-      <v-row justify="center" no-gutters>
-        <AuthenticationStatus />
-        <v-spacer></v-spacer>
-        <iframe src="https://ghbtns.com/github-btn.html?user=geoglify&repo=geoglify&type=star&count=true&size=large" frameborder="0" scrolling="0" width="130" height="32" title="GitHub"></iframe>
-      </v-row>
-    </v-footer>
   </v-app>
 </template>
 

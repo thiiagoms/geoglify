@@ -268,7 +268,7 @@
   }
 
   .ships .v-table__wrapper {
-    height: calc(100dvh - 305px) !important;
+    height: calc(100dvh - 260px) !important;
   }
 
   .ships .v-data-table__tr td {

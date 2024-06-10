@@ -1,5 +1,5 @@
 <template>
-  <v-btn class="position-absolute" style="top: 10px; left: 10px; z-index: 1000" density="comfortable" rounded="lg" size="small" @click="dialogOpened = true" icon="mdi-layers"></v-btn>
+  <v-btn class="position-absolute" style="top: 10px; left: 45px; z-index: 1000" density="comfortable" rounded="lg" size="small" @click="dialogOpened = true" icon="mdi-layers"></v-btn>
 </template>
 
 <script>
