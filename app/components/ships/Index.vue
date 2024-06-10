@@ -1,15 +1,23 @@
 <template>
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; right: 45px; z-index: 1000" rounded="md" size="small" @click="toggleMapMode" :color="mapMode === '3D' ? 'green' : 'white'">
+  <!--v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; right: 45px; z-index: 1000" rounded="md" size="small" @click="toggleMapMode" :color="mapMode === '3D' ? 'green' : 'white'">
     <v-icon>mdi-cube-outline</v-icon>
     3D
-  </v-btn>
+  </v-btn-->
 
-  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 45px; z-index: 1000" rounded="md" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 80px; z-index: 1000" rounded="lg" size="small" :prepend-icon="serviceStatusIcon" @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
     </template>
     {{ serviceStatusText }}
   </v-btn>
+
+  <v-bottom-sheet opacity="0" scrim="true">
+    <template v-slot:activator="{ props }">
+      <v-btn v-bind="props" class="position-absolute font-weight-bold text-body-2 text--uppercase" style="top: 10px; left: 45px; z-index: 1000" rounded="lg" density="comfortable" size="small" :color="mapMode === 'HISTORY' ? 'green' : 'white'" icon="mdi-history"> </v-btn>
+    </template>
+
+    <ShipsTimeline />
+  </v-bottom-sheet>
 </template>
 
 <script>
@@ -315,15 +323,15 @@
                 radius: 64,
               },
               fontWeight: "bold",
-              getBackgroundColor: [255, 255, 255],
               getColor: [0, 0, 0],
-              outlineColor:  [255, 234, 0, 200],
+              outlineColor: [255, 255, 255, 255],
               outlineWidth: 30,
               getPosition: (f) => f.geometry.coordinates,
               getSize: (f) => 11,
               getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
               extensions: [new CollisionFilterExtension()],
               collisionGroup: "visualization",
+              getCollisionPriority: 0,
             });
           } else {
             // Clear the layers if the GeoJSON data is invalid
@@ -445,7 +453,7 @@
       },
 
       toggleMapMode() {
-        this.mapMode = this.mapMode === "2D" ? "3D" : "2D";
+        this.mapMode = this.mapMode === "2D" ? "HISTORY" : "2D";
       },
     },
 
