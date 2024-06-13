@@ -68,7 +68,7 @@ export default {
     },
 
     filteredShips() {
-      if(this.isEnable === false) return [];
+      if (this.isEnable === false) return [];
       return this.$store.state.ships.list.filter((s) => s.location && s.location.coordinates && this.$store.state.ships.cargos.some((c) => c.code === (s.cargo ?? 0) && c.is_active))
     },
 
@@ -245,7 +245,7 @@ export default {
             getText: (f) => (!!f.shipname ? f.shipname : "N/A"),
             getTextAnchor: "middle",
             extensions: [new CollisionFilterExtension()],
-            collisionGroup: "visualization",
+            collisionGroup: "legend",
           });
         } else {
           this.legendLayer = null;
@@ -268,7 +268,7 @@ export default {
           getAngle: (f) => 360 - f.hdg,
           getSize: (f) => f.size,
           getColor: (f) => (f._id == this.selected?._id ? [255, 234, 0, 255] : f.color),
-          getCollisionPriority: (f) => f.priority,
+          getCollisionPriority: (f) => parseInt(f.priority),
           extensions: [new CollisionFilterExtension()],
           collisionGroup: "visualization",
           pickable: true,
@@ -327,7 +327,7 @@ export default {
             getSize: (f) => 11,
             getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
             extensions: [new CollisionFilterExtension()],
-            collisionGroup: "visualization",
+            collisionGroup: "checkpoint-path",
             getCollisionPriority: 0,
           });
         } else {

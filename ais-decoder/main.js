@@ -11,6 +11,9 @@ const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mong
 const AIS_SERVER_HOST = process.env.AIS_SERVER_HOST || "153.44.253.27";
 const AIS_SERVER_PORT = process.env.AIS_SERVER_PORT || 5631;
 
+const TIMEOUT_LOOP = process.env.TIMEOUT_LOOP || 1000;
+const NUMBER_OF_EMITS = process.env.NUMBER_OF_EMITS || 1000;
+
 // MongoDB client
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 
@@ -55,6 +58,7 @@ async function connectToMongoDBWithRetry() {
 // Main processing function
 async function startProcessing() {
   const database = mongoClient.db("geoglify");
+  const shipsMessagesCollection = database.collection("ships");
   const realtimeMessagesCollection = database.collection("realtime");
   const historicalMessagesCollection = database.collection("historical");
 
@@ -63,75 +67,142 @@ async function startProcessing() {
     if (!isProcessing && aisMessageBuffer.length > 0) {
       isProcessing = true;
 
+      const bulkShipsOperations = [];
       const bulkRealtimeOperations = [];
       const bulkHistoricalOperations = [];
 
-      const bufferSize = Math.min(aisMessageBuffer.length, 200);
+      const bufferSize = Math.min(aisMessageBuffer.length, NUMBER_OF_EMITS);
 
       for (let i = 0; i < bufferSize; i++) {
         const mmsi = aisMessageBuffer[i];
         const message = aisMessageDB.get(mmsi);
 
         delete message._id;
+        let now = new Date();
 
-        // Iterate through each attribute and delete if empty or null
-        for (const key in message) {
-          if (message.hasOwnProperty(key) && (message[key] === null || message[key] === undefined || message[key] === "")) {
-            delete message[key];
+        // Ship object - to be inserted or updated in the ships collection
+        let ship = {
+          mmsi: message.mmsi,
+          shipname: message.shipname,
+          dimA: message.dimA,
+          dimB: message.dimB,
+          dimC: message.dimC,
+          dimD: message.dimD,
+          imo: message.imo,
+          callsign: message.callsign,
+          draught: message.draught,
+          cargo: message.cargo,
+          updated_at: now,
+          ais_server_host: message.ais_server_host,
+        };
+
+        // Remove empty fields
+        for (const key in ship) {
+          if (ship.hasOwnProperty(key) && (ship[key] === null || ship[key] === undefined || ship[key] === "")) {
+            delete ship[key];
           }
         }
 
-        // Create a location field if lat and lon are present
-        if (!!message["lat"] && !!message["lon"]) {
-          message["location"] = {
-            type: "Point",
-            coordinates: [message.lon, message.lat],
-          };
-        }
-
-        // Save realtime messages (all attributes)
-        bulkRealtimeOperations.push({
+        // Add ship object to bulk operations
+        bulkShipsOperations.push({
           updateOne: {
             filter: { mmsi: mmsi },
-            update: { $set: message },
+            update: {
+              $set: ship,
+            },
             upsert: true,
           },
         });
 
-        let now = new Date();
-        
-        // insert all messages (only mmsi and location) and set expiration time to 24 hours in the future
-        bulkHistoricalOperations.push({
-          insertOne: {
-            mmsi: message.mmsi,
-            location: message.location,
-            cog: message.cog,
-            hdg: message.hdg,
-            sog: message.sog,
-            expire_at: new Date(now.getTime() + 24 * 60 * 60 * 1000), // Set expiration time to 24 hours in the future
-            updated_at: new Date(),
+        // Realtime object - to be inserted or updated in the realtime collection
+        let realtime = {
+          mmsi: message.mmsi,
+          location: message.location,
+          cog: message.cog,
+          sog: message.sog,
+          hdg: message.hdg,
+          utc: message.utc,
+          updated_at: now,
+          eta: message.eta,
+          destination: message.destination,
+          expired_at: new Date(now.getTime() + 30 * 60 * 1000),
+          ais_server_host: message.ais_server_host,
+        };
+
+        // Remove empty fields
+        for (const key in realtime) {
+          if (realtime.hasOwnProperty(key) && (realtime[key] === null || realtime[key] === undefined || realtime[key] === "")) {
+            delete realtime[key];
+          }
+        }
+
+        // Add realtime object to bulk operations
+        bulkRealtimeOperations.push({
+          updateOne: {
+            filter: { mmsi: mmsi },
+            update: {
+              $set: realtime,
+            },
+            upsert: true,
           },
+        });
+
+        // Historical object - to be inserted in the historical collection
+        let historical = {
+          mmsi: message.mmsi,
+          location: message.location,
+          cog: message.cog,
+          sog: message.sog,
+          hdg: message.hdg,
+          utc: message.utc,
+          updated_at: now,
+          eta: message.eta,
+          destination: message.destination,
+          expired_at: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          ais_server_host: message.ais_server_host,
+        };
+
+        for (const key in historical) {
+          if (historical.hasOwnProperty(key) && (historical[key] === null || historical[key] === undefined || historical[key] === "")) {
+            delete historical[key];
+          }
+        }
+
+        // Remove empty fields
+        bulkHistoricalOperations.push({
+          insertOne: historical,
         });
       }
 
-      aisMessageBuffer.splice(0, bufferSize);
-
       try {
+        // Bulk write operations - ships, realtime and historical collections
+
+        // Ships collection
+        logInfo(`Inserting or Updating ${bulkShipsOperations.length} operations into the ships collection...`);
+        await shipsMessagesCollection.bulkWrite(bulkShipsOperations, {
+          ordered: false,
+        });
+        logSuccess("Ships saved successfully!\n");
+
+        // Realtime and Historical collections
         logInfo(`Inserting or Updating ${bulkRealtimeOperations.length} operations into the realtime collection...`);
         await realtimeMessagesCollection.bulkWrite(bulkRealtimeOperations, {
           ordered: false,
         });
-        logSuccess("Realtime messages saved successfully!");
+        logSuccess("Realtime messages saved successfully!\n");
 
+        // Historical collection
         logInfo(`Inserting or Updating ${bulkHistoricalOperations.length} operations into the historical collection...`);
         await historicalMessagesCollection.bulkWrite(bulkHistoricalOperations, {
           ordered: false,
         });
-        logSuccess("Historical messages saved successfully!");
+        logSuccess("Historical messages saved successfully!\n");
 
+        // Remove processed messages from aisMessageBuffer
+        aisMessageBuffer.splice(0, bufferSize);
         logInfo(`Remaining in aisMessageBuffer: ${aisMessageBuffer.length}`);
       } catch (error) {
-        logError("Error while processing bulk operations");
+        logError("Error while processing bulk operations\n");
       }
 
       isProcessing = false;
@@ -140,17 +211,20 @@ async function startProcessing() {
     }
   }
 
-  // Set interval to process and save messages every 5 seconds
-  setInterval(processAndSaveMessages, 5000);
+  // Set interval to process and save messages every TIMEOUT_LOOP seconds
+  setInterval(processAndSaveMessages, TIMEOUT_LOOP);
 
-  // Create an index for expire_at field if not already created
+  // Create an index for expired_at field if not already created
   if (!isIndexCreated) {
+    shipsMessagesCollection.createIndex({ mmsi: 1 }, { unique: true });
 
-    realtimeMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
-    historicalMessagesCollection.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
+    realtimeMessagesCollection.createIndex({ expired_at: 1 }, { expireAfterSeconds: 0 });
+    historicalMessagesCollection.createIndex({ expired_at: 1 }, { expireAfterSeconds: 0 });
 
     realtimeMessagesCollection.createIndex({ location: "2dsphere" });
     historicalMessagesCollection.createIndex({ location: "2dsphere" });
+
+    logSuccess("Indexes created successfully!\n");
 
     isIndexCreated = true;
   }
@@ -202,10 +276,15 @@ function processAisMessage(message) {
     message = {
       ...decMsg,
       utc: new Date(now.getTime() - decMsg.utc),
-      expire_at: new Date(now.getTime() + 30 * 60 * 1000), // Set expiration time to 30 minutes in the future
-      updated_at: new Date(),
-      ais_server_host: AIS_SERVER_HOST,
+      ais_server_host: AIS_SERVER_HOST
     };
+
+    if (!!decMsg["lat"] && !!decMsg["lon"]) {
+      message["location"] = {
+        type: "Point",
+        coordinates: [message.lon, message.lat],
+      };
+    }
 
     delete message.bitarray;
     delete message.valid;

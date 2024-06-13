@@ -6,55 +6,60 @@ const { ObjectId } = require("mongodb");
 const MONGODB_CONNECTION_STRING = process.env.MONGODB_CONNECTION_STRING || "mongodb://root:root@localhost:27778/?directConnection=true&authMechanism=DEFAULT";
 const mongoClient = new MongoClient(MONGODB_CONNECTION_STRING);
 
-// Get the list of ships
+/*
+ * Get the list of ships.
+ * */
 async function getAISShips() {
   const results = await mongoClient
     .db("geoglify")
     .collection("realtime")
-    .find(
-      {},
-      /*{
-        $and: [
-          { lat: { $exists: true, $ne: null, $ne: 0 } }, // lat exists and is not null nor zero
-          { lon: { $exists: true, $ne: null, $ne: 0 } }, // lon exists and is not null nor zero
-        ],
-      },*/
+    .aggregate([
       {
-        projection: {
+        $lookup: {
+          from: "ships",
+          localField: "mmsi",
+          foreignField: "mmsi",
+          as: "ship_details",
+        },
+      },
+      {
+        $unwind: "$ship_details",
+      },
+      {
+        $project: {
           _id: 1,
           mmsi: 1,
-          shipname: 1,
-          cargo: 1,
+          shipname: "$ship_details.shipname",
+          cargo: "$ship_details.cargo",
           hdg: 1,
           location: 1,
           utc: 1,
-          lat: 1,
-          lon: 1,
-          dimA: 1,
-          dimB: 1,
-          dimC: 1,
-          dimD: 1,
-          length: 1,
-          width: 1,
+          dimA: "$ship_details.dimA",
+          dimB: "$ship_details.dimB",
+          dimC: "$ship_details.dimC",
+          dimD: "$ship_details.dimD",
+          length: "$ship_details.length",
+          width: "$ship_details.width",
         },
-      }
-    )
-    .limit(30000)
+      },
+    ])
     .toArray();
 
   return results;
 }
 
-// Search for ships
+/*
+ * Get the list of ships with optional search parameters.
+ * */
 async function searchAISShips(page, itemsPerPage, searchText, cargos = [], geometry = null) {
   let match = {};
 
-  if (searchText) {
-    match.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }, { imo: { $regex: searchText, $options: "i" } }];
+  if (!!searchText && searchText.length > 0) {
+    match.$or = [{ mmsi: { $regex: searchText, $options: "i" } }, { shipname: { $regex: searchText, $options: "i" } }];
   }
 
   if (cargos.length > 0) {
-    match.cargo = { $in: cargos };
+    match["cargo"] = { $in: cargos };
   } else {
     return { items: [], total: 0 };
   }
@@ -67,81 +72,152 @@ async function searchAISShips(page, itemsPerPage, searchText, cargos = [], geome
     };
   }
 
-  let project = {
-    _id: 1,
-    mmsi: 1,
-    shipname: 1,
-    cargo: { $ifNull: ["$cargo", 0] },
-    hdg: 1,
-    location: 1,
-    utc: 1,
-    lat: 1,
-    lon: 1,
-    dimA: 1,
-    dimB: 1,
-    dimC: 1,
-    dimD: 1,
-    length: 1,
-    width: 1,
-  };
-
   let pipeline = [
     {
-      $project: project,
+      $lookup: {
+        from: "ships",
+        localField: "mmsi",
+        foreignField: "mmsi",
+        as: "ship_details",
+      },
+    },
+    {
+      $unwind: "$ship_details",
+    },
+    {
+      $project: {
+        _id: 1,
+        mmsi: 1,
+        shipname: "$ship_details.shipname",
+        cargo: { $ifNull: ["$ship_details.cargo", 0] },
+        hdg: 1,
+        location: 1,
+        utc: 1,
+        dimA: "$ship_details.dimA",
+        dimB: "$ship_details.dimB",
+        dimC: "$ship_details.dimC",
+        dimD: "$ship_details.dimD",
+        length: "$ship_details.length",
+        width: "$ship_details.width",
+        lat: { $arrayElemAt: ["$location.coordinates", 1] },
+        lon: { $arrayElemAt: ["$location.coordinates", 0] },
+      },
     },
     { $match: match },
     { $skip: (page - 1) * itemsPerPage },
     { $limit: itemsPerPage },
   ];
 
-  let countPipeline = [{ $project: project }, { $match: match }, { $count: "total" }];
+  let countPipeline = [
+    {
+      $lookup: {
+        from: "ships",
+        localField: "mmsi",
+        foreignField: "mmsi",
+        as: "ship_details",
+      },
+    },
+    {
+      $unwind: "$ship_details",
+    },
+    {
+      $project: {
+        _id: 1,
+        mmsi: 1,
+        shipname: "$ship_details.shipname",
+        cargo: { $ifNull: ["$ship_details.cargo", 0] },
+        hdg: 1,
+        location: 1,
+        utc: 1,
+        dimA: "$ship_details.dimA",
+        dimB: "$ship_details.dimB",
+        dimC: "$ship_details.dimC",
+        dimD: "$ship_details.dimD",
+        length: "$ship_details.length",
+        width: "$ship_details.width",
+        lat: { $arrayElemAt: ["$location.coordinates", 1] },
+        lon: { $arrayElemAt: ["$location.coordinates", 0] },
+      },
+    },
+    { $match: match },
+    { $count: "total" },
+  ];
 
-  let ships = await mongoClient.db("geoglify").collection("realtime").aggregate(pipeline).toArray();
+  try {
+    let ships = await mongoClient.db("geoglify").collection("realtime").aggregate(pipeline).toArray();
+    let countResult = await mongoClient.db("geoglify").collection("realtime").aggregate(countPipeline).toArray();
+    let total = countResult.length > 0 ? countResult[0].total : 0;
 
-  let countResult = await mongoClient.db("geoglify").collection("realtime").aggregate(countPipeline).toArray();
-
-  let total = countResult.length > 0 ? countResult[0].total : 0;
-
-  return { items: ships, total: total };
+    return { items: ships, total: total };
+  } catch (error) {
+    console.error("Error executing searchAISShips pipeline:", error);
+    return { items: [], total: 0 };
+  }
 }
 
-// Get a ship by ID
+/*
+ * Get the details of a ship by its ID.
+ * */
 async function getAISShip(shipId) {
+  // Verifique se shipId é uma string e crie um ObjectId
+  const objectId = new ObjectId(shipId);
+
+  // Realiza o lookup e retorna um único documento
   let data = await mongoClient
     .db("geoglify")
     .collection("realtime")
-    .findOne(
-      { _id: new ObjectId(shipId) },
+    .aggregate([
       {
-        projection: {
+        $match: { _id: objectId },
+      },
+      {
+        $lookup: {
+          from: "ships",
+          localField: "mmsi",
+          foreignField: "mmsi",
+          as: "ship_details",
+        },
+      },
+      {
+        $unwind: "$ship_details",
+      },
+      {
+        $project: {
           _id: 1,
           mmsi: 1,
-          aistype: 1,
+          shipname: "$ship_details.shipname",
           callsign: 1,
-          cargo: 1,
-          channel: 1,
-          class: 1,
-          dimA: 1,
-          dimB: 1,
-          dimC: 1,
-          dimD: 1,
-          length: 1,
-          utc: 1,
-          width: 1,
+          cargo: "$ship_details.cargo",
+          dimA: "$ship_details.dimA",
+          dimB: "$ship_details.dimB",
+          dimC: "$ship_details.dimC",
+          dimD: "$ship_details.dimD",
+          length: "$ship_details.length",
+          width: "$ship_details.width",
           cog: 1,
           hdg: 1,
           sog: 1,
-          shipname: 1,
-          lat: 1,
-          lon: 1,
+          utc: 1,
+          eta: 1,
+          destination: 1,
+          draught: 1,
         },
-      }
-    );
+      },
+    ])
+    .toArray();
 
+  // Obtemos o primeiro (e único) documento do array retornado pelo aggregate
+  data = data[0];
+
+  // Adiciona o path histórico ao objeto
   data.path = await getHistoricalPath(data.mmsi);
+
   return data;
 }
 
+/*
+ * Get the historical path of a ship by MMSI.
+ */
 async function getHistoricalPath(mmsi) {
   // Fetch historical data from MongoDB
   let data = await mongoClient
@@ -220,9 +296,91 @@ async function getHistoricalPath(mmsi) {
   };
 }
 
+/*
+ * Get the historical positions of all ships before the given timestamp.
+ * The positions are the last known positions of each ship before the given timestamp.
+ * The positions are filtered to exclude ships whose last update was more than 30 minutes before the given timestamp.
+ */
+async function getAISShipsHistory(timestamp) {
+  try {
+    const halfHourInMillis = 2 * 60 * 1000;
+    const timestampDate = new Date(parseInt(timestamp));
+    const halfHourAgoDate = new Date(timestampDate.getTime() - halfHourInMillis);
+
+    // Find the last position of each ship before the given timestamp and exclude those older than 30 minutes
+    let data = await mongoClient
+      .db("geoglify")
+      .collection("historical")
+      .aggregate([
+        {
+          $match: {
+            updated_at: { $lte: timestampDate }, // Consider only positions before or at the given timestamp
+          },
+        },
+        {
+          $sort: {
+            updated_at: -1, // Sort by date in descending order to get the most recent position first
+          },
+        },
+        {
+          $group: {
+            _id: "$mmsi", // Group by MMSI to get the last position of each ship
+            doc: { $first: "$$ROOT" }, // Select the first document of each group, which is the most recent one
+          },
+        },
+        {
+          $replaceRoot: { newRoot: "$doc" }, // Replace the root document with the selected document
+        },
+        {
+          $match: {
+            updated_at: { $gte: halfHourAgoDate }, // Exclude ships whose last update was more than 30 minutes before the given timestamp
+          },
+        },
+        {
+          $lookup: {
+            from: "ships",
+            localField: "mmsi",
+            foreignField: "mmsi",
+            as: "ship_details",
+          },
+        },
+        {
+          $unwind: "$ship_details",
+        },
+        {
+          $project: {
+            _id: 0,
+            mmsi: 1,
+            shipname: "$ship_details.shipname",
+            cargo: { $ifNull: ["$ship_details.cargo", 0] },
+            hdg: 1,
+            location: 1,
+            cog: 1,
+            sog: 1,
+            utc: 1,
+            dimA: "$ship_details.dimA",
+            dimB: "$ship_details.dimB",
+            dimC: "$ship_details.dimC",
+            dimD: "$ship_details.dimD",
+            length: "$ship_details.length",
+            width: "$ship_details.width",
+            updated_at: 1,
+          },
+        },
+      ])
+      .toArray();
+
+    return data;
+  } catch (error) {
+    console.error("Error fetching historical ships:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAISShips,
   getAISShip,
   searchAISShips,
   getHistoricalPath,
+  getAISShipsHistory,
 };

@@ -51,7 +51,7 @@
           <!-- increase speed -->
           <v-btn depressed @click="toggleSpeed()" class="mx-2 font-weight-black" elevation="0" icon title="Toggle speed"
             size="small" variant="tonal" rounded="lg">
-            x{{ speed }}
+            {{ speed }}s
           </v-btn>
 
         </template>
@@ -62,9 +62,14 @@
 
 <script>
 import { debounce } from "lodash";
+import configs from "~/helpers/configs";
+
+import { IconLayer } from "@deck.gl/layers";
+import { CollisionFilterExtension } from "@deck.gl/extensions";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 
 export default {
-  props: ["enable"],
+  props: ["map", "enable"],
 
   data() {
     return {
@@ -74,6 +79,13 @@ export default {
       playTimeout: null,
       sliderVal: 0,
       speed: 1,
+      lastIntervalTimestamp: 0,
+      aisLayer: null,
+      overlay: new MapboxOverlay({
+        interleaved: false,
+        layers: [],
+      }),
+      ships: [],
     };
   },
   computed:
@@ -88,12 +100,11 @@ export default {
     }
   },
   watch: {
-    sliderVal(val) {
-      fetch(`https://api.example.com/v1/history?timestamp=${val}`)
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-        });
+    sliderVal: {
+      handler: debounce(function (val) {
+        this.fetchData(val);
+      }, 300),
+      immediate: false
     },
     isEnable(val) {
       if (val) {
@@ -151,7 +162,7 @@ export default {
       this.isPlaying = false;
       clearTimeout(this.playTimeout);
     },
-    // increase speed 1, 2, 5, 10, 20
+    // increase speed 1, 2, 5, 10, 30, 60
     toggleSpeed() {
       if (this.speed === 1) {
         this.speed = 2;
@@ -160,12 +171,65 @@ export default {
       } else if (this.speed === 5) {
         this.speed = 10;
       } else if (this.speed === 10) {
-        this.speed = 20;
+        this.speed = 30;
+      } else if (this.speed === 30) {
+        this.speed = 60;
       } else {
         this.speed = 1;
       }
     },
+    fetchData(timestamp) {
+      this.$store.dispatch("ships/GET_HISTORY", { timestamp: parseInt(timestamp) }).then((data) => {
+        this.ships = data.map((s) => configs.processShipData(s)).filter(Boolean);
+      });
+    },
+    render(now) {
+
+      // Process the message buffer every second
+      if (!this.lastIntervalTimestamp || now - this.lastIntervalTimestamp > 1000) {
+
+        // Update the timestamp to right now
+        this.lastIntervalTimestamp = now;
+
+        // Create a new ScatterplotLayer for the AIS data
+        this.aisLayer = new IconLayer({
+          id: "ais-layer",
+          data: this.ships,
+          billboard: false,
+          autoHighlight: true,
+          highlightColor: [255, 234, 0],
+          getIcon: (f) => ({
+            url: f.icon,
+            width: f.width,
+            height: f.height,
+            mask: true,
+          }),
+          getPosition: (f) => f.location.coordinates,
+          getAngle: (f) => 360 - f.hdg,
+          getSize: (f) => f.size,
+          getColor: (f) => f.color,
+          extensions: [new CollisionFilterExtension()],
+          collisionGroup: "visualization",
+          pickable: true,
+        });
+
+        // Update the layers in the overlay
+        this.overlay.setProps({
+          layers: [this.aisLayer].filter(Boolean),
+        });
+      }
+
+      requestAnimationFrame(this.render.bind(this));
+    },
   },
+  mounted() {
+
+    // Add the overlay to the map
+    this.map.addControl(this.overlay);
+
+    // Render the layers
+    window.requestAnimationFrame(this.render.bind(this));
+  }
 };
 </script>
 

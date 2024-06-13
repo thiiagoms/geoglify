@@ -28,6 +28,19 @@ export const actions = {
     });
   },
 
+  async GET_HISTORY(_, payload) {
+    const config = useRuntimeConfig();
+
+    return new Promise(async (resolve) => {
+      try {
+        const ships = await $fetch(config.public.EXP_API_URL + "/history/" + payload.timestamp);
+        resolve(ships);
+      } catch (error) {
+        resolve([]);
+      }
+    });
+  },
+
   async PROCESS_ALL({ dispatch }, ships) {
     for (let i = 0; i < ships.length; i += 100) {
       let chunk = ships.slice(i, i + 100);
@@ -92,7 +105,6 @@ export const actions = {
 };
 
 export const mutations = {
-
   // Action to set the selected ship
   setSelectedShip(state, ship) {
     state.selected = ship;
@@ -106,7 +118,7 @@ export const mutations = {
     }
 
     // Process ship data and filter out invalid entries
-    const processedShips = ships.map(processShipData).filter(Boolean);
+    const processedShips = ships.map((s) => configs.processShipData(s)).filter(Boolean);
 
     // Create a copy of the existing ship list to avoid direct mutations
     const list = [...state.list];
@@ -125,44 +137,3 @@ export const mutations = {
     state.list = [...list];
   },
 };
-
-// Process the ship data and return the processed ship object
-function processShipData(ship) {
-  // Check if the ship object is valid
-  if (!ship || !ship.location || !ship.location.coordinates) return null;
-
-  // Extract the necessary data from the ship object
-  const { hdg, cargo, mmsi } = ship;
-
-  // Check if the heading is valid
-  const isHeadingValid = !!(hdg && hdg !== 511);
-
-  // Create a new ship object with the necessary properties
-  if (isHeadingValid) {
-    ship.icon = "models/boat.svg";
-    ship.size = 16;
-    ship.width = 44;
-    ship.height = 96;
-  } else {
-    ship.icon = "models/circle.svg";
-    ship.size = 10;
-    ship.width = 20;
-    ship.height = 20;
-  }
-
-  // Determine the color and priority of the ship based on the cargo type
-  const cargoType = configs.getCargoType(cargo);
-  ship.color = configs.hexToRgb(cargoType.color, 1);
-  ship.colorGeoJson = configs.hexToRgb(cargoType.color, 0.8);
-  ship.priority = -(isHeadingValid ? cargoType.priority * -100 : -100);
-
-  // Get the country code from the MMSI
-  if (!!mmsi) ship.countrycode = configs.getCountryCode(mmsi);
-
-  // Process the GeoJSON data
-  ship.geojson = configs.processGeoJSON(ship);
-
-  ship.center = configs.getCenter(ship.geojson);
-
-  return ship;
-}
