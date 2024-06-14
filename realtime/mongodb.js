@@ -303,9 +303,9 @@ async function getHistoricalPath(mmsi) {
  */
 async function getAISShipsHistory(timestamp) {
   try {
-    const halfHourInMillis = 2 * 60 * 1000;
+    const timeout  = 30 * 60 * 1000; // 30 minutes in milliseconds
     const timestampDate = new Date(parseInt(timestamp));
-    const halfHourAgoDate = new Date(timestampDate.getTime() - halfHourInMillis);
+    const halfHourAgoDate = new Date(timestampDate.getTime() - timeout);
 
     // Find the last position of each ship before the given timestamp and exclude those older than 30 minutes
     let data = await mongoClient

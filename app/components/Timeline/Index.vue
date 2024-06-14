@@ -156,7 +156,7 @@ export default {
     },
     reboot() {
       const now = Date.now();
-      this.min = now - 24 * 60 * 60 * 1000;
+      this.min = now - 60 * 60 * 1000; // 1 hour ago
       this.max = now;
       this.sliderVal = this.min;
       this.isPlaying = false;
@@ -208,8 +208,6 @@ export default {
           getAngle: (f) => 360 - f.hdg,
           getSize: (f) => f.size,
           getColor: (f) => f.color,
-          extensions: [new CollisionFilterExtension()],
-          collisionGroup: "visualization",
           pickable: true,
         });
 
