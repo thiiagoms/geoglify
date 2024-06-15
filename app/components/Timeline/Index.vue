@@ -208,6 +208,8 @@ export default {
           getAngle: (f) => 360 - f.hdg,
           getSize: (f) => f.size,
           getColor: (f) => f.color,
+          extensions: [new CollisionFilterExtension()],
+          collisionGroup: "visualization",
           pickable: true,
         });
 
