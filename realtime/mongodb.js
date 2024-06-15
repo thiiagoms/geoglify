@@ -250,9 +250,8 @@ async function getHistoricalPath(mmsi) {
   // Create an array to hold GeoJSON features
   const features = [];
 
-  // Extract coordinates from each location point and filter points with valid sog
-  const validPoints = data.filter((d) => d.sog !== null && d.sog > 0);
-  const coordinates = validPoints.map((d) => d.location.coordinates);
+  // Extract coordinates from each location point
+  const coordinates = data.map((d) => d.location.coordinates);
 
   // Create the GeoJSON LineString feature
   const lineFeature = {
@@ -270,7 +269,7 @@ async function getHistoricalPath(mmsi) {
   features.push(lineFeature);
 
   // Create GeoJSON Point features for each location point with valid sog
-  validPoints.forEach((d) => {
+  data.forEach((d) => {
     const pointFeature = {
       type: "Feature",
       properties: {
@@ -377,10 +376,97 @@ async function getAISShipsHistory(timestamp) {
   }
 }
 
+/*
+ * Get all ship paths between two timestamps.
+* The paths are constructed from historical data between the given timestamps.
+ */
+async function getHistoricalPathsBetweenTimestamps(startTime, endTime) {
+  try {
+    const startDate = new Date(parseInt(startTime));
+    const endDate = new Date(parseInt(endTime));
+
+    // Fetch historical data between the given timestamps from MongoDB
+    let data = await mongoClient
+      .db("geoglify")
+      .collection("historical")
+      .find(
+        {
+          updated_at: { $gte: startDate, $lte: endDate },
+        },
+        {
+          projection: {
+            _id: 0, // Exclude the _id field from the projection
+            mmsi: 1,
+            location: 1,
+            cog: 1,
+            hdg: 1,
+            sog: 1,
+            updated_at: 1,
+          },
+        }
+      )
+      .toArray();
+
+    // Check if data was found
+    if (data.length === 0) {
+      // Return an empty FeatureCollection if no data found
+      return {
+        type: "FeatureCollection",
+        features: [],
+      };
+    }
+
+    // Group data by MMSI
+    const groupedData = data.reduce((acc, item) => {
+      acc[item.mmsi] = acc[item.mmsi] || [];
+      acc[item.mmsi].push(item);
+      return acc;
+    }, {});
+
+    // Create an array to hold GeoJSON features
+    const features = [];
+
+    // Iterate through each group of data (by MMSI)
+    Object.keys(groupedData).forEach((mmsi) => {
+      const shipData = groupedData[mmsi];
+
+      // Extract coordinates from each location point
+      const coordinates = shipData.map((d) => d.location.coordinates);
+
+      // Create the GeoJSON LineString feature if there are valid coordinates
+      if (coordinates.length > 1) {
+        const lineFeature = {
+          type: "Feature",
+          properties: {
+            mmsi: mmsi,
+          },
+          geometry: {
+            type: "LineString",
+            coordinates: coordinates,
+          },
+        };
+
+        // Push the LineString feature to the features array
+        features.push(lineFeature);
+      }
+    });
+
+    // Return the GeoJSON FeatureCollection
+    return {
+      type: "FeatureCollection",
+      features: features,
+    };
+  } catch (error) {
+    console.error("Error fetching historical paths between timestamps:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAISShips,
   getAISShip,
   searchAISShips,
   getHistoricalPath,
   getAISShipsHistory,
+  getHistoricalPathsBetweenTimestamps
 };

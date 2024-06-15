@@ -41,6 +41,19 @@ export const actions = {
     });
   },
 
+  async GET_PATHS(_, payload) {
+    const config = useRuntimeConfig();
+
+    return new Promise(async (resolve) => {
+      try {
+        const paths = await $fetch(config.public.EXP_API_URL + "/paths/" + payload.start + "/" + payload.end);
+        resolve(paths);
+      } catch (error) {
+        resolve([]);
+      }
+    });
+  },
+
   async PROCESS_ALL({ dispatch }, ships) {
     for (let i = 0; i < ships.length; i += 100) {
       let chunk = ships.slice(i, i + 100);

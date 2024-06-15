@@ -4,13 +4,20 @@
 
     <template v-slot:activator="{ props }">
       <v-btn v-bind="props" class="position-absolute font-weight-bold text-body-2 text--uppercase"
-        :color="isEnable ? 'primary' : 'dark'" style="top: 10px; left: 10px; z-index: 1000" rounded="lg"
-        density="comfortable" size="small" icon="mdi-history"></v-btn>
+        :color="isEnable ? 'black' : 'dark'" style="top: 10px; left: 10px; z-index: 1000" rounded="lg"
+        density="comfortable" icon="mdi-history" size="small"></v-btn>
+
+      <!-- toggle showPaths-->
+      <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" v-if="isEnable"
+        style="top: 10px; left: 45px; z-index: 1000" :color="showPaths ? 'black' : 'dark'"
+        @click="showPaths = !showPaths" rounded="lg" density="comfortable" icon="mdi-map-marker-path"
+        size="small"></v-btn>
 
     </template>
 
     <v-card class="pa-2">
       <v-card-title class="text-center font-weight-bold">{{ formatDate(new Date(sliderVal)) }}</v-card-title>
+
       <v-slider v-model="sliderVal" track-color="grey" always-dirty :max="max" :min="min" hide-details
         @end="setSliderValue">
         <template v-slot:prepend>
@@ -64,8 +71,8 @@
 import { debounce } from "lodash";
 import configs from "~/helpers/configs";
 
-import { IconLayer } from "@deck.gl/layers";
-import { CollisionFilterExtension } from "@deck.gl/extensions";
+import { IconLayer, GeoJsonLayer } from "@deck.gl/layers";
+import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 
 export default {
@@ -86,6 +93,8 @@ export default {
         layers: [],
       }),
       ships: [],
+      paths: [],
+      showPaths: false
     };
   },
   computed:
@@ -101,15 +110,14 @@ export default {
   },
   watch: {
     sliderVal: {
-      handler: debounce(function (val) {
-        this.fetchData(val);
+      handler: debounce(function (value) {
+        this.fetchData(this.min, value);
       }, 300),
       immediate: false
     },
-    isEnable(val) {
-      if (val) {
-        this.reboot();
-      }
+    isEnable() {
+      this.reboot();
+      this.showPaths = false;
     }
   },
   beforeDestroy() {
@@ -178,9 +186,16 @@ export default {
         this.speed = 1;
       }
     },
-    fetchData(timestamp) {
-      this.$store.dispatch("ships/GET_HISTORY", { timestamp: parseInt(timestamp) }).then((data) => {
+    fetchData(start, end) {
+
+      // Get the AIS data for the timestamp
+      this.$store.dispatch("ships/GET_HISTORY", { timestamp: parseInt(end) }).then((data) => {
         this.ships = data.map((s) => configs.processShipData(s)).filter(Boolean);
+      });
+
+      // Get the paths between the start and end timestamps if showPaths is enabled
+      this.$store.dispatch("ships/GET_PATHS", { start: parseInt(start), end: parseInt(end) }).then((data) => {
+        this.paths = data;
       });
     },
     render(now) {
@@ -213,9 +228,22 @@ export default {
           pickable: true,
         });
 
+
+        if (this.showPaths) {
+          // Create a new GeoJsonLayer for the line strings
+          this.pathsLayer = new GeoJsonLayer({
+            id: "paths-layer",
+            data: this.paths,
+            getLineColor: [255, 0, 0],
+            lineWidthMinPixels: 2,
+          });
+        } else {
+          this.pathsLayer = null;
+        }
+
         // Update the layers in the overlay
         this.overlay.setProps({
-          layers: [this.aisLayer].filter(Boolean),
+          layers: [this.pathsLayer, this.aisLayer].filter(Boolean),
         });
       }
 

@@ -4,7 +4,7 @@ const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
-const { getAISShips, getAISShip, searchAISShips, getAISShipsHistory } = require("./mongodb");
+const { getAISShips, getAISShip, searchAISShips, getAISShipsHistory, getHistoricalPathsBetweenTimestamps } = require("./mongodb");
 const { logError, logInfo, logSuccess, logWarning } = require("./logger");
 
 // Configurations
@@ -61,6 +61,13 @@ app.get("/history/:timestamp", async (req, res) => {
   res.json(ships);
 });
 
+app.get("/paths/:start/:end", async (req, res) => {
+  const start = req.params.start;
+  const end = req.params.end;
+  const paths = await getHistoricalPathsBetweenTimestamps(start, end);
+  res.json(paths);
+});
+
 app.post("/ships/search", async (req, res) => {
   const page = parseInt(req.body.page) || 1;
   const itemsPerPage = parseInt(req.body.itemsPerPage) || 20;
@@ -91,62 +98,62 @@ async function connectToMongoDBWithRetry() {
 
 // Define the run function
 async function startApplication() {
-    try {
-      // Connect to the "geoglify" database and the "realtime" collection
-      const database = mongoClient.db("geoglify");
-      const realtimeMessagesCollection = database.collection("realtime");
-      const shipsCollection = database.collection("ships");
-  
-      io.on("connection", (socket) => {
-        logSuccess(`Client connected: \x1b[32m${socket.id}\x1b[0m`);
-        socket.on("disconnect", () => logError(`Client disconnected: \x1b[31m${socket.id}\x1b[0m`));
-      });
-  
-      const options = { fullDocument: "updateLookup" };
-      const changeStream = realtimeMessagesCollection.watch([], options);
-  
-      // Listen for changes on the "realtime" collection
-      changeStream.on("change", async (change) => {
-        let ship = change.fullDocument;
-  
-        // Check if the ship object is valid
-        if (!ship || !ship?.location) return;
-  
-        // Fetch ship details from the "ships" collection
-        let shipDetails = await shipsCollection.findOne({ mmsi: ship.mmsi });
-  
-        if (!shipDetails) return;
-  
-        // Merge ship data from both collections into a single object
-        let message = {
-          _id: ship._id,
-          mmsi: ship.mmsi,
-          shipname: shipDetails.shipname || "N/A",
-          cargo: shipDetails.cargo || ship.cargo,
-          hdg: ship.hdg,
-          location: ship.location,
-          utc: ship.utc,
-          dimA: shipDetails.dimA,
-          dimB: shipDetails.dimB,
-          dimC: shipDetails.dimC,
-          dimD: shipDetails.dimD,
-          length: shipDetails.length,
-          width: shipDetails.width,
-        };
-  
-        messages.set(message.mmsi, message);
-  
-        if (message && !messageQueue.includes(message.mmsi)) {
-          messageQueue.push(message.mmsi);
-        }
-      });
-  
-      startDispatchLoop();
-    } catch (error) {
-      logError("Error running the application: " + error);
-      await mongoClient.close();
-    }
+  try {
+    // Connect to the "geoglify" database and the "realtime" collection
+    const database = mongoClient.db("geoglify");
+    const realtimeMessagesCollection = database.collection("realtime");
+    const shipsCollection = database.collection("ships");
+
+    io.on("connection", (socket) => {
+      logSuccess(`Client connected: \x1b[32m${socket.id}\x1b[0m`);
+      socket.on("disconnect", () => logError(`Client disconnected: \x1b[31m${socket.id}\x1b[0m`));
+    });
+
+    const options = { fullDocument: "updateLookup" };
+    const changeStream = realtimeMessagesCollection.watch([], options);
+
+    // Listen for changes on the "realtime" collection
+    changeStream.on("change", async (change) => {
+      let ship = change.fullDocument;
+
+      // Check if the ship object is valid
+      if (!ship || !ship?.location) return;
+
+      // Fetch ship details from the "ships" collection
+      let shipDetails = await shipsCollection.findOne({ mmsi: ship.mmsi });
+
+      if (!shipDetails) return;
+
+      // Merge ship data from both collections into a single object
+      let message = {
+        _id: ship._id,
+        mmsi: ship.mmsi,
+        shipname: shipDetails.shipname || "N/A",
+        cargo: shipDetails.cargo || ship.cargo,
+        hdg: ship.hdg,
+        location: ship.location,
+        utc: ship.utc,
+        dimA: shipDetails.dimA,
+        dimB: shipDetails.dimB,
+        dimC: shipDetails.dimC,
+        dimD: shipDetails.dimD,
+        length: shipDetails.length,
+        width: shipDetails.width,
+      };
+
+      messages.set(message.mmsi, message);
+
+      if (message && !messageQueue.includes(message.mmsi)) {
+        messageQueue.push(message.mmsi);
+      }
+    });
+
+    startDispatchLoop();
+  } catch (error) {
+    logError("Error running the application: " + error);
+    await mongoClient.close();
   }
+}
 
 // Define the startDispatchLoop function
 async function startDispatchLoop() {
