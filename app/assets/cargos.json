@@ -3,7 +3,7 @@
     "code": 0,
     "name": "No cargo type specified",
     "color": "#808080",
-    "priority": -1,
+    "priority": 0,
     "is_active": true
   },
   {
@@ -41,13 +41,13 @@
     "priority": 6,
     "is_active": true
   },
-  { "code": 30, "name": "Fishing", "color": "#008000", "priority": 3, "is_active": true },
-  { "code": 31, "name": "Towing", "color": "#800080", "priority": 4, "is_active": true },
+  { "code": 30, "name": "Fishing", "color": "#008000", "priority": 5, "is_active": true },
+  { "code": 31, "name": "Towing", "color": "#800080", "priority": 5, "is_active": true },
   {
     "code": 32,
     "name": "Towing, length exceeds 200m or breadth exceeds 25m",
     "color": "#800080",
-    "priority": 4,
+    "priority": 5,
     "is_active": true
   },
   {
@@ -57,43 +57,43 @@
     "priority": 4,
     "is_active": true
   },
-  { "code": 34, "name": "Diving ops", "color": "#FF0000", "priority": 4, "is_active": true },
-  { "code": 35, "name": "Military ops", "color": "#000000", "priority": 5, "is_active": true },
-  { "code": 36, "name": "Sailing", "color": "#FFA500", "priority": 2, "is_active": true },
-  { "code": 37, "name": "Pleasure Craft", "color": "#FFFF00", "priority": 2, "is_active": true },
+  { "code": 34, "name": "Diving ops", "color": "#FF0000", "priority": 6, "is_active": true },
+  { "code": 35, "name": "Military ops", "color": "#000000", "priority": 6, "is_active": true },
+  { "code": 36, "name": "Sailing", "color": "#FFA500", "priority": 4, "is_active": true },
+  { "code": 37, "name": "Pleasure Craft", "color": "#FFFF00", "priority": 4, "is_active": true },
   {
     "code": 40,
     "name": "High speed craft (HSC), all ships of this type",
     "color": "#0000FF",
-    "priority": 3,
+    "priority": 6,
     "is_active": true
   },
   {
     "code": 41,
     "name": "High speed craft (HSC), Hazardous category A",
     "color": "#0000FF",
-    "priority": 4,
+    "priority": 6,
     "is_active": true
   },
   {
     "code": 42,
     "name": "High speed craft (HSC), Hazardous category B",
     "color": "#0000FF",
-    "priority": 4,
+    "priority": 6,
     "is_active": true
   },
   {
     "code": 43,
     "name": "High speed craft (HSC), Hazardous category C",
     "color": "#0000FF",
-    "priority": 4,
+    "priority": 6,
     "is_active": true
   },
   {
     "code": 44,
     "name": "High speed craft (HSC), Hazardous category D",
     "color": "#0000FF",
-    "priority": 4,
+    "priority": 6,
     "is_active": true
   },
   { "code": 50, "name": "Pilot Vessel", "color": "#808080", "priority": 3, "is_active": true },
@@ -101,16 +101,16 @@
     "code": 51,
     "name": "Search and Rescue vessel",
     "color": "#FF0000",
-    "priority": 3,
+    "priority": 8,
     "is_active": true
   },
-  { "code": 52, "name": "Tug", "color": "#808080", "priority": 4, "is_active": true },
-  { "code": 53, "name": "Port Tender", "color": "#FFA500", "priority": 3, "is_active": true },
+  { "code": 52, "name": "Tug", "color": "#808080", "priority": 8, "is_active": true },
+  { "code": 53, "name": "Port Tender", "color": "#FFA500", "priority": 8, "is_active": true },
   {
     "code": 54,
     "name": "Anti-pollution equipment",
     "color": "#FFA500",
-    "priority": 3,
+    "priority": 8,
     "is_active": true
   },
   { "code": 55, "name": "Law Enforcement", "color": "#0000FF", "priority": 5, "is_active": true },
@@ -118,42 +118,42 @@
     "code": 58,
     "name": "Medical Transport",
     "color": "#FF0000",
-    "priority": 4,
+    "priority": 8,
     "is_active": true
   },
   {
     "code": 60,
     "name": "Passenger, all ships of this type",
     "color": "#ff00b0",
-    "priority": 2,
+    "priority": 10,
     "is_active": true
   },
   {
     "code": 61,
     "name": "Passenger, Hazardous category A",
     "color": "#ff00b0",
-    "priority": 3,
+    "priority": 10,
     "is_active": true
   },
   {
     "code": 62,
     "name": "Passenger, Hazardous category B",
     "color": "#ff00b0",
-    "priority": 3,
+    "priority": 10,
     "is_active": true
   },
   {
     "code": 63,
     "name": "Passenger, Hazardous category C",
     "color": "#ff00b0",
-    "priority": 3,
+    "priority": 10,
     "is_active": true
   },
   {
     "code": 64,
     "name": "Passenger, Hazardous category D",
     "color": "#ff00b0",
-    "priority": 3,
+    "priority": 10,
     "is_active": true
   },
   {

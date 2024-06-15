@@ -49,7 +49,7 @@
 
   <ShipsFilters :open="openFiltersDialog" @update:open="updateOpenFiltersDialogState"></ShipsFilters>
 
-  <v-snackbar color="primary" elevation="24" v-model="geofencerSearchEnabled" location="bottom" location-strategy="connected" timeout="-1" style="position: absolute; bottom: 50px">
+  <v-snackbar color="primary" elevation="24" v-model="geofencerSearchEnabled" location="bottom" location-strategy="connected" timeout="-1" style="position: absolute;">
     Draw a polygon on the map to search for ships within the area.<br />
     Area: {{ geofencerArea }} km<sup>2</sup>
 
@@ -268,7 +268,7 @@
   }
 
   .ships .v-table__wrapper {
-    height: calc(100dvh - 305px) !important;
+    height: calc(100dvh - 260px) !important;
   }
 
   .ships .v-data-table__tr td {

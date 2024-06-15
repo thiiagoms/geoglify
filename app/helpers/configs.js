@@ -484,6 +484,47 @@ export default {
     return [r, g, b, a];
   },
 
+  // Process the ship data and return the processed ship object
+  processShipData(ship) {
+    // Check if the ship object is valid
+    if (!ship || !ship.location || !ship.location.coordinates) return null;
+
+    // Extract the necessary data from the ship object
+    const { hdg, cargo, mmsi } = ship;
+
+    // Check if the heading is valid
+    const isHeadingValid = !!(hdg && hdg !== 511);
+
+    // Create a new ship object with the necessary properties
+    if (isHeadingValid) {
+      ship.icon = "models/boat.svg";
+      ship.size = 16;
+      ship.width = 44;
+      ship.height = 96;
+    } else {
+      ship.icon = "models/circle.svg";
+      ship.size = 10;
+      ship.width = 20;
+      ship.height = 20;
+    }
+
+    // Determine the color and priority of the ship based on the cargo type
+    const cargoType = this.getCargoType(cargo);
+    ship.color = this.hexToRgb(cargoType.color, 1);
+    ship.colorGeoJson = this.hexToRgb(cargoType.color, 0.8);
+    ship.priority = isHeadingValid ? cargoType.priority : 1;
+
+    // Get the country code from the MMSI
+    if (!!mmsi) ship.countrycode = this.getCountryCode(mmsi);
+
+    // Process the GeoJSON data
+    ship.geojson = this.processGeoJSON(ship);
+
+    ship.center = this.getCenter(ship.geojson);
+
+    return ship;
+  },
+
   getGeofencerStyle() {
     return [
       // ACTIVE (being drawn)
