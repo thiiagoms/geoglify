@@ -159,10 +159,10 @@ async function searchAISShips(page, itemsPerPage, searchText, cargos = [], geome
  * Get the details of a ship by its ID.
  * */
 async function getAISShip(shipId) {
-  // Verifique se shipId é uma string e crie um ObjectId
+  // Convert the ship ID to an ObjectId
   const objectId = new ObjectId(shipId);
 
-  // Realiza o lookup e retorna um único documento
+  // Fetch ship data from MongoDB
   let data = await mongoClient
     .db("geoglify")
     .collection("realtime")
@@ -206,10 +206,13 @@ async function getAISShip(shipId) {
     ])
     .toArray();
 
-  // Obtemos o primeiro (e único) documento do array retornado pelo aggregate
+  // Check if data was found
+  if (data.length === 0) return null;
+
+  // Extract the first element of the data array
   data = data[0];
 
-  // Adiciona o path histórico ao objeto
+  // Add the historical path to the data object
   data.path = await getHistoricalPath(data.mmsi);
 
   return data;
@@ -250,8 +253,9 @@ async function getHistoricalPath(mmsi) {
   // Create an array to hold GeoJSON features
   const features = [];
 
-  // Extract coordinates from each location point
-  const coordinates = data.map((d) => d.location.coordinates);
+  // Extract coordinates from each location point and filter points with valid sog
+  const validPoints = data.filter((d) => d.sog !== null && d.sog > 0);
+  const coordinates = validPoints.map((d) => d.location.coordinates);
 
   // Create the GeoJSON LineString feature
   const lineFeature = {
@@ -269,7 +273,7 @@ async function getHistoricalPath(mmsi) {
   features.push(lineFeature);
 
   // Create GeoJSON Point features for each location point with valid sog
-  data.forEach((d) => {
+  validPoints.forEach((d) => {
     const pointFeature = {
       type: "Feature",
       properties: {
@@ -302,7 +306,7 @@ async function getHistoricalPath(mmsi) {
  */
 async function getAISShipsHistory(timestamp) {
   try {
-    const timeout  = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const timeout = 30 * 60 * 1000; // 30 minutes in milliseconds
     const timestampDate = new Date(parseInt(timestamp));
     const halfHourAgoDate = new Date(timestampDate.getTime() - timeout);
 
@@ -378,7 +382,7 @@ async function getAISShipsHistory(timestamp) {
 
 /*
  * Get all ship paths between two timestamps.
-* The paths are constructed from historical data between the given timestamps.
+ * The paths are constructed from historical data between the given timestamps.
  */
 async function getHistoricalPathsBetweenTimestamps(startTime, endTime) {
   try {
@@ -430,8 +434,9 @@ async function getHistoricalPathsBetweenTimestamps(startTime, endTime) {
     Object.keys(groupedData).forEach((mmsi) => {
       const shipData = groupedData[mmsi];
 
-      // Extract coordinates from each location point
-      const coordinates = shipData.map((d) => d.location.coordinates);
+      // Extract coordinates from each location point and filter points with valid sog
+      const validPoints = shipData.filter((d) => d.sog !== null && d.sog > 0);
+      const coordinates = validPoints.map((d) => d.location.coordinates);
 
       // Create the GeoJSON LineString feature if there are valid coordinates
       if (coordinates.length > 1) {
@@ -468,5 +473,5 @@ module.exports = {
   searchAISShips,
   getHistoricalPath,
   getAISShipsHistory,
-  getHistoricalPathsBetweenTimestamps
+  getHistoricalPathsBetweenTimestamps,
 };

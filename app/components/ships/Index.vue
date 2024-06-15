@@ -300,16 +300,12 @@ export default {
           this.pathLayer = new GeoJsonLayer({
             id: "path-layer",
             data: lineStringsOnly,
-            getLineColor: [255, 234, 0, 125],
-            getDashArray: [3, 2],
+            getLineColor: [255, 0, 0],
             lineWidthMinPixels: 2,
-            dashJustified: true,
-            dashGapPickable: true,
-            extensions: [new PathStyleExtension({ dash: true })],
           });
 
           // Create a new GeoJsonLayer for the points
-          this.checkPointPathLayer = new TextLayer({
+          /*this.checkPointPathLayer = new TextLayer({
             id: "checkpoint-path-layer",
             data: pointsOnly.features,
             fontFamily: "Monaco, monospace",
@@ -329,7 +325,7 @@ export default {
             extensions: [new CollisionFilterExtension()],
             collisionGroup: "checkpoint-path",
             getCollisionPriority: 0,
-          });
+          });*/
         } else {
           // Clear the layers if the GeoJSON data is invalid
           this.checkPointPathLayer = null;
