@@ -93,6 +93,16 @@ services:
     volumes:
       - database_data:/var/lib/postgresql/data
 
+  martin:
+    image: ghcr.io/maplibre/martin:v0.13.0
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres2024@database/geoglify
+    depends_on:
+      - database
+
   tileserver:
     build: ./tileserver
     restart: always
