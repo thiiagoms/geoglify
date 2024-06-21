@@ -142,15 +142,15 @@ export default {
       maplibregl.addProtocol("pmtiles", protocol.tile);
 
       // Add the PMTiles layers to the map
-      const PMTILES_BUILDINGS_URL = this.$config.public.TILESERVER_URL + "/pmtiles/buildings.pmtiles";
-      const PMTILES_LANDUSE_URL = this.$config.public.TILESERVER_URL + "/pmtiles/landuse.pmtiles";
-      const PMTILES_LAND_URL = this.$config.public.TILESERVER_URL + "/pmtiles/land.pmtiles";
-      const PMTILES_INFRASTRUCTURE_URL = this.$config.public.TILESERVER_URL + "/pmtiles/infrastructure.pmtiles";
+      const PMTILES_BUILDINGS_URL = this.$config.public.TILESERVER_URL + "/buildings";
+      const PMTILES_LANDUSE_URL = this.$config.public.TILESERVER_URL + "/landuse";
+      const PMTILES_LAND_URL = this.$config.public.TILESERVER_URL + "/land";
+      const PMTILES_INFRASTRUCTURE_URL = this.$config.public.TILESERVER_URL + "/infrastructure";
 
       // add landuse layer
       this.map.addSource("landuse", {
         type: "vector",
-        url: `pmtiles://${PMTILES_LANDUSE_URL}`,
+        url: `${PMTILES_LANDUSE_URL}`,
       });
 
       // parks
@@ -171,7 +171,7 @@ export default {
       // add land layer
       this.map.addSource("land", {
         type: "vector",
-        url: `pmtiles://${PMTILES_LAND_URL}`,
+        url: `${PMTILES_LAND_URL}`,
       });
 
       this.map.addLayer({
@@ -191,7 +191,7 @@ export default {
       // add infrastructure layer
       this.map.addSource("infrastructure", {
         type: "vector",
-        url: `pmtiles://${PMTILES_INFRASTRUCTURE_URL}`,
+        url: `${PMTILES_INFRASTRUCTURE_URL}`,
       });
 
       this.map.addLayer({
@@ -212,7 +212,7 @@ export default {
       // add buildings layer
       this.map.addSource("buildings", {
         type: "vector",
-        url: `pmtiles://${PMTILES_BUILDINGS_URL}`,
+        url: `${PMTILES_BUILDINGS_URL}`,
       });
 
       this.map.addLayer({
