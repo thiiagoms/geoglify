@@ -93,13 +93,17 @@ services:
     volumes:
       - database_data:/var/lib/postgresql/data
 
-  tileserver:
-    build: ./tileserver
+  martin:
+    image: ghcr.io/maplibre/martin:latest
     restart: always
-    container_name: tileserver
-    working_dir: /opt/tileserver
+    container_name: martin
+    command: --config /app/config.yml
     ports:
-      - "8083:8080"
+      - "3001:3000"
+    depends_on:
+      - database
+    volumes:
+      - ./martin:/app
 
 volumes:
   vendor_data:

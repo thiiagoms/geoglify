@@ -84,7 +84,7 @@ export default defineNuxtConfig({
         REALTIME_URL: process.env.REALTIME_URL || "http://localhost:8080",
         EXP_API_URL: process.env.EXP_API_URL || "http://localhost:8080",
         API_URL: process.env.API_URL || "http://localhost:8082/api",
-        TILESERVER_URL: process.env.TILESERVER_URL || "http://localhost:8083",
+        TILESERVER_URL: process.env.TILESERVER_URL || "http://localhost:3001",
         MAPBOX_TOKEN: process.env.MAPBOX_TOKEN,
         OPENWEATHERMAP_API_KEY: process.env.OPENWEATHERMAP_API_KEY,
       },
