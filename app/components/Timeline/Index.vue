@@ -4,12 +4,12 @@
 
     <template v-slot:activator="{ props }">
       <v-btn v-bind="props" class="position-absolute font-weight-bold text-body-2 text--uppercase"
-        :color="isEnable ? 'black' : 'dark'" style="top: 10px; left: 10px; z-index: 1000" rounded="lg"
+        :color="isEnable ? 'black' : 'dark'" style="top: 10px; left: 45px; z-index: 1000" rounded="lg"
         density="comfortable" icon="mdi-history" size="small"></v-btn>
 
       <!-- toggle showPaths-->
       <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase" v-if="isEnable"
-        style="top: 10px; left: 45px; z-index: 1000" :color="showPaths ? 'black' : 'dark'"
+        style="top: 10px; left: 80px; z-index: 1000" :color="showPaths ? 'black' : 'dark'"
         @click="showPaths = !showPaths" rounded="lg" density="comfortable" icon="mdi-map-marker-path"
         size="small"></v-btn>
 

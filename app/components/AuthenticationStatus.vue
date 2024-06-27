@@ -1,31 +1,37 @@
 <template>
-  <Login :opened="openedLoginDialog" @update:opened="updateOpenedLoginDialogState"></Login>
-  <Profile :opened="openedProfileDialog" @update:opened="updateOpenedProfileDialogState"></Profile>
+  
+  <Login :opened="openedLoginDialog" @update:opened="openedLoginDialog = $event"></Login>
+  <Profile :opened="openedProfileDialog" @update:opened="openedProfileDialog = $event"></Profile>
 
-  <v-btn v-if="status === 'authenticated'" @click="openedProfileDialog = true" variant="outlined" size="small" prepend-icon="mdi-account-circle">{{ user.name }}</v-btn>
-  <v-btn v-else @click="openedLoginDialog = true" variant="outlined" size="small" prepend-icon="mdi-login">Login</v-btn>
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase"
+    style="top: 10px; left: 10px; z-index: 1000" density="comfortable" rounded="lg" size="small"
+    v-if="status === 'authenticated'" @click="openedProfileDialog = true" icon="mdi-account-circle"></v-btn>
+
+  <v-btn class="position-absolute font-weight-bold text-body-2 text--uppercase"
+    style="top: 10px; left: 10px; z-index: 1000" density="comfortable" rounded="lg" size="small" v-else
+    @click="openedLoginDialog = true" icon="mdi-login"></v-btn>
 </template>
 
 <script>
-  const { status, data } = useAuth();
+const { status, data } = useAuth();
 
-  export default {
-    data() {
-      return {
-        openedLoginDialog: false,
-        openedProfileDialog: false,
-      };
+export default {
+  data() {
+    return {
+      openedLoginDialog: false,
+      openedProfileDialog: false,
+    };
+  },
+
+  computed: {
+
+    user() {
+      return data?.value;
     },
 
-    computed: {
-
-      user() {
-        return data?.value;
-      },
-
-      status() {
-        return status?.value;
-      },
+    status() {
+      return status?.value;
     },
-  };
+  },
+};
 </script>

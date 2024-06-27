@@ -1,7 +1,7 @@
 <template>
 
   <v-btn v-if="showShips" class="position-absolute font-weight-bold text-body-2 text--uppercase"
-    style="top: 10px; left: 80px; z-index: 1000" rounded="lg" size="small" :prepend-icon="serviceStatusIcon"
+    style="top: 10px; left: 115px; z-index: 1000" rounded="lg" size="small" :prepend-icon="serviceStatusIcon"
     @click="dialogOpened = true">
     <template v-slot:prepend>
       <v-icon :color="serviceStatusColor"></v-icon>
