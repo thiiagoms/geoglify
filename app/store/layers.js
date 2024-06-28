@@ -34,7 +34,7 @@ export const actions = {
   // Action to fetch the layer list
   async GET_FEATURES({ commit }, layerId) {
     return new Promise(async (resolve) => {
-      const config = useRuntimeConfig();
+      //const config = useRuntimeConfig();
 
       // Remove layerId from selected layers
       commit("unsetSelected", layerId);
@@ -43,19 +43,19 @@ export const actions = {
       commit("setLayerLoading", { layerId, loading: true });
 
       // Set the layer features as an empty array
-      commit("setLayerFeatures", { layerId, features: [] });
+      //commit("setLayerFeatures", { layerId, features: [] });
 
       // Fetch the features from the server
-      const features = await $fetch(config.public.API_URL + `/layers/${layerId}/features`);
+      //const features = await $fetch(config.public.API_URL + `/layers/${layerId}/features`);
 
       // Set the layer features
-      commit("setLayerFeatures", { layerId, features });
+      //commit("setLayerFeatures", { layerId, features });
 
       // Add layerId to selected layers
       commit("setSelected", layerId);
 
       // Resolve the promise with the features
-      resolve(features);
+      resolve();
     });
   },
 
@@ -66,7 +66,7 @@ export const actions = {
       commit("setLayerLoading", { layerId, loading: true });
 
       // Set the layer features as an empty array
-      commit("setLayerFeatures", { layerId, features: [] });
+      //commit("setLayerFeatures", { layerId, features: [] });
 
       // Remove layerId from selected layers
       commit("unsetSelected", layerId);

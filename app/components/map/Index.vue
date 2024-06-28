@@ -14,6 +14,8 @@
   <ShipsList v-if="!!ready && !enableTimeline" :map="map"></ShipsList>
   <ShipsDetails v-if="!!ready && !enableTimeline"></ShipsDetails>
 
+  <AuthenticationStatus></AuthenticationStatus>
+
 </template>
 <script>
 const { status } = useAuth();
@@ -81,6 +83,7 @@ export default {
       bearing: this.currentViewState.bearing,
       pitch: this.currentViewState.pitch,
       preserveDrawingBuffer: true,
+      constrainResolution: true
     });
 
     // Add geolocate control to the map.
