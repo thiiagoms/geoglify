@@ -4,7 +4,7 @@
 </template>
 
 <script>
-import { GeoJsonLayer } from "@deck.gl/layers";
+import { MVTLayer } from "@deck.gl/geo-layers";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { PathStyleExtension, FillStyleExtension } from "@deck.gl/extensions";
 import configs from "~/helpers/configs";
@@ -86,40 +86,9 @@ export default {
     // Add a layer to the map
     addLayer(id) {
 
-      if (this.map.getLayer("layer-geoglify-" + id))
-        this.map.removeLayer("layer-geoglify-" + id);
-
-      if (this.map.getSource("layer-geoglify-" + id))
-        this.map.removeSource("layer-geoglify-" + id);
-
-      this.map.addSource("layer-geoglify-" + id, {
-        type: 'vector',
-        url: 'http://localhost:3001/geoglify_data?layer_id=' + id
-      });
-
-      let randomColorHexString = '#' + (Math.random() * 0xFFFFFF << 0).toString(16).padStart(6, '0');
-
-      this.map.addLayer({
-        'id': "layer-geoglify-" + id,
-        'type': 'fill',
-        'source': "layer-geoglify-" + id,
-        'source-layer': 'geoglify_data',
-        paint: {
-          "fill-color": randomColorHexString,
-          "fill-opacity": 0.8,
-          "fill-outline-color": "#000000"
-        },
-      });
-
-      /*
       const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
-      let features = layer.features;
-
-      let data = {
-        type: "FeatureCollection",
-        features: JSON.parse(JSON.stringify(features)),
-      };
+      let data = 'http://localhost:3001/geoglify_data?layer_id=' + id
 
       let geojsonLayer = null;
 
@@ -132,21 +101,16 @@ export default {
       }
 
       this.layers.set(layer.id, geojsonLayer);
-*/
+
       this.updateOverlay();
     },
 
     // Remove a layer from the map
     removeLayer(id) {
-      //const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
-      //this.layers.delete(layer.id);
+      const layer = this.$store.state.layers.list.find((l) => l.id === id);
 
-      if (this.map.getLayer("layer-geoglify-" + id))
-        this.map.removeLayer("layer-geoglify-" + id);
-
-      if (this.map.getSource("layer-geoglify-" + id))
-        this.map.removeSource("layer-geoglify-" + id);
+      this.layers.delete(layer.id);
 
       this.updateOverlay();
     },
@@ -164,8 +128,9 @@ export default {
 
     // Get a GeoJSON point layer
     getGeoJSONPointLayer(layer, data) {
-      return new GeoJsonLayer({
+      return new MVTLayer({
         id: "layer-" + layer.id,
+        uniqueIdProperty: 'id',
         data: data,
         pickable: true,
         filled: true,
@@ -176,7 +141,7 @@ export default {
         pointRadiusUnits: "pixels",
         getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
         autoHighlight: true,
-        highlightColor: [255, 234, 0, 125],
+        highlightColor: [255, 234, 0, 255],
         getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
         updateTriggers: {
           getPointRadius: layer.style?.radius,
@@ -201,14 +166,15 @@ export default {
 
     // Get a GeoJSON line layer
     getGeoJSONLineLayer(layer, data) {
-      return new GeoJsonLayer({
+      return new MVTLayer({
         id: "layer-" + layer.id,
+        uniqueIdProperty: 'id',
         data: data,
         pickable: true,
         getLineWidth: layer.style?.lineWidth || 5,
         lineWidthUnits: "pixels",
         autoHighlight: true,
-        highlightColor: [255, 234, 0, 125],
+        highlightColor: [255, 234, 0, 255],
         getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
         getDashArray: layer.style?.dashArray?.split(",").map(Number) || [0, 0],
         dashJustified: true,
@@ -236,15 +202,16 @@ export default {
     // Get a GeoJSON polygon layer
     getGeoJSONPolygonLayer(layer, data) {
       if (layer.style?.fillPattern === "none") {
-        return new GeoJsonLayer({
+        return new MVTLayer({
           id: "layer-" + layer.id,
+          uniqueIdProperty: 'id',
           data: data,
           pickable: true,
           stroked: true,
           filled: true,
           extruded: false,
           autoHighlight: true,
-          highlightColor: [255, 234, 0, 125],
+          highlightColor: [255, 234, 0, 255],
           getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
           getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
           getLineWidth: layer.style?.lineWidth || 5,
@@ -270,15 +237,16 @@ export default {
           onHover: (info) => this.showTooltip(info),
         });
       } else {
-        return new GeoJsonLayer({
+        return new MVTLayer({
           id: "layer-" + layer.id,
+          uniqueIdProperty: 'id',
           data: data,
           pickable: true,
           stroked: true,
           filled: true,
           extruded: false,
           autoHighlight: true,
-          highlightColor: [255, 234, 0, 125],
+          highlightColor: [255, 234, 0, 255],
           getFillColor: configs.hexToRgbaArray(layer.style?.fillColor),
           getLineColor: configs.hexToRgbaArray(layer.style?.lineColor),
           getLineWidth: layer.style?.lineWidth || 5,
@@ -319,15 +287,17 @@ export default {
 
             // unset the selected ship
             this.$store.dispatch("ships/SET_SELECTED", null);
+
             return true;
           },
 
-          onHover: (info) => this.showTooltip(info),
+          getTooltip: (info) => this.showTooltip(info),
         });
       }
     },
 
     showTooltip({ object, x, y }) {
+
       if (object) {
         this.tooltipInfo.style.display = "block";
         this.tooltipInfo.style.left = `${x}px`;
@@ -335,10 +305,15 @@ export default {
 
         this.tooltipInfo.innerHTML = "";
 
-        for (const [key, value] of Object.entries(object.properties)) {
-          this.tooltipInfo.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
+        for (const [key, value] of Object.entries(JSON.parse(object.properties.data))) {
+          if(!!value)
+            this.tooltipInfo.innerHTML += `<div><b>${key}</b>: ${value}</div>`;
         }
+
+        this.tooltipInfo.innerHTML += `<div><b>Layer</b>: ${object.properties.layer_name}</div>`;
+
       } else {
+        
         this.tooltipInfo.style.display = "none";
       }
     },
