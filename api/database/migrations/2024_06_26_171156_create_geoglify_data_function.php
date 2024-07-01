@@ -17,16 +17,27 @@ return new class extends Migration {
             RETURNS bytea AS \$\$
             DECLARE
                 mvt bytea;
+                envelope geometry;
             BEGIN
+                -- Create the tile envelope in 4326 and clip to valid latitudes
+                envelope := ST_Transform(ST_TileEnvelope(z, x, y), 4326);
+                envelope := ST_Intersection(envelope, ST_MakeEnvelope(-180, -85, 180, 85, 4326));
+
+                -- Generate the MVT data
                 SELECT INTO mvt ST_AsMVT(tile, 'geoglify_data', 4096, 'geom') FROM (
                     SELECT
                         ST_AsMVTGeom(
-                            ST_Transform(ST_CurveToLine(geom), 3857),
-                            ST_TileEnvelope(z, x, y),
-                            4096, 64, true) AS geom, layer_id
+                            ST_Transform(ST_CurveToLine(
+                                CASE
+                                    WHEN ST_YMin(geom) < -85 OR ST_YMax(geom) > 85 THEN NULL
+                                    ELSE geom
+                                END
+                            ), 3857),
+                            ST_Transform(envelope, 3857),
+                            4096, 64, true) AS geom, layer_id, geojson->>'properties' as data, (select name from layers where id = (query_params->>'layer_id')::integer) as layer_name
                     FROM features
-                    WHERE geom && ST_Transform(ST_TileEnvelope(z, x, y), 4326)
-                ) as tile WHERE geom IS NOT NULL AND layer_id = (query_params->>'layer_id')::integer;
+                    WHERE geom && envelope
+                ) AS tile WHERE geom IS NOT NULL AND layer_id = (query_params->>'layer_id')::integer;
 
                 RETURN mvt;
             END

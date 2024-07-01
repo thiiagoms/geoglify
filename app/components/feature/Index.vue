@@ -3,7 +3,7 @@
     <!-- Toolbar with ship name and flag -->
     <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
       <v-toolbar-title class="text-h5 font-weight-bold pl-4"> Feature Details </v-toolbar-title>
-
+    
       <v-spacer></v-spacer>
 
       <v-btn icon @click="dialogOpened = false" density="compact" class="ml-1">
@@ -15,9 +15,13 @@
     <v-card-text class="pa-0" style="height: calc(100dvh - 140px); overflow: auto">
       <v-table>
         <tbody>
-          <tr v-for="(value, key) in feature.properties" :key="key">
+          <tr>
+            <td class="font-weight-bold text-uppercase">Layer</td>
+            <td class="text-uppercase">{{ feature.properties.layer_name }}</td>
+          </tr>
+          <tr v-for="(value, key) in JSON.parse(feature.properties.data)" :key="key">
             <td class="font-weight-bold text-uppercase">{{ key }}</td>
-            <td>{{ value }}</td>
+            <td class="text-uppercase">{{ value }}</td>
           </tr>
         </tbody>
       </v-table>
