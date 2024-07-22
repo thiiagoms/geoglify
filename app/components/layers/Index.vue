@@ -117,6 +117,7 @@ export default {
 
     // Update the overlay with the current layers
     updateOverlay() {
+
       this.overlay.setProps({
         layers: Array.from(this.layers.values()),
       });

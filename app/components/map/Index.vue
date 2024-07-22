@@ -126,6 +126,7 @@ export default {
 
     // add pmtiles layers to the map
     this.addPMTilesLayers();
+
   },
 
   methods: {
@@ -138,7 +139,7 @@ export default {
       document.body.append(this.tooltip);
     },
 
-    addPMTilesLayers() {
+    async addPMTilesLayers() {
 
       // Add the protocol to the map
       let protocol = new Protocol();
@@ -149,6 +150,7 @@ export default {
       const PMTILES_LANDUSE_URL = this.$config.public.TILESERVER_URL + "/landuse";
       const PMTILES_LAND_URL = this.$config.public.TILESERVER_URL + "/land";
       const PMTILES_INFRASTRUCTURE_URL = this.$config.public.TILESERVER_URL + "/infrastructure";
+      const PMTILES_ROADS_URL = this.$config.public.TILESERVER_URL + "/roads";
 
       // add landuse layer
       this.map.addSource("landuse", {
@@ -191,6 +193,26 @@ export default {
         },
       });
 
+      // add roads layer
+      this.map.addSource("roads", {
+        type: "vector",
+        url: `${PMTILES_ROADS_URL}`,
+      });
+
+      this.map.addLayer({
+        id: "roads",
+        type: "line",
+        source: "roads",
+        "source-layer": "roads",
+        minzoom: 13,
+        maxzoom: 24,
+        paint: {
+          "line-color": "#f0f0f0",
+          "line-opacity": 0.6,
+          "line-width": 3,
+        },
+      });
+
       // add infrastructure layer
       this.map.addSource("infrastructure", {
         type: "vector",
@@ -207,7 +229,7 @@ export default {
         maxzoom: 24,
         paint: {
           "line-color": "#f0f0f0",
-          "line-opacity": 0.8,
+          "line-opacity": 1,
           "line-width": 3,
         },
       });
@@ -227,7 +249,7 @@ export default {
         "source-layer": "buildings",
         paint: {
           "fill-extrusion-color": "#f0f0f0",
-          "fill-extrusion-opacity": 0.8,
+          "fill-extrusion-opacity": 0.9,
           "fill-extrusion-base": 0,
           "fill-extrusion-height": ["case", ["has", "height"], ["to-number", ["get", "height"]], 5],
         },

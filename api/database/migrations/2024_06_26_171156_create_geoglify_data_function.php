@@ -36,7 +36,7 @@ return new class extends Migration {
                             ST_Transform(envelope, 3857),
                             4096, 64, true) AS geom, layer_id, geojson->>'properties' as data, id, (select name from layers where id = (query_params->>'layer_id')::integer) as layer_name
                     FROM features
-                    WHERE geom && envelope
+                    WHERE geom && envelope AND deleted_at is null
                 ) AS tile WHERE geom IS NOT NULL AND layer_id = (query_params->>'layer_id')::integer;
 
                 RETURN mvt;
