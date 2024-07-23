@@ -13,7 +13,7 @@
 
 <script>
 import { io } from "socket.io-client";
-import { IconLayer, TextLayer, GeoJsonLayer } from "@deck.gl/layers";
+import { IconLayer, TextLayer, GeoJsonLayer, ArcLayer } from "@deck.gl/layers";
 import { CollisionFilterExtension, PathStyleExtension } from "@deck.gl/extensions";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 
@@ -296,12 +296,20 @@ export default {
           // Filter the GeoJSON data to include only line strings
           const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
 
+          // Convert the GeoJSON data to a JSON format that can be used by the LineLayer
+          const lineStringsJSON = this.convertFeatureCollectionToJSON(pointsOnly);
+
           // Create a new GeoJsonLayer for the line strings
-          this.pathLayer = new GeoJsonLayer({
+          this.pathLayer = new ArcLayer({
             id: "path-layer",
-            data: lineStringsOnly,
-            getLineColor: [255, 0, 0],
-            lineWidthMinPixels: 2,
+            data: lineStringsJSON,
+            getSourcePosition: d => d.from.coordinates,
+            getTargetPosition: d => d.to.coordinates,
+            getSourceColor: d => this.getSpeedColor(d.from.sog),
+            getTargetColor: d => this.getSpeedColor(d.to.sog),
+            getHeight: 0,
+            getWidth: 5,
+            capRounded: true
           });
 
           // Create a new GeoJsonLayer for the points
@@ -409,6 +417,36 @@ export default {
       return date ? new Date(date).toLocaleString({ timeZone: "UTC" }) : "";
     },
 
+    convertFeatureCollectionToJSON(featureCollection) {
+
+      const features = featureCollection.features;
+      const result = [];
+
+      for (let i = 0; i < features.length - 1; i++) {
+        const fromFeature = features[i];
+        const toFeature = features[i + 1];
+
+        const fromSOG = fromFeature.properties.sog;
+        const fromCoordinates = fromFeature.geometry.coordinates;
+
+        const toSOG = toFeature.properties.sog;
+        const toCoordinates = toFeature.geometry.coordinates;
+
+        result.push({
+          "from": {
+            "sog": fromSOG,
+            "coordinates": fromCoordinates
+          },
+          "to": {
+            "sog": toSOG,
+            "coordinates": toCoordinates
+          }
+        });
+      }
+
+      return result;
+    },
+
     filterPoints(featureCollection) {
       // Check if the input is a valid GeoJSON FeatureCollection
       if (!featureCollection || featureCollection.type !== "FeatureCollection" || !Array.isArray(featureCollection.features)) {
@@ -448,6 +486,17 @@ export default {
     toggleMapMode() {
       this.mapMode = this.mapMode === "2D" ? "HISTORY" : "2D";
     },
+
+    getSpeedColor(sog) {
+      const maxSpeed = 18; // Maximum relevant speed
+      const clampedSpeed = Math.min(Math.max(sog, 0), maxSpeed); // Clamp the speed between 0 and 20
+
+      const red = Math.min(255, Math.round((clampedSpeed / maxSpeed) * 255)); // Calculate the red component
+      const green = Math.min(255, Math.round(255 - (clampedSpeed / maxSpeed) * 255)); // Calculate the green component
+      const blue = 0; // Blue component is always 0
+
+      return [red, green, blue, 200]; // Return the RGB color
+    }
   },
 
   async mounted() {
