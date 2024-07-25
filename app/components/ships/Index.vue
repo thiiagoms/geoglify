@@ -290,11 +290,9 @@ export default {
 
         // Check if the GeoJSON data is valid
         if (!!pathGeoJSON) {
+          
           // Filter the GeoJSON data to include only points and line strings
           const pointsOnly = this.filterPoints(pathGeoJSON);
-
-          // Filter the GeoJSON data to include only line strings
-          const lineStringsOnly = this.filterLineStrings(pathGeoJSON);
 
           // Convert the GeoJSON data to a JSON format that can be used by the LineLayer
           const lineStringsJSON = this.convertFeatureCollectionToJSON(pointsOnly);
@@ -312,28 +310,6 @@ export default {
             capRounded: true
           });
 
-          // Create a new GeoJsonLayer for the points
-          /*this.checkPointPathLayer = new TextLayer({
-            id: "checkpoint-path-layer",
-            data: pointsOnly.features,
-            fontFamily: "Monaco, monospace",
-            fontSettings: {
-              sdf: true,
-              fontSize: 128,
-              buffer: 64,
-              radius: 64,
-            },
-            fontWeight: "bold",
-            getColor: [0, 0, 0],
-            outlineColor: [255, 255, 255, 255],
-            outlineWidth: 30,
-            getPosition: (f) => f.geometry.coordinates,
-            getSize: (f) => 11,
-            getText: (f) => f.properties.sog + " knots" + "\n" + this.formatDate(f.properties.updated_at),
-            extensions: [new CollisionFilterExtension()],
-            collisionGroup: "checkpoint-path",
-            getCollisionPriority: 0,
-          });*/
         } else {
           // Clear the layers if the GeoJSON data is invalid
           this.checkPointPathLayer = null;
@@ -456,24 +432,6 @@ export default {
       // Filter the features to include only those with geometry type "Point"
       const filteredFeatures = featureCollection.features.filter((feature) => {
         return feature.geometry && feature.geometry.type === "Point";
-      });
-
-      // Return a new FeatureCollection with the filtered features
-      return {
-        type: "FeatureCollection",
-        features: filteredFeatures,
-      };
-    },
-
-    filterLineStrings(featureCollection) {
-      // Check if the input is a valid GeoJSON FeatureCollection
-      if (!featureCollection || featureCollection.type !== "FeatureCollection" || !Array.isArray(featureCollection.features)) {
-        throw new Error("Invalid GeoJSON FeatureCollection");
-      }
-
-      // Filter the features to include only those with geometry type "LineString"
-      const filteredFeatures = featureCollection.features.filter((feature) => {
-        return feature.geometry && feature.geometry.type === "LineString";
       });
 
       // Return a new FeatureCollection with the filtered features

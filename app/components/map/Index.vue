@@ -12,7 +12,7 @@
   <!-- Add the ships to the map -->
   <Ships v-if="!!ready" :map="map" :tooltip="tooltip" :showShips="!enableTimeline"></Ships>
   <ShipsList v-if="!!ready && !enableTimeline" :map="map"></ShipsList>
-  <ShipsDetails v-if="!!ready && !enableTimeline"></ShipsDetails>
+  <ShipsDetails v-if="!!ready && !enableTimeline" :map="map"></ShipsDetails>
 
   <AuthenticationStatus></AuthenticationStatus>
 

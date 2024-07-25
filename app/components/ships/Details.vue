@@ -31,7 +31,7 @@
       <!-- Divider between toolbar and ship information -->
       <v-divider></v-divider>
 
-      <v-tabs v-model="tab" bg-color="primary" align-tabs="center">
+      <v-tabs v-model="tab" bg-color="primary">
         <v-tab value="details">Details</v-tab>
         <v-tab value="timeline">Timeline</v-tab>
       </v-tabs>
@@ -73,24 +73,27 @@
           <v-tabs-window-item value="timeline">
             <v-card style="height: calc(100dvh - 200px); overflow: auto;" class="px-5">
               <v-timeline side="end">
-                <v-timeline-item dot-color="red" icon="mdi-compass"
-                  v-for="feature in selected.path.features.filter(f => !!f.properties.updated_at).sort((a, b) => new Date(b.properties.updated_at) - new Date(a.properties.updated_at))">
+                <v-timeline-item size="x-small" fill-dot :dot-color="getSpeedColor(feature.properties.sog)"
+                  v-for="feature in selected.path.features.filter(f => !!f.properties.updated_at)">
+
                   <template v-slot:opposite>
-                    <strong>{{ this.formatDate(feature.properties.updated_at) }}</strong>
+                    <h3 class="headline font-weight-black">
+                      {{ this.formatDate(feature.properties.updated_at) }}
+                    </h3>
+                    <v-btn variant="tonal" size="small" block @click="flyTo(feature.geometry.coordinates)">
+                      <v-icon>mdi-target</v-icon>
+                    </v-btn>
                   </template>
-                  <v-alert :value="true" density="compact" width="200px">
-                    <div>
-                      <div>
-                        <div class="text-caption">
-                          <strong>HDG: </strong>{{ feature.properties.hdg }}°
-                        </div>
-                        <div class="text-caption">
-                          <strong>COG: </strong> {{ feature.properties.cog }}
-                        </div>
-                        <div class="text-caption">
-                          <strong>SOG: </strong> {{ feature.properties.sog }}
-                        </div>
-                      </div>
+                  <v-alert width="180px" :color="getSpeedColorHex(feature.properties.sog)" border="top"
+                    variant="outlined">
+                    <div class="text-caption text-black">
+                      <strong>HDG: </strong>{{ feature.properties?.hdg || "N/A" }}°
+                    </div>
+                    <div class="text-caption text-black">
+                      <strong>COG: </strong> {{ feature.properties?.cog || "N/A" }}°
+                    </div>
+                    <div class="text-caption text-black">
+                      <strong>SOG: </strong> {{ feature.properties?.sog || "N/A" }} knots
                     </div>
                   </v-alert>
                 </v-timeline-item>
@@ -109,6 +112,7 @@
 import configs from "~/helpers/configs";
 
 export default {
+  props: ["map"],
   data: () => ({
     tab: null
   }),
@@ -143,6 +147,17 @@ export default {
     },
   },
 
+  watch: {
+    dialogOpened(value) {
+      if (!value) {
+        if (this.map.getSource('points')) {
+          this.map.removeLayer('points');
+          this.map.removeSource('points');
+        }
+      }
+    },
+  },
+
   methods: {
     // Helper method to format date
     formatDate(date) {
@@ -156,6 +171,74 @@ export default {
       } else {
         this.selectedTimeline = ship;
       }
+    },
+
+    getSpeedColor(sog) {
+      const maxSpeed = 18; // Maximum relevant speed
+      const clampedSpeed = Math.min(Math.max(sog, 0), maxSpeed); // Clamp the speed between 0 and 20
+
+      const red = Math.min(255, Math.round((clampedSpeed / maxSpeed) * 255)); // Calculate the red component
+      const green = Math.min(255, Math.round(255 - (clampedSpeed / maxSpeed) * 255)); // Calculate the green component
+      const blue = 0; // Blue component is always 0
+
+      //hex color
+      return `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
+    },
+
+    getSpeedColorHex(sog) {
+      const maxSpeed = 18; // Maximum relevant speed
+      const clampedSpeed = Math.min(Math.max(sog, 0), maxSpeed); // Clamp the speed between 0 and 20
+
+      const red = Math.min(255, Math.round((clampedSpeed / maxSpeed) * 255)); // Calculate the red component
+      const green = Math.min(255, Math.round(255 - (clampedSpeed / maxSpeed) * 255)); // Calculate the green component
+      const blue = 0; // Blue component is always 0
+
+      //hex color
+      return `#${red.toString(16).padStart(2, "0")}${green.toString(16).padStart(2, "0")}${blue.toString(16).padStart(2, "0")}`;
+    },
+
+    flyTo(coordinates) {
+
+      this.map.flyTo({
+        center: coordinates,
+        zoom: 13,
+        essential: true,
+      });
+
+      if (this.map.getSource('points')) {
+        this.map.removeLayer('points');
+        this.map.removeSource('points');
+      }
+
+      this.map.addSource('points', {
+        'type': 'geojson',
+        'data': {
+          'type': 'FeatureCollection',
+          'features': [
+            {
+              'type': 'Feature',
+              'geometry': {
+                'type': 'Point',
+                'coordinates': coordinates
+              }
+            }
+          ]
+        }
+      });
+
+      this.map.addLayer({
+        'id': 'points',
+        'source': 'points',
+        'type': 'circle',
+        'paint': {
+          'circle-radius': 10,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FFFFFF',
+          'circle-opacity': 0.7,
+          'circle-color': '#FFFFFF'
+        }
+      });
+
     },
   },
 };
