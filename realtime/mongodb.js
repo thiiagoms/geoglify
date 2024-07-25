@@ -254,23 +254,7 @@ async function getHistoricalPath(mmsi) {
   const features = [];
 
   // Extract coordinates from each location point and filter points with valid sog
-  const validPoints = data.filter((d) => d.sog !== null && d.sog > 0);
-  const coordinates = validPoints.map((d) => d.location.coordinates);
-
-  // Create the GeoJSON LineString feature
-  const lineFeature = {
-    type: "Feature",
-    properties: {
-      mmsi: mmsi,
-    },
-    geometry: {
-      type: "LineString",
-      coordinates: coordinates,
-    },
-  };
-
-  // Push the LineString feature to the features array
-  features.push(lineFeature);
+  const validPoints = data.filter((d) => d.sog !== null && d.sog > 0).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
   // Create GeoJSON Point features for each location point with valid sog
   validPoints.forEach((d) => {
@@ -435,7 +419,7 @@ async function getHistoricalPathsBetweenTimestamps(startTime, endTime) {
       const shipData = groupedData[mmsi];
 
       // Extract coordinates from each location point and filter points with valid sog
-      const validPoints = shipData.filter((d) => d.sog !== null && d.sog > 0);
+      const validPoints = shipData.filter((d) => d.sog !== null && d.sog > 0).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
       const coordinates = validPoints.map((d) => d.location.coordinates);
 
       // Create the GeoJSON LineString feature if there are valid coordinates

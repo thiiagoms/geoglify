@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Layer;
 use App\Models\Feature;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LayerController extends Controller
 {
@@ -82,31 +84,46 @@ class LayerController extends Controller
     public function upload_data(Request $request, $id)
     {
         // Get layer
-        $layer = Layer::findOrfail($id);
+        $layer = Layer::findOrFail($id);
 
         // Handle GeoJSON file upload
         if ($request->hasFile('file')) {
 
             // Replace features
-            $layer->features()->delete();
+            DB::transaction(function () use ($request, $layer, $id) {
 
-            // Get uploaded file
-            $file = $request->file('file');
+                // Delete existing features
+                $layer->features()->delete();
 
-            // Process GeoJSON file
-            $geojson = json_decode(file_get_contents($file->getPathname()), true);
-            if (isset($geojson['features'])) {
-                foreach ($geojson['features'] as $f) {
+                // Get uploaded file
+                $file = $request->file('file');
 
-                    $feature = new Feature;
-                    $feature->layer_id = $id;
-                    $feature->geojson = $f;
-                    $feature->created_by = auth()->user()->id;
-                    $feature->updated_by = auth()->user()->id;
-                    $feature->save();
+                // Process GeoJSON file
+                $geojson = json_decode(file_get_contents($file->getPathname()), true);
 
+                if (isset($geojson['features'])) {
+                    // Prepare data for bulk insert
+                    $featuresData = [];
+                    $userId = auth()->user()->id;
+
+                    foreach ($geojson['features'] as $f) {
+                        $featuresData[] = [
+                            'layer_id' => $id,
+                            'geojson' => json_encode($f),
+                            'created_by' => $userId,
+                            'updated_by' => $userId,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ];
+                    }
+
+                    // Insert data in chunks
+                    $chunks = array_chunk($featuresData, 1000); // Adjust chunk size as needed
+                    foreach ($chunks as $chunk) {
+                        Feature::insert($chunk);
+                    }
                 }
-            }
+            });
         }
 
         return response()->json("Ok", 200);

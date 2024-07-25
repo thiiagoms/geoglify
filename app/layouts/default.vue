@@ -12,9 +12,11 @@
       </v-app-bar-title>
 
       <template v-slot:append>
-        <v-list-item v-if="weather" class="pa-0 ma-0" :prepend-avatar="'https://openweathermap.org/img/wn/' + weather.weather[0].icon + '@2x.png'">
+        <v-list-item v-if="weather" class="pa-0 ma-0"
+          :prepend-avatar="'https://openweathermap.org/img/wn/' + weather.weather[0].icon + '@2x.png'">
           <v-list-item-title class="text-body-2">{{ weather.name }}</v-list-item-title>
-          <v-list-item-subtitle class="text-body-2">{{ weather.main.temp.toFixed(0) + "°, " + weather.weather[0].description }}</v-list-item-subtitle>
+          <v-list-item-subtitle class="text-body-2">{{ weather.main.temp.toFixed(0) + "°, " +
+            weather.weather[0].description }}</v-list-item-subtitle>
         </v-list-item>
       </template>
     </v-app-bar>
@@ -26,7 +28,7 @@
       <v-spacer v-if="!isMobile"></v-spacer>
 
       <div v-if="weather">
-        <v-icon icon="mdi-thermometer-minus" size="small" class="ml-3" color="white"/>
+        <v-icon icon="mdi-thermometer-minus" size="small" class="ml-3" color="white" />
         <span class="ms-1">{{ weather.main.temp_min.toFixed(0) }} °C</span>
         <v-icon icon="mdi-thermometer-plus" size="small" class="ml-3" />
         <span class="ms-1"> {{ weather.main.temp_max.toFixed(0) }} °C</span>
@@ -46,61 +48,63 @@
 </template>
 
 <script>
-  export default {
-    data() {
-      return {
-        currentTime: "",
-        weather: null,
-        isMobile: false,
-      };
-    },
 
-    mounted() {
-      this.updateTime();
-      this.fetchWeatherData();
-      setInterval(this.updateTime, 1000);
-      this.checkIfMobile(); // Verifica se o dispositivo é móvel após a montagem do componente
-      window.addEventListener("resize", this.checkIfMobile); // Verifica se o dispositivo é móvel ao redimensionar a janela
-    },
+export default {
+  data() {
+    return {
+      currentTime: "",
+      weather: null,
+      isMobile: false,
+    };
+  },
 
-    methods: {
-      async updateTime() {
-        const date = new Date();
-        this.currentTime = date.toLocaleString();
-      },
-      async getCurrentPosition() {
-        return new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject);
-        });
-      },
-      async fetchWeatherData() {
-        try {
-          const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY || "790a9878f3ac207114becfad4a7870aa";
-          const position = await this.getCurrentPosition();
-          const { latitude: lat, longitude: lon } = position.coords;
-          const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}&units=metric`);
-          this.weather = await response.json();
-        } catch (error) {
-          setInterval(this.fetchWeatherData, 15000);
-          console.error("Error fetching weather data:", error);
-        }
-      },
-      checkIfMobile() {
-        this.isMobile = window.innerWidth <= 600; // Define isMobile como verdadeiro se a largura da janela for menor ou igual a 600 pixels
-      },
+  mounted() {
+    this.updateTime();
+    this.fetchWeatherData();
+    setInterval(this.updateTime, 1000);
+    this.checkIfMobile(); // Verifica se o dispositivo é móvel após a montagem do componente
+    window.addEventListener("resize", this.checkIfMobile); // Verifica se o dispositivo é móvel ao redimensionar a janela
+  },
+
+  methods: {
+    async updateTime() {
+      const date = new Date();
+      this.currentTime = date.toLocaleString();
     },
-  };
+    async getCurrentPosition() {
+      return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+    },
+    async fetchWeatherData() {
+      try {
+        const API_KEY = this.$config.public.OPENWEATHERMAP_API_KEY || "790a9878f3ac207114becfad4a7870aa";
+        const position = await this.getCurrentPosition();
+        const { latitude: lat, longitude: lon } = position.coords;
+        const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}&units=metric`);
+        this.weather = await response.json();
+      } catch (error) {
+        setInterval(this.fetchWeatherData, 15000);
+        console.error("Error fetching weather data:", error);
+      }
+    },
+    checkIfMobile() {
+      this.isMobile = window.innerWidth <= 600; // Define isMobile como verdadeiro se a largura da janela for menor ou igual a 600 pixels
+    },
+  },
+};
 </script>
 
 <style>
-  .v-toolbar__content > .v-toolbar-title {
-    margin-inline-start: 0px !important;
-  }
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: black;
-  }
+.v-toolbar__content>.v-toolbar-title {
+  margin-inline-start: 0px !important;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: black;
+}
 </style>

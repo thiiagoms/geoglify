@@ -1,9 +1,11 @@
 <template>
- <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : 'right'" style="z-index: 1002; right: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'" v-if="feature">
+  <v-navigation-drawer v-model="dialogOpened" :location="$vuetify.display.mobile ? 'bottom' : 'right'"
+    style="z-index: 1002; right: 0px !important" permanent :width="$vuetify.display.mobile ? '100%' : '400'"
+    v-if="feature">
     <!-- Toolbar with ship name and flag -->
     <v-toolbar class="fixed-bar" color="white" dark style="border-bottom: 1px solid #ccc">
       <v-toolbar-title class="text-h5 font-weight-bold pl-4"> Feature Details </v-toolbar-title>
-    
+
       <v-spacer></v-spacer>
 
       <v-btn icon @click="dialogOpened = false" density="compact" class="ml-1">
@@ -30,22 +32,22 @@
 </template>
 
 <script>
-  export default {
-    computed: {
-      // Computed property for dialog state
-      dialogOpened: {
-        get() {
-          return !!this.$store.state.features.selected;
-        },
-        set(value) {
-          this.$store.state.features.selected = value;
-        },
+export default {
+  computed: {
+    // Computed property for dialog state
+    dialogOpened: {
+      get() {
+        return !!this.$store.state.features.selected;
       },
-      feature: {
-        get() {
-          return JSON.parse(JSON.stringify(this.$store.state.features.selected));
-        },
+      set(value) {
+        this.$store.state.features.selected = value;
       },
     },
-  };
+    feature: {
+      get() {
+        return JSON.parse(JSON.stringify(this.$store.state.features.selected));
+      },
+    },
+  },
+};
 </script>

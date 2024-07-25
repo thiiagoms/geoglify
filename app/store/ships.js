@@ -5,6 +5,7 @@ export const state = () => ({
   list: [],
   selected: null,
   selectedDetails: null,
+  selectedTimeline: null,
   cargos: configs.getCargos(),
   listOpened: false,
 });
