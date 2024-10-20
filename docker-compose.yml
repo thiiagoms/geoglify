@@ -1,109 +1,99 @@
-version: '3.1'
-
 services:
-  
-  app:
-    container_name: app
-    restart: always
-    build: ./app
-    working_dir: /opt/app
-    ports:
-      - "3000:3000"
-      
-  mongodb:
-    container_name: mongodb
-    restart: always
-    image: mongodb/atlas
-    privileged: true
-    command: |
-      /bin/bash -c "atlas deployments setup --type local --port 27778 --bindIpAll --username root --password root --force && tail -f /dev/null"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - mongodb_data:/var/lib/containers
-    ports:
-      - 27778:27778
-
-  ais-stream:
-    build: ./ais-stream
-    restart: always
-    container_name: ais-stream
-    working_dir: /opt/ais-stream
-    environment:
-      - NODE_ENV=production
-      - MONGODB_CONNECTION_STRING=mongodb+srv://geoglify:Fp0p5DWwjUYtdYPB@cluster0.2n7eqof.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-      - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
-      - AIS_SERVER_HOST=aisstream.io
-    command: "node main.js"
-
-  #ais-decoder:
-  #  build: ./ais-decoder
-  #  restart: always
-  #  container_name: ais-decoder
-  #  working_dir: /opt/ais-decoder
-  #  environment:
-  #    - NODE_ENV=production
-  #    - MONGODB_CONNECTION_STRING=mongodb://root:root@mongodb:27778/?directConnection=true&authMechanism=DEFAULT
-  #    - AIS_SERVER_HOST=153.44.253.27
-  #    - AIS_SERVER_PORT=5631
-  #  command: "node main.js"
-  #  depends_on:
-  #    - mongodb
-
-  realtime:
-    build: ./realtime
-    restart: always
-    container_name: realtime
-    working_dir: /opt/realtime
-    environment:
-      - NODE_ENV=production
-      - MONGODB_CONNECTION_STRING=mongodb+srv://geoglify:Fp0p5DWwjUYtdYPB@cluster0.2n7eqof.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-    ports:
-      - "8080:8080"
-    command: "node main.js"
-
-  api:
-    build: ./api
-    container_name: api
+  webapp:
+    build: ./webapp
+    image: geoglify/webapp
+    container_name: gwebapp
     restart: always
     environment:
       PHP_OPCACHE_ENABLE: 0
       PRODUCTION: 0
     ports:
-      - 8082:80
+      - 81:80
+      - 8080:8080
+      - 5173:5173
     volumes:
-      - ./api:/opt/api
-      - vendor_data:/opt/api/vendor
+      - ./webapp:/var/www/webapp
+      - node-modules-data:/var/www/webapp/node_modules
+      - vendor-data:/var/www/webapp/vendor
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://api/"]
+      test: ["CMD", "curl", "-f", "http://webapp/"]
       interval: 30s
       timeout: 10s
       retries: 3
     depends_on:
       - database
+      - redis
 
   database:
     build: ./database
-    image: database
+    image: geoglify/database
     restart: always
-    container_name: database
+    container_name: gdatabase
     ports:
       - "5432:5432"
     volumes:
-      - database_data:/var/lib/postgresql/data
+      - database-data:/var/lib/postgresql/data
 
-  martin:
-    image: ghcr.io/maplibre/martin:latest
+  mailpit:  
+    image: axllent/mailpit:latest
+    container_name: gmailpit
     restart: always
-    container_name: martin
-    command: --config /app/config.yml
     ports:
-      - "3001:3000"
-    depends_on:
-      - database
+      - "8025:8025"
+      - "1025:1025"
     volumes:
-      - ./martin:/app
+      - mailpit-data:/data
 
+  redis:
+    image: redis:latest
+    container_name: gredis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - 6379:6379
+
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: gredisinsight
+    restart: always
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis-insight-data:/data
+
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: gldap
+    environment:
+        - LDAP_ORGANISATION=exampleorg
+        - LDAP_DOMAIN=example.in
+        - "LDAP_BASE_DN=dc=example,dc=in"
+        - LDAP_ADMIN_PASSWORD=password
+    ports:
+        - 389:389
+        - 636:636
+
+  ais-stream:
+    build: ./ais-stream
+    container_name: gaisstream
+    working_dir: /opt/ais-stream
+    environment:
+      - NODE_ENV=production
+      - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
+      - AIS_SERVER_HOST=aisstream.io
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: "node main.js"
+    depends_on:
+      - redis
+    
 volumes:
-  vendor_data:
-  mongodb_data:
-  database_data:
+  vendor-data:
+  storage-data:
+  database-data:
+  node-modules-data:
+  mailpit-data:
+  redis-data:
+  redis-insight-data:

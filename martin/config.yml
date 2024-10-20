@@ -1,8 +1,0 @@
-keep_alive: 75
-listen_addresses: "0.0.0.0:3000"
-worker_processes: 8
-postgres:
-  connection_string: "postgresql://postgres:postgres2024@database/geoglify"
-pmtiles:
-  paths:
-    - /app/tile
