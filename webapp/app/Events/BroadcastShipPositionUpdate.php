@@ -18,7 +18,7 @@ class BroadcastShipPositionUpdate implements ShouldBroadcast
         public ?float $cog,
         public ?float $sog,
         public ?int $hdg,
-        public ?string $utc,
+        public ?string $last_updated,
         public ?string $eta,
         public ?string $destination,
         public ?string $geojson
@@ -37,7 +37,7 @@ class BroadcastShipPositionUpdate implements ShouldBroadcast
             'cog' => $this->cog,
             'sog' => $this->sog,
             'hdg' => $this->hdg,
-            'utc' => $this->utc,
+            'last_updated' => $this->last_updated,
             'eta' => $this->eta,
             'destination' => $this->destination,
             'geojson' => $this->geojson

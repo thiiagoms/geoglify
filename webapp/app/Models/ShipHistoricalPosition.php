@@ -19,7 +19,7 @@ class ShipHistoricalPosition extends Model
         'cog',
         'sog',
         'hdg',
-        'utc',
+        'last_updated',
         'eta',
         'destination',
         'geojson'

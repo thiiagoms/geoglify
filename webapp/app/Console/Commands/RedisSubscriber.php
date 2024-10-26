@@ -47,7 +47,7 @@ class RedisSubscriber extends Command
             // Convert geojson to JSON string
             $geojsonString = json_encode($shipData['geojson']);
 
-            BroadcastShipPositionUpdate::dispatch($shipData['mmsi'], $shipData['name'], $shipData['cog'], $shipData['sog'], $shipData['hdg'], $shipData['utc'], $shipData['eta'], $shipData['destination'], $geojsonString);
+            BroadcastShipPositionUpdate::dispatch($shipData['mmsi'], $shipData['name'], $shipData['cog'], $shipData['sog'], $shipData['hdg'], $shipData['last_updated'], $shipData['eta'], $shipData['destination'], $geojsonString);
 
             echo "Ship position broadcasted\n";
         });

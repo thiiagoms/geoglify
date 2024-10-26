@@ -17,13 +17,15 @@ class Ship extends Model
     protected $fillable = [
         'mmsi',
         'name',
-        'dimA',
-        'dimB',
-        'dimC',
-        'dimD',
+        'dim_a',
+        'dim_b',
+        'dim_c',
+        'dim_d',
         'imo',
         'callsign',
         'draught',
-        'cargo'
+        'cargo',
+        'imo',
+        'draught',
     ];
 }

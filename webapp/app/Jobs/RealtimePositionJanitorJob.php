@@ -32,7 +32,7 @@ class RealtimePositionJanitorJob implements ShouldQueue
         $threshold = Carbon::now()->subMinutes(30);
 
         // Get all ships that are older than the threshold
-        $shipsToRemove = ShipRealtimePosition::where('utc', '<=', $threshold)->get();
+        $shipsToRemove = ShipRealtimePosition::where('last_updated', '<=', $threshold)->get();
 
         foreach ($shipsToRemove as $ship) {
             // Delete the ship

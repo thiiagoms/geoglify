@@ -14,10 +14,10 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('callsign')->nullable();
             $table->string('imo')->nullable();
-            $table->integer('dimA')->nullable();
-            $table->integer('dimB')->nullable();
-            $table->integer('dimC')->nullable();
-            $table->integer('dimD')->nullable();
+            $table->integer('dim_a')->nullable();
+            $table->integer('dim_b')->nullable();
+            $table->integer('dim_c')->nullable();
+            $table->integer('dim_d')->nullable();
             $table->string('cargo')->nullable();
             $table->decimal('draught', 5, 2)->nullable();
 

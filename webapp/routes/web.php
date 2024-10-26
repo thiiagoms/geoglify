@@ -7,6 +7,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ShipController;
 use App\Http\Controllers\ShipRealtimePositionController;
 use App\Http\Controllers\ShipHistoricalPositionController;
+use App\Http\Controllers\ShipRealtimeViewController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -36,13 +37,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/ldap/remove', [LdapController::class, 'remove'])->name('ldap.remove');
 
     Route::resource('ships', ShipController::class);
-    Route::post('/ships/list', [ShipController::class, 'list'])->name('ships.list');
+    Route::get('ships/{id}/photo', [ShipController::class, 'photo'])->name('ships.photo');
 
     Route::resource('ship-realtime-positions', ShipRealtimePositionController::class);
-    Route::post('/ship-realtime-positions/list', [ShipRealtimePositionController::class, 'list'])->name('ship-realtime-positions.list');
-
     Route::resource('ship-historical-positions', ShipHistoricalPositionController::class);
-    Route::post('/ship-historical-positions/list', [ShipHistoricalPositionController::class, 'list'])->name('ship-historical-positions.list');
+
+    Route::get('ships-realtime/all', [ShipRealtimeViewController::class, 'all'])->name('ships-realtime.all');
+    Route::post('ships-realtime/search', [ShipRealtimeViewController::class, 'search'])->name('ships-realtime.search');
+    
 });
 
 require __DIR__ . '/auth.php';

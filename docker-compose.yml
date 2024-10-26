@@ -34,6 +34,15 @@ services:
     volumes:
       - database-data:/var/lib/postgresql/data
 
+  typesense:
+    image: 'typesense/typesense:26.0'
+    container_name: gtypesense
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense-data:/data
+    command: '--data-dir /data --api-key=xyz --enable-cors'
+
   mailpit:  
     image: axllent/mailpit:latest
     container_name: gmailpit
@@ -97,3 +106,4 @@ volumes:
   mailpit-data:
   redis-data:
   redis-insight-data:
+  typesense-data:

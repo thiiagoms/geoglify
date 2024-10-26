@@ -11,11 +11,11 @@ return new class extends Migration
     {
         Schema::create('ship_realtime_positions', function (Blueprint $table) {
             $table->id();
-            $table->string('mmsi');
+            $table->string('mmsi')->unique();
             $table->decimal('cog', 5, 2)->nullable(); // Course over ground
             $table->decimal('sog', 5, 2)->nullable(); // Speed over ground
             $table->integer('hdg')->nullable(); // Heading
-            $table->timestamp('utc')->nullable();
+            $table->timestamp('last_updated')->nullable();
             $table->timestamp('eta')->nullable();
             $table->string('destination')->nullable();
             $table->jsonb('geojson')->nullable();

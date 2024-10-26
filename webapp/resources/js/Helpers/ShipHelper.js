@@ -64,24 +64,6 @@ export default {
     },
 
     /**
-     * Get list of colors for the cargo types
-     * @returns 
-     */
-    getCargoColors() {
-        const matchExpression = ["match", ["get", "cargo"]];
-
-        cargos.types.forEach((cargo) => {
-            if (cargo.is_active) {
-                matchExpression.push(cargo.code, cargo.color);
-            }
-        });
-
-        matchExpression.push("#FF0000");
-
-        return matchExpression;
-    },
-
-    /**
      * Add a ship layer to the map
      * @param {*} map 
      * @param {*} id 
@@ -105,7 +87,6 @@ export default {
         };
 
         const paintOptions = {
-            "icon-color": this.getCargoColors()
         };
 
         MapHelper.addLayer(map, id, source, "symbol", layoutOptions, paintOptions);

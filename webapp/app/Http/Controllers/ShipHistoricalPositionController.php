@@ -60,10 +60,4 @@ class ShipHistoricalPositionController extends Controller
     {
         //
     }
-
-    public function list(Request $request)
-    {
-        $ship_historical_positions = ShipHistoricalPosition::all();    
-        return response()->json($ship_historical_positions);
-    }
 }

@@ -65,6 +65,9 @@ php artisan storage:link
 # Set the correct permissions
 chmod -R ugo+rw storage
 
+# Queue clear
+php artisan queue:clear
+
 # Install node dependencies
 npm install
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->decimal('cog', 5, 2)->nullable();
             $table->decimal('sog', 5, 2)->nullable();
             $table->integer('hdg')->nullable();
-            $table->timestamp('utc')->nullable();
+            $table->timestamp('last_updated')->nullable();
             $table->timestamp('eta')->nullable();
             $table->string('destination')->nullable();
             $table->jsonb('geojson')->nullable();
