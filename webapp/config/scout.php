@@ -193,11 +193,27 @@ return [
                             'type' => 'string',
                         ],
                         [
+                            'name' => 'callsign',
+                            'type' => 'string',
+                        ],
+                        [
                             'name' => 'imo',
                             'type' => 'string',
                         ],
                         [
-                            'name' => 'callsign',
+                            'name' => 'cargo_name',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'destination',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'country_iso_code',
+                            'type' => 'string',
+                        ],
+                        [
+                            'name' => 'country_name',
                             'type' => 'string',
                         ],
                         [
@@ -212,7 +228,7 @@ return [
                     'default_sorting_field' => 'updated_at',
                 ],
                 'search-parameters' => [
-                    'query_by' => 'name,imo,callsign,mmsi',
+                    'query_by' => 'name,imo,callsign,mmsi,destination,country_name,cargo_name',
                 ],
             ],
         ],

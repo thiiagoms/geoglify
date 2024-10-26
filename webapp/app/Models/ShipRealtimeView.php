@@ -24,6 +24,11 @@ class ShipRealtimeView extends Model
         'imo',
         'updated_at',
         'created_at',
+        'cargo_name',
+        'eta',
+        'destination',
+        'country_iso_code',
+        'country_name',
     ];
 
     /**
@@ -41,6 +46,10 @@ class ShipRealtimeView extends Model
                 'name' => (string) $this->name,
                 'callsign' => (string) $this->callsign,
                 'imo' => (string) $this->imo,
+                'cargo_name' => (string) $this->cargo_name,
+                'destination' => (string) $this->destination,
+                'country_iso_code' => (string) $this->country_iso_code,
+                'country_name' => (string) $this->country_name,
 
                 // Use the UNIX timestamp for Typesense integration
                 // https://typesense.org/docs/26.0/api/collections.html#indexing-dates

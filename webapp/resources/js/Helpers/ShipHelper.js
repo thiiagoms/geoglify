@@ -1,5 +1,4 @@
 import MapHelper from "@/Helpers/MapHelper";
-import cargos from "@/../data/cargos.json";
 
 /**
  * Helper functions for the ships

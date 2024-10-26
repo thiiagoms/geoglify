@@ -8,6 +8,8 @@ use Database\Seeders\PermissionsTableSeeder;
 use Database\Seeders\PermissionRoleTableSeeder;
 use Database\Seeders\UsersTableSeeder;
 use Database\Seeders\RoleUserTableSeeder;
+use Database\Seeders\CargoTypesSeeder;
+use Database\Seeders\CountriesTableSeeder;
  
 class DatabaseSeeder extends Seeder
 {
@@ -22,6 +24,8 @@ class DatabaseSeeder extends Seeder
             PermissionRoleTableSeeder::class,
             UsersTableSeeder::class,
             RoleUserTableSeeder::class,
+            CargoTypesSeeder::class,
+            CountriesTableSeeder::class,
         ]);
     }
 }

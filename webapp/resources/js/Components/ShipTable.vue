@@ -61,11 +61,12 @@
 
             <template v-slot:item.country="{ item }">
                 <country-flag
-                    :country="getCountryFlag(item.mmsi)"
+                    v-if="item.country_iso_code"
+                    :country="item.country_iso_code"
                     class="flag"
                     left
                 />
-                {{ getCountryName(item.mmsi) }}
+                {{ item.country_name }}
             </template>
 
             <template v-slot:item.last_updated="{ item }">
@@ -84,9 +85,6 @@
 </template>
 
 <script>
-import mids from "@/../data/mids.json";
-import cargos from "@/../data/cargos.json";
-
 export default {
     props: ["ships"], // Receives ships from the map component
     data() {
@@ -103,7 +101,7 @@ export default {
                 { title: "MMSI", value: "mmsi", width: "150px" },
                 { title: "IMO", value: "imo", width: "150px" },
                 { title: "Callsign", value: "callsign", width: "150px" },
-                { title: "Vessel Type", value: "cargo" },
+                { title: "Vessel Type", value: "cargo_name" },
                 { title: "Country", value: "country" },
                 { title: "Destination", value: "destination" },
                 { title: "ETA", value: "eta", width: "150px" },
@@ -142,23 +140,6 @@ export default {
 
         emitFilteredShips() {
             this.$emit("filteredShips", this.serverItems); // Emit filtered ships to parent
-        },
-
-        getCountryFlag(mmsi) {
-            const mid = mmsi.toString().slice(0, 3);
-            const country = mids[mid];
-            return country ? country[0] : "";
-        },
-
-        getCountryName(mmsi) {
-            const mid = mmsi.toString().slice(0, 3);
-            const country = mids[mid];
-            return country ? country[3] : "";
-        },
-
-        getCargoName(code) {
-            const cargo = cargos[code];
-            return cargo ? cargo[0] : "";
         },
     },
 };

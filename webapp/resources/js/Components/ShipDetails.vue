@@ -2,7 +2,7 @@
     <v-card flat>
         <v-card-title class="d-flex align-center pe-2 bg-primary">
             <country-flag
-                :country="getCountryFlag(ship.mmsi)"
+                :country="ship.country_iso_code"
                 class="flag"
                 left
             />
@@ -31,12 +31,12 @@
                     <tr>
                         <td class="font-weight-black">Country</td>
                         <td>
-                            {{ getCountryName(ship.mmsi) }}
+                            {{ ship.country_name }}
                         </td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Vessel Type</td>
-                        <td>{{ getCargoName(ship.cargo) }}</td>
+                        <td>{{ ship.cargo_name }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">ETA</td>
@@ -92,8 +92,6 @@
 </template>
 
 <script>
-import mids from "@/../data/mids.json";
-import cargos from "@/../data/cargos.json";
 
 export default {
     props: ["ship"], // Receives ship from the map component
@@ -125,23 +123,6 @@ export default {
                 .finally(() => {
                     this.loading = false; // Termina o estado de carregamento
                 });
-        },
-
-        getCountryFlag(mmsi) {
-            const mid = mmsi.toString().slice(0, 3);
-            const country = mids[mid];
-            return country ? country[0] : "";
-        },
-
-        getCountryName(mmsi) {
-            const mid = mmsi.toString().slice(0, 3);
-            const country = mids[mid];
-            return country ? country[3] : "";
-        },
-
-        getCargoName(code) {
-            const cargo = cargos[code];
-            return cargo ? cargo[0] : "";
         },
     },
 };
