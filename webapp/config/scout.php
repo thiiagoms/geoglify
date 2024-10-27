@@ -225,7 +225,7 @@ return [
                             'type' => 'int64',
                         ],
                     ],
-                    'default_sorting_field' => 'updated_at',
+                    'default_sorting_field' => 'created_at',
                 ],
                 'search-parameters' => [
                     'query_by' => 'name,imo,callsign,mmsi,destination,country_name,cargo_name',

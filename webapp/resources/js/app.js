@@ -8,6 +8,7 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import vuetify from "./vuetify";
 import fetchInterceptor from './fetchInterceptor';
 import CountryFlag from 'vue-country-flag-next';
+import moment from "moment";
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -20,6 +21,14 @@ createInertiaApp({
             .use(ZiggyVue)
             .use(fetchInterceptor)
             .use(CountryFlag)
+            .mixin({
+                methods: {
+                    formatDateTime(value) {
+                        if (!value) return "";
+                        return moment(value).format("DD/MM/YYYY HH:mm");
+                    },
+                },
+            })
             .use(vuetify)
             .mount(el);
     },

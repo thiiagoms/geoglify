@@ -12,7 +12,7 @@
                 variant="outlined"
                 flat
                 hide-details
-                @input="emitFilteredShips"
+                @input="handleInput"
             ></v-text-field>
         </v-card-title>
 
@@ -31,9 +31,10 @@
             density="compact"
         >
             <template v-slot:loading>
-                <v-skeleton-loader type="table-row@5"></v-skeleton-loader>
+                <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
             </template>
 
+            <!-- Photo -->
             <template v-slot:item.photo="{ item }">
                 <v-avatar
                     rounded="0"
@@ -51,14 +52,32 @@
                 </v-avatar>
             </template>
 
+            <!-- Name -->
             <template v-slot:item.name="{ item }">
-                <b>{{ item.name }}</b>
+                <b v-html="item.name"></b>
             </template>
 
-            <template v-slot:item.cargo="{ item }">
-                {{ getCargoName(item.cargo) }}
+            <!-- MMSI -->
+            <template v-slot:item.mmsi="{ item }">
+                <span v-html="item.mmsi"></span>
             </template>
 
+            <!-- IMO -->
+            <template v-slot:item.imo="{ item }">
+                <span v-html="item.imo"></span>
+            </template>
+
+            <!-- Callsign -->
+            <template v-slot:item.callsign="{ item }">
+                <span v-html="item.callsign"></span>
+            </template>
+
+            <!-- Vessel Type -->
+            <template v-slot:item.cargo_name="{ item }">
+                <span v-html="item.cargo_name"></span>
+            </template>
+
+            <!-- Country -->
             <template v-slot:item.country="{ item }">
                 <country-flag
                     v-if="item.country_iso_code"
@@ -66,19 +85,22 @@
                     class="flag"
                     left
                 />
-                {{ item.country_name }}
+                <span v-html="item.country_name"></span>
             </template>
 
-            <template v-slot:item.last_updated="{ item }">
-                {{
-                    item.last_updated
-                        ? new Date(item.last_updated).toLocaleString()
-                        : ""
-                }}
+            <!-- Destination -->
+            <template v-slot:item.destination="{ item }">
+                <span v-html="item.destination"></span>
             </template>
 
+            <!-- ETA -->
             <template v-slot:item.eta="{ item }">
-                {{ item.eta ? new Date(item.eta).toLocaleString() : "" }}
+                {{ formatDateTime(item.eta) }}
+            </template>
+
+            <!-- Last Updated -->
+            <template v-slot:item.last_updated="{ item }">
+                {{ formatDateTime(item.last_updated) }}
             </template>
         </v-data-table-server>
     </v-card>
@@ -86,10 +108,10 @@
 
 <script>
 export default {
-    props: ["ships"], // Receives ships from the map component
+    props: ["ships"],
     data() {
         return {
-            itemsPerPage: 5,
+            itemsPerPage: 10,
             serverItems: [],
             paginatedItems: [],
             loading: false,
@@ -104,16 +126,23 @@ export default {
                 { title: "Vessel Type", value: "cargo_name" },
                 { title: "Country", value: "country" },
                 { title: "Destination", value: "destination" },
-                { title: "ETA", value: "eta", width: "150px" },
-                {
-                    title: "Last Updated",
-                    value: "last_updated",
-                    width: "150px",
-                },
+                { title: "ETA", value: "eta" },
+                { title: "Last Updated", value: "last_updated" },
             ],
+            debounceTimer: null, // Timer para debounce
         };
     },
     methods: {
+        handleInput() {
+            // Limpa o timer anterior
+            clearTimeout(this.debounceTimer);
+
+            // Define um novo timer
+            this.debounceTimer = setTimeout(() => {
+                this.emitFilteredShips();
+            }, 300); // 300 ms de atraso
+        },
+
         loadItems({ page, itemsPerPage, search }) {
             this.loading = true;
             fetch("ships-realtime/search", {
@@ -139,13 +168,12 @@ export default {
         },
 
         emitFilteredShips() {
-            this.$emit("filteredShips", this.serverItems); // Emit filtered ships to parent
+            this.$emit("filteredShips", this.serverItems);
         },
     },
 };
 </script>
-
-<style scoped>
+<style>
 table tbody * {
     font-family: "Roboto Mono", monospace !important;
 }
@@ -179,5 +207,10 @@ table thead th {
     border-radius: 5px !important;
     margin-right: -5px !important;
     float: left !important;
+}
+
+em {
+    font-style: normal !important;
+    background-color: yellow !important;
 }
 </style>
