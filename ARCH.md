@@ -19,12 +19,14 @@ Here’s a breakdown of each part of the system:
 
 5. **Database (PostgreSQL)**: Stores all the historical and real-time data about the vehicles' locations.
 
-6. **Vector Tiles Server (Martin)**: Provides map tiles to display on the map, making it load faster and use less data.
+6. **Typesense:** A search engine that enables fast and relevant search functionality for vehicle data, enhancing the user experience by allowing quick access to information.
 
-7. **Reverse Proxy (NGINX)**: Manages requests between users and the web application, also helps with security and load balancing.
+7. **Vector Tiles Server (Martin)**: Provides map tiles to display on the map, making it load faster and use less data.
 
-8. **Internet**: Connects the web application to the users.
+8. **Reverse Proxy (NGINX)**: Manages requests between users and the web application, also helps with security and load balancing.
 
-9. **Client**: The user’s device (like a computer or phone) where they view and interact with the real-time map.
+9. **Internet**: Connects the web application to the users.
+
+10. **Client**: The user’s device (like a computer or phone) where they view and interact with the real-time map.
 
 This setup lets users track vehicles in real-time on a map, with data processed quickly and efficiently.
