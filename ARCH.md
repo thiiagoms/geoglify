@@ -2,7 +2,7 @@
 
 This project tracks vehicles (like ships, planes, and trucks) on a map in real-time.
 
-![image](https://github.com/user-attachments/assets/0150b4c1-0218-47b4-a3d8-5a879d80f954)
+![image](https://github.com/user-attachments/assets/075fabbb-9296-4dce-82b9-47e532598ab6)
 
 Here’s a breakdown of each part of the system:
 
