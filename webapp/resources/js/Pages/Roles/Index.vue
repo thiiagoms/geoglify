@@ -99,7 +99,7 @@ export default {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6 my-6" title="Roles" subtitle="List of roles">
+        <v-card class="max-w-7xl mx-auto pa-6" flat title="Roles" subtitle="List of roles">
 
             <template v-slot:append>
                 <v-btn color="primary" variant="flat" :href="route('roles.create')" class="ml-2">Create</v-btn>

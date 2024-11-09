@@ -45,7 +45,7 @@ const updateRole = () => {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6 my-6" title="Edit Role" subtitle="Edit role details">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Edit Role" subtitle="Edit role details">
             <v-card-text>
                 <v-form @submit.prevent="updateRole">
                     <v-text-field v-model="form.title" label="Name" variant="outlined"

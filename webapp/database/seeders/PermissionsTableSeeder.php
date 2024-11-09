@@ -36,7 +36,7 @@ class PermissionsTableSeeder extends Seeder
             ],
             [
                 'id' => 5,
-                'title' => 'users_list',
+                'title' => 'users_index',
                 'description' => 'List users',
             ],
 
@@ -63,9 +63,63 @@ class PermissionsTableSeeder extends Seeder
             ],
             [
                 'id' => 10,
-                'title' => 'roles_list',
+                'title' => 'roles_index',
                 'description' => 'List roles',
-            ]
+            ],
+
+            // Layers
+            [
+                'id' => 11,
+                'title' => 'layers_create',
+                'description' => 'Create layers',
+            ],
+            [
+                'id' => 12,
+                'title' => 'layers_edit',
+                'description' => 'Edit layers',
+            ],
+            [
+                'id' => 13,
+                'title' => 'layers_destroy',
+                'description' => 'Destroy layers',
+            ],
+            [
+                'id' => 14,
+                'title' => 'layers_show',
+                'description' => 'Show layers',
+            ],
+            [
+                'id' => 15,
+                'title' => 'layers_index',
+                'description' => 'List layers',
+            ],
+
+            // Features
+            [
+                'id' => 16,
+                'title' => 'features_create',
+                'description' => 'Create features',
+            ],
+            [
+                'id' => 17,
+                'title' => 'features_edit',
+                'description' => 'Edit features',
+            ],
+            [
+                'id' => 18,
+                'title' => 'features_destroy',
+                'description' => 'Destroy features',
+            ],
+            [
+                'id' => 19,
+                'title' => 'features_show',
+                'description' => 'Show features',
+            ],
+            [
+                'id' => 20,
+                'title' => 'features_index',
+                'description' => 'List features',
+            ],
         ];
 
         Permission::insert($permissions);

@@ -5,9 +5,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LdapController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ShipController;
+use App\Http\Controllers\LayerController;
 use App\Http\Controllers\ShipRealtimePositionController;
 use App\Http\Controllers\ShipHistoricalPositionController;
 use App\Http\Controllers\ShipRealtimeViewController;
+use App\Http\Controllers\PortController;
+use App\Http\Controllers\SearouteController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -44,6 +47,15 @@ Route::middleware('auth')->group(function () {
 
     Route::get('ships-realtime/all', [ShipRealtimeViewController::class, 'all'])->name('ships-realtime.all');
     Route::post('ships-realtime/search', [ShipRealtimeViewController::class, 'search'])->name('ships-realtime.search');
+
+    Route::resource('layers', LayerController::class);
+    Route::post('/layers/list', [LayerController::class, 'list'])->name('layers.list');
+    
+    Route::get('/ports/geojson', [PortController::class, 'geojson'])->name('ports.geojson');
+    Route::resource('ports', PortController::class);
+
+    Route::get('/searoutes/geojson', [SearouteController::class, 'geojson'])->name('searoutes.geojson');
+    Route::resource('searoutes', SearouteController::class);
     
 });
 

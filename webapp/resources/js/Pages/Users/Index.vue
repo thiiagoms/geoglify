@@ -102,7 +102,7 @@ export default {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6" title="Users" subtitle="List of users">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Users" subtitle="List of users">
 
             <template v-slot:append>
                 <v-btn color="primary" variant="flat" :href="route('users.create')" class="ml-2">Create</v-btn>

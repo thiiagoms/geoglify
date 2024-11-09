@@ -36,7 +36,7 @@ const createUser = () => {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6" title="Create User" subtitle="Create a new user">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Create User" subtitle="Create a new user">
             <v-card-text>
                 <v-form @submit.prevent="createUser">
                     <v-text-field v-model="form.name" label="Name" required variant="outlined"

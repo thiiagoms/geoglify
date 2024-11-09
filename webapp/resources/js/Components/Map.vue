@@ -1,6 +1,9 @@
 <script>
 import MapHelper from "@/Helpers/MapHelper";
 import ShipHelper from "@/Helpers/ShipHelper";
+import PortHelper from "@/Helpers/PortHelper";
+import SearoutesHelper from "@/Helpers/SearoutesHelper";
+
 import "maplibre-gl/dist/maplibre-gl.css";
 import ShipTable from "@/Components/ShipTable.vue";
 import ShipDetails from "@/Components/ShipDetails.vue";
@@ -12,67 +15,113 @@ export default {
     },
 
     data: () => ({
-        map: null,
-        ships: [],
-        showList: false,
-        showShipDetails: false,
-        selectedShip: null,
+        mapInstance: null,
+        shipData: [],
+        isShipListVisible: false,
+        isShipDetailsVisible: false,
+        activeShip: null,
     }),
 
     mounted() {
-        this.map = MapHelper.createMap("map"); // Create the map
-        MapHelper.addNavigationControl(this.map); // Add navigation control
+        this.mapInstance = MapHelper.createMap("map"); // Create the map
+        MapHelper.addNavigationControl(this.mapInstance); // Add navigation control
 
-        this.map.on("load", async () => {
-            // Add ship icon (load custom icon before adding layer)
-            await MapHelper.addIcon(this.map, "ship", "/images/boat.png");
-            await MapHelper.addIcon(this.map, "circle", "/images/circle.png");
+        this.mapInstance.on("load", async () => {
+            // Create the source for searoutes
+            MapHelper.addSource(this.mapInstance, "searouteSource");
+
+            // Add the searoutes layer using the same source ID
+            SearoutesHelper.addLayer(
+                this.mapInstance,
+                "searouteLayer",
+                "searouteSource"
+            );
+
+            // Fetch searoutes data from the server
+            fetch(route("searoutes.geojson"))
+                .then((response) => response.json())
+                .then((geojson) => {
+                    MapHelper.updateSource(
+                        this.mapInstance,
+                        "searouteSource",
+                        geojson.features
+                    );
+                });
+
+            // Create the source for ports
+            MapHelper.addSource(this.mapInstance, "portSource");
+
+            // Add the ports layer using the same source ID
+            PortHelper.addLayer(this.mapInstance, "portLayer", "portSource");
+
+            // Fetch ports data from the server
+            fetch(route("ports.geojson"))
+                .then((response) => response.json())
+                .then((geojson) => {
+                    MapHelper.updateSource(
+                        this.mapInstance,
+                        "portSource",
+                        geojson.features
+                    );
+                });
+
+            // Add ship icons
+            await MapHelper.addIcon(
+                this.mapInstance,
+                "shipIcon",
+                "/images/boat.png"
+            );
+            await MapHelper.addIcon(
+                this.mapInstance,
+                "circleIcon",
+                "/images/circle.png"
+            );
 
             // Create the source for ships
-            MapHelper.addSource(this.map, "ships");
+            MapHelper.addSource(this.mapInstance, "shipSource");
 
             // Add the ships layer using the same source ID
-            ShipHelper.addLayer(this.map, "ships", "ships");
+            ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
-            // First get ships from the server
+            // Fetch ships data from the server
             fetch("ships-realtime/all")
-                .then((response) => {
-                    // Parse the response
-                    return response.json();
-                })
+                .then((response) => response.json())
                 .then((data) => {
-                    // Store ships data
-                    this.ships = data;
+                    this.shipData = data;
                 })
                 .catch(() => {
-                    // Failed to fetch data from the server
-                    this.ships = [];
+                    this.shipData = [];
                 })
                 .finally(() => {
-                    // Create ship features using this.ships
-                    const features = ShipHelper.createShipFeatures(this.ships);
-                    MapHelper.updateSource(this.map, "ships", features);
+                    const features = ShipHelper.createShipFeatures(
+                        this.shipData
+                    );
+                    MapHelper.updateSource(
+                        this.mapInstance,
+                        "shipSource",
+                        features
+                    );
 
-                    // Init listener for ship click
-                    this.map.on("click", "ships", (e) => {
+                    // Initialize click listener for ship selection
+                    this.mapInstance.on("click", "shipLayer", (e) => {
                         const ship = e.features[0].properties;
-                        this.showShipDetails = true;
-                        this.selectedShip = ship;
+                        this.isShipDetailsVisible = true;
+                        this.activeShip = ship;
                         this.highlightShip(ship.mmsi);
                     });
 
-                    // Init listener for realtime ship updates
+                    // Listener for real-time ship updates
                     /*window.Echo.channel("realtime_ships").listen(
                         "BroadcastShipPositionUpdate",
                         (ship) => {
-                            const source = this.map.getSource("ships");
+                            const source = this.mapInstance.getSource("shipSource");
                             if (!source) return;
 
                             const features = source._data.features;
                             ShipHelper.updateShipPosition(features, ship);
 
-                            this.ships.push(ship);
-                            MapHelper.updateSource(this.map, "ships", features);
+                            this.shipData.push(ship);
+                            MapHelper.updateSource(this.mapInstance, "shipSource", features);
                         }
                     );**/
                 });
@@ -83,26 +132,27 @@ export default {
         // Update ships on the map
         updateShipsOnMap(filteredShips) {
             const features = ShipHelper.createShipFeatures(filteredShips);
-            MapHelper.updateSource(this.map, "ships", features);
+            MapHelper.updateSource(this.mapInstance, "shipSource", features);
         },
 
         // Highlight ship on the map
         highlightShip(mmsi) {
-            // Get all features
-            const features = this.map.getSource("ships")._data.features;
+            const features =
+                this.mapInstance.getSource("shipSource")._data.features;
             const selectedFeature = features.find(
-                (f) => f.properties.mmsi === mmsi
+                (feature) => feature.properties.mmsi === mmsi
             );
 
             if (selectedFeature) {
-                // Set priority to 200
                 selectedFeature.properties.priority = 200;
 
-                // Update the source
-                MapHelper.updateSource(this.map, "ships", features);
+                MapHelper.updateSource(
+                    this.mapInstance,
+                    "shipSource",
+                    features
+                );
 
-                // Fly to the selected ship
-                this.map.flyTo({
+                this.mapInstance.flyTo({
                     center: selectedFeature.geometry.coordinates,
                     zoom: 15,
                 });
@@ -121,7 +171,7 @@ export default {
         absolute
         app
         appear
-        @click="showList = !showList"
+        @click="isShipListVisible = !isShipListVisible"
         rounded="sm"
         elevation="2"
     ></v-fab>
@@ -129,26 +179,26 @@ export default {
     <div id="map"></div>
 
     <v-navigation-drawer
-        v-model="showList"
+        v-model="isShipListVisible"
         location="bottom"
         style="z-index: 1001"
         permanent
     >
         <ShipTable
-            v-if="showList"
-            :ships="ships"
+            v-if="isShipListVisible"
+            :ships="shipData"
             @filteredShips="updateShipsOnMap"
         />
     </v-navigation-drawer>
 
     <v-navigation-drawer
         width="400"
-        v-model="showShipDetails"
+        v-model="isShipDetailsVisible"
         location="right"
         style="z-index: 1002"
         permanent
     >
-        <ShipDetails v-if="selectedShip" :ship="selectedShip"> </ShipDetails>
+        <ShipDetails v-if="activeShip" :ship="activeShip"> </ShipDetails>
     </v-navigation-drawer>
 </template>
 

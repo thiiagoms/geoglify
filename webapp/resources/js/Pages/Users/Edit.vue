@@ -38,7 +38,7 @@ const updateUser = () => {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6" title="Edit User" subtitle="Edit user details">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Edit User" subtitle="Edit user details">
             <v-card-text>
                 <v-form @submit.prevent="updateUser">
 

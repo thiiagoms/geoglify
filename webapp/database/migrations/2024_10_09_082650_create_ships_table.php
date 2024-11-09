@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
+        // Create the ships table
         Schema::create('ships', function (Blueprint $table) {
             $table->id();
             $table->string('mmsi')->unique();
@@ -28,20 +29,19 @@ return new class extends Migration
             $table->unsignedBigInteger('deleted_by')->nullable();
             $table->softDeletes();
 
-            // Indexes
-            $table->index('mmsi');
-        });
-
-        // Adding the foreign keys
-        Schema::table('ships', function (Blueprint $table) {
+            // Adding foreign keys directly
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('set null');
+
+            // Indexes
+            $table->index('mmsi');
         });
     }
 
     public function down()
     {
+        // Drop the ships table
         Schema::dropIfExists('ships');
     }
 };

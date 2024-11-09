@@ -46,7 +46,7 @@ const createRole = () => {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6 my-6" title="Create Role" subtitle="Create a new role">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Create Role" subtitle="Create a new role">
             <v-card-text>
                 <v-form @submit.prevent="createRole">
 

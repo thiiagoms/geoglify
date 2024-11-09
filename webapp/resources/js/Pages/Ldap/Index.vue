@@ -129,7 +129,7 @@ export default {
             ]" divider="/" />
         </template>
 
-        <v-card class="max-w-7xl mx-auto pa-6" title="Import Users" subtitle="Select the users LDAP you want to import">
+        <v-card class="max-w-7xl mx-auto pa-6" flat  title="Import Users" subtitle="Select the users LDAP you want to import">
             <v-card-text>
 
                 <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" variant="outlined"

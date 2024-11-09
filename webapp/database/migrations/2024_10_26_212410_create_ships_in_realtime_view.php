@@ -7,13 +7,14 @@ return new class extends Migration
 {
     public function up()
     {
-        // Drop the view if the migration is rolled back
+        // Drop the view if it already exists
         DB::statement('DROP VIEW IF EXISTS ships_in_realtime');
-        
+
         // Create a view that includes only ships with real-time data
         DB::statement('
             CREATE OR REPLACE VIEW ships_in_realtime AS
-            SELECT LEFT(ships.mmsi::text, 3),
+            SELECT 
+                LEFT(ships.mmsi::text, 3) AS country_code,
                 ships.id,
                 ships.mmsi,
                 ships.name,
