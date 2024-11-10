@@ -11,15 +11,18 @@ export default {
      * @param {*} source
      */
     addLayer(map, id, source) {
-        const layoutOptions = {};
+        const layoutOptions = {
+
+        };
 
         const paintOptions = {
             "circle-radius": 4,
-            "circle-color": "black",
+            "circle-color": "#004c97",
             "circle-stroke-color": "white",
             "circle-stroke-width": 1,
             "circle-opacity": 0.8,
             "circle-stroke-opacity": 0.2,
+
         };
 
         MapHelper.addLayer(

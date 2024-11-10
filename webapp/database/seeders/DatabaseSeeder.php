@@ -28,8 +28,8 @@ class DatabaseSeeder extends Seeder
             RoleUserTableSeeder::class,
             CargoTypesSeeder::class,
             CountriesTableSeeder::class,
-            PortsTableSeeder::class,
-            SearoutesTableSeeder::class,
+            //PortsTableSeeder::class,
+            //SearoutesTableSeeder::class,
         ]);
     }
 }

@@ -37,8 +37,8 @@ export default {
                     ...(cargo && { cargo }),
                     ...(ship.hdg !== undefined && { hdg: ship.hdg }),
                     ...(ship.hdg && ship.hdg != 511
-                        ? { image: "ship", priority: 100 }
-                        : { image: "circle", priority: 0 }),
+                        ? { image: "shipIcon", priority: 100 }
+                        : { image: "circleIcon", priority: 0 }),
                 },
             });
         } else {
@@ -50,8 +50,8 @@ export default {
                 ...(cargo && { cargo }),
                 ...(name && { name }),
                 ...(ship.hdg && ship.hdg != 511
-                    ? { image: "ship", priority: 100 }
-                    : { image: "circle", priority: 0 }),
+                    ? { image: "shipIcon", priority: 100 }
+                    : { image: "circleIcon", priority: 0 }),
             };
         }
     },
@@ -75,8 +75,8 @@ export default {
                 ...(cargo && { cargo }),
                 ...(ship.hdg !== undefined && { hdg: ship.hdg }),
                 ...(ship.hdg && ship.hdg != 511
-                    ? { image: "ship", priority: 100 }
-                    : { image: "circle", priority: 0 }),
+                    ? { image: "shipIcon", priority: 100 }
+                    : { image: "circleIcon", priority: 0 }),
             };
 
             return {
@@ -85,6 +85,27 @@ export default {
                 properties,
             };
         });
+    },
+
+    /**
+     * Update a feature collection with the ships
+     */
+    updateShipFeatures(currentFeatures, newFeatures) {
+        newFeatures.forEach((newFeature) => {
+            const existingFeatureIndex = currentFeatures.findIndex(
+                (feature) => feature.properties.mmsi === newFeature.properties.mmsi
+            );
+
+            if (existingFeatureIndex !== -1) {
+                // Se a feature já existir, substitui
+                currentFeatures[existingFeatureIndex] = newFeature;
+            } else {
+                // Se não existir, adiciona
+                currentFeatures.push(newFeature);
+            }
+        });
+
+        return currentFeatures;
     },
 
     /**

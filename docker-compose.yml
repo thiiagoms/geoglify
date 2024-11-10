@@ -16,7 +16,7 @@ services:
       - node-modules-data:/var/www/webapp/node_modules
       - vendor-data:/var/www/webapp/vendor
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://webapp/"]
+      test: [ "CMD", "curl", "-f", "http://webapp/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -25,17 +25,21 @@ services:
       - redis
 
   database:
-    build: ./database
-    image: geoglify/database
+    image: pgrouting/pgrouting:16-3.4-3.6.1
     restart: always
     container_name: gdatabase
     ports:
       - "5432:5432"
     volumes:
       - database-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: dbadmin
+      POSTGRES_PASSWORD: geoglify2024
+      POSTGRES_DB: geoglify
 
   typesense:
     image: 'typesense/typesense:26.0'
+    restart: always
     container_name: gtypesense
     ports:
       - "8108:8108"
@@ -43,7 +47,7 @@ services:
       - typesense-data:/data
     command: '--data-dir /data --api-key=xyz --enable-cors'
 
-  mailpit:  
+  mailpit:
     image: axllent/mailpit:latest
     container_name: gmailpit
     restart: always
@@ -76,13 +80,13 @@ services:
     image: osixia/openldap:1.5.0
     container_name: gldap
     environment:
-        - LDAP_ORGANISATION=exampleorg
-        - LDAP_DOMAIN=example.in
-        - "LDAP_BASE_DN=dc=example,dc=in"
-        - LDAP_ADMIN_PASSWORD=password
+      - LDAP_ORGANISATION=exampleorg
+      - LDAP_DOMAIN=example.in
+      - "LDAP_BASE_DN=dc=example,dc=in"
+      - LDAP_ADMIN_PASSWORD=password
     ports:
-        - 389:389
-        - 636:636
+      - 389:389
+      - 636:636
 
   ais-stream:
     build: ./ais-stream
@@ -91,13 +95,11 @@ services:
     environment:
       - NODE_ENV=production
       - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
-      - AIS_SERVER_HOST=aisstream.io
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - LARAVEL_API_URL=http://webapp/api/ais
     command: "node main.js"
     depends_on:
-      - redis
-    
+      - webapp
+
 volumes:
   vendor-data:
   storage-data:

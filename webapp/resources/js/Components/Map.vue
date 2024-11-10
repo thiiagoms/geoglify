@@ -30,24 +30,6 @@ export default {
             // Create the source for searoutes
             MapHelper.addSource(this.mapInstance, "searouteSource");
 
-            // Add the searoutes layer using the same source ID
-            SearoutesHelper.addLayer(
-                this.mapInstance,
-                "searouteLayer",
-                "searouteSource"
-            );
-
-            // Fetch searoutes data from the server
-            fetch(route("searoutes.geojson"))
-                .then((response) => response.json())
-                .then((geojson) => {
-                    MapHelper.updateSource(
-                        this.mapInstance,
-                        "searouteSource",
-                        geojson.features
-                    );
-                });
-
             // Create the source for ports
             MapHelper.addSource(this.mapInstance, "portSource");
 
@@ -93,9 +75,11 @@ export default {
                     this.shipData = [];
                 })
                 .finally(() => {
+
                     const features = ShipHelper.createShipFeatures(
                         this.shipData
                     );
+
                     MapHelper.updateSource(
                         this.mapInstance,
                         "shipSource",
@@ -111,19 +95,28 @@ export default {
                     });
 
                     // Listener for real-time ship updates
-                    /*window.Echo.channel("realtime_ships").listen(
-                        "BroadcastShipPositionUpdate",
-                        (ship) => {
+                    window.Echo.channel("realtime_ships").listen(
+                        "ShipPositionUpdated",
+                        (data) => {
+                            // Create features for the new ship data
+                            const newFeatures = ShipHelper.createShipFeatures(data);
+
+                            // Get the current ship source
                             const source = this.mapInstance.getSource("shipSource");
-                            if (!source) return;
+                            if (source) {
+                                const currentFeatures = source._data.features || [];
 
-                            const features = source._data.features;
-                            ShipHelper.updateShipPosition(features, ship);
+                                // Update the features with the new data
+                                const updatedFeatures = ShipHelper.updateShipFeatures(currentFeatures, newFeatures);
 
-                            this.shipData.push(ship);
-                            MapHelper.updateSource(this.mapInstance, "shipSource", features);
+                                // Update the source with the new data
+                                source.setData({
+                                    type: "FeatureCollection",
+                                    features: updatedFeatures,
+                                });
+                            }
                         }
-                    );**/
+                    );
                 });
         });
     },
@@ -163,41 +156,16 @@ export default {
 </script>
 
 <template>
-    <v-fab
-        color="primary"
-        icon="mdi-ferry"
-        location="top start"
-        density="comfortable"
-        absolute
-        app
-        appear
-        @click="isShipListVisible = !isShipListVisible"
-        rounded="sm"
-        elevation="2"
-    ></v-fab>
+    <v-fab color="primary" icon="mdi-ferry" location="top start" density="comfortable" absolute app appear
+        @click="isShipListVisible = !isShipListVisible" rounded="sm" elevation="2"></v-fab>
 
     <div id="map"></div>
 
-    <v-navigation-drawer
-        v-model="isShipListVisible"
-        location="bottom"
-        style="z-index: 1001"
-        permanent
-    >
-        <ShipTable
-            v-if="isShipListVisible"
-            :ships="shipData"
-            @filteredShips="updateShipsOnMap"
-        />
+    <v-navigation-drawer v-model="isShipListVisible" location="bottom" style="z-index: 1001" permanent>
+        <ShipTable v-if="isShipListVisible" :ships="shipData" @filteredShips="updateShipsOnMap" />
     </v-navigation-drawer>
 
-    <v-navigation-drawer
-        width="400"
-        v-model="isShipDetailsVisible"
-        location="right"
-        style="z-index: 1002"
-        permanent
-    >
+    <v-navigation-drawer width="400" v-model="isShipDetailsVisible" location="right" style="z-index: 1002" permanent>
         <ShipDetails v-if="activeShip" :ship="activeShip"> </ShipDetails>
     </v-navigation-drawer>
 </template>

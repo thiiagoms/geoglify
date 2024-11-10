@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Schedule;
-use App\Jobs\RealtimePositionJanitorJob;
+use App\Jobs\RemoveOutdatedRealtimePositionsJob;
 
-// Schedule the RealtimePositionJanitorJob command to run every minute
-// Schedule::job(new RealtimePositionJanitorJob)->everyMinute();
+// Schedule the RemoveOutdatedRealtimePositionsJob command to run every minute
+// Schedule::job(new RemoveOutdatedRealtimePositionsJob)->everyMinute();
