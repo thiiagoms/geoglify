@@ -58,14 +58,15 @@ services:
       - mailpit-data:/data
 
   redis:
-    image: redis:latest
+    build: ./redis
     container_name: gredis
     restart: always
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
     ports:
       - 6379:6379
+    command: sh -c "./init.sh"
+    privileged: true
+    volumes:
+      - redis-data:/data
 
   redis-insight:
     image: redis/redisinsight:latest
@@ -95,7 +96,7 @@ services:
     environment:
       - NODE_ENV=production
       - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
-      - LARAVEL_API_URL=http://webapp/api/ais
+      - LARAVEL_API_URL=http://webapp/api/ships
     command: "node main.js"
     depends_on:
       - webapp

@@ -2,84 +2,84 @@
     <v-card flat>
         <v-card-title class="d-flex align-center pe-2 bg-primary">
             <country-flag
-                :country="ship.country_iso_code"
+                :country="data.country_iso_code ?? 'XX'"
                 class="flag"
                 left
             />
             {{ ship.mmsi }}
         </v-card-title>
 
-        <v-card-text class="ma-0 pa-0">
+        <v-card-text class="ma-0 pa-0" v-if="!this.loading">
             <v-table>
                 <tbody>
                     <tr>
                         <td class="font-weight-black">MMSI</td>
-                        <td>{{ ship.mmsi }}</td>
+                        <td>{{ data.mmsi }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">IMO</td>
-                        <td>{{ ship.imo }}</td>
+                        <td>{{ data.imo }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Name</td>
-                        <td>{{ ship.name }}</td>
+                        <td>{{ data.name }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Call Sign</td>
-                        <td>{{ ship.callsign }}</td>
+                        <td>{{ data.callsign }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Country</td>
                         <td>
-                            {{ ship.country_name }}
+                            {{ data.country_name }}
                         </td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Vessel Type</td>
-                        <td>{{ ship.cargo_name }}</td>
+                        <td>{{ data.cargo_name }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">ETA</td>
                         <td>
                             {{
-                                ship.eta
-                                    ? new Date(ship.eta).toLocaleString()
+                                data.eta
+                                    ? new Date(data.eta).toLocaleString()
                                     : ""
                             }}
                         </td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Destination</td>
-                        <td>{{ ship.destination }}</td>
+                        <td>{{ data.destination }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Latitude</td>
-                        <td>{{ ship.lat }}</td>
+                        <td>{{ data.lat }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Longitude</td>
-                        <td>{{ ship.lon }}</td>
+                        <td>{{ data.lon }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Speed Over Ground</td>
-                        <td>{{ ship.sog }}</td>
+                        <td>{{ data.sog }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Course Over Ground</td>
-                        <td>{{ ship.cog }}</td>
+                        <td>{{ data.cog }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Heading</td>
-                        <td>{{ ship.heading }}</td>
+                        <td>{{ data.hdg }}</td>
                     </tr>
 
                     <tr>
                         <td class="font-weight-black">Last Updated</td>
                         <td>
                             {{
-                                ship.last_updated
+                                data.last_updated
                                     ? new Date(
-                                          ship.last_updated
+                                        data.last_updated
                                       ).toLocaleString()
                                     : ""
                             }}
@@ -98,7 +98,7 @@ export default {
     data() {
         return {
             loading: false,
-            details: {},
+            data: {},
         };
     },
 
@@ -109,19 +109,19 @@ export default {
     methods: {
         fetchShipDetails() {
             this.loading = true;
-            fetch(`/ship-realtime-positions/details/${this.ship.mmsi}`, {
+            fetch(`/api/ships/details/${this.ship.mmsi}`, {
                 method: "get",
                 headers: { "Content-Type": "application/json" },
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    this.details = data.ship; // Atualiza os dados do navio
+                    this.data = data; // Sets the ship details
                 })
                 .catch(() => {
-                    this.details = {}; // Limpa os dados do navio em caso de erro
+                    this.data = {}; // Resets the ship details
                 })
                 .finally(() => {
-                    this.loading = false; // Termina o estado de carregamento
+                    this.loading = false; // Hides the loading spinner
                 });
         },
     },

@@ -39,15 +39,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/ldap/add', [LdapController::class, 'add'])->name('ldap.add');
     Route::post('/ldap/remove', [LdapController::class, 'remove'])->name('ldap.remove');
 
-    Route::resource('ships', ShipController::class);
-    Route::get('ships/{id}/photo', [ShipController::class, 'photo'])->name('ships.photo');
-
-    Route::resource('ship-realtime-positions', ShipRealtimePositionController::class);
-    Route::resource('ship-historical-positions', ShipHistoricalPositionController::class);
-
-    Route::get('ships-realtime/all', [ShipRealtimeViewController::class, 'all'])->name('ships-realtime.all');
-    Route::post('ships-realtime/search', [ShipRealtimeViewController::class, 'search'])->name('ships-realtime.search');
-
     Route::resource('layers', LayerController::class);
     Route::post('/layers/list', [LayerController::class, 'list'])->name('layers.list');
     

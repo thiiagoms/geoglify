@@ -18,7 +18,6 @@ export default {
         mapInstance: null,
         shipData: [],
         isShipListVisible: false,
-        isShipDetailsVisible: false,
         activeShip: null,
     }),
 
@@ -66,7 +65,7 @@ export default {
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
             // Fetch ships data from the server
-            fetch("ships-realtime/all")
+            fetch("/api/ships/realtime/all")
                 .then((response) => response.json())
                 .then((data) => {
                     this.shipData = data;
@@ -75,7 +74,6 @@ export default {
                     this.shipData = [];
                 })
                 .finally(() => {
-
                     const features = ShipHelper.createShipFeatures(
                         this.shipData
                     );
@@ -89,7 +87,6 @@ export default {
                     // Initialize click listener for ship selection
                     this.mapInstance.on("click", "shipLayer", (e) => {
                         const ship = e.features[0].properties;
-                        this.isShipDetailsVisible = true;
                         this.activeShip = ship;
                         this.highlightShip(ship.mmsi);
                     });
@@ -99,15 +96,22 @@ export default {
                         "ShipPositionUpdated",
                         (data) => {
                             // Create features for the new ship data
-                            const newFeatures = ShipHelper.createShipFeatures(data);
+                            const newFeatures =
+                                ShipHelper.createShipFeatures(data);
 
                             // Get the current ship source
-                            const source = this.mapInstance.getSource("shipSource");
+                            const source =
+                                this.mapInstance.getSource("shipSource");
                             if (source) {
-                                const currentFeatures = source._data.features || [];
+                                const currentFeatures =
+                                    source._data.features || [];
 
                                 // Update the features with the new data
-                                const updatedFeatures = ShipHelper.updateShipFeatures(currentFeatures, newFeatures);
+                                const updatedFeatures =
+                                    ShipHelper.updateShipFeatures(
+                                        currentFeatures,
+                                        newFeatures
+                                    );
 
                                 // Update the source with the new data
                                 source.setData({
@@ -156,17 +160,43 @@ export default {
 </script>
 
 <template>
-    <v-fab color="primary" icon="mdi-ferry" location="top start" density="comfortable" absolute app appear
-        @click="isShipListVisible = !isShipListVisible" rounded="sm" elevation="2"></v-fab>
+    <v-fab
+        color="primary"
+        icon="mdi-ferry"
+        location="top start"
+        density="comfortable"
+        absolute
+        app
+        appear
+        @click="isShipListVisible = !isShipListVisible"
+        rounded="sm"
+        elevation="2"
+    ></v-fab>
 
     <div id="map"></div>
 
-    <v-navigation-drawer v-model="isShipListVisible" location="bottom" style="z-index: 1001" permanent>
-        <ShipTable v-if="isShipListVisible" :ships="shipData" @filteredShips="updateShipsOnMap" />
+    <v-navigation-drawer
+        v-model="isShipListVisible"
+        location="bottom"
+        style="z-index: 1001"
+        permanent
+    >
+        <ShipTable
+            v-if="isShipListVisible"
+            :ships="shipData"
+            @filteredShips="updateShipsOnMap"
+        />
     </v-navigation-drawer>
 
-    <v-navigation-drawer width="400" v-model="isShipDetailsVisible" location="right" style="z-index: 1002" permanent>
-        <ShipDetails v-if="activeShip" :ship="activeShip"> </ShipDetails>
+    <v-navigation-drawer
+        width="400"
+        v-model="activeShip"
+        location="right"
+        style="z-index: 1002"
+        permanent
+        v-if="!!activeShip"
+    >
+        <ShipDetails :key="activeShip.mmsi" :ship="activeShip" />
     </v-navigation-drawer>
 </template>
 

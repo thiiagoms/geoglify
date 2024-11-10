@@ -47,7 +47,7 @@
                         aspect-ratio="9/16"
                         cover
                         v-if="!!item.id"
-                        :src="`/ships/${item.id}/photo`"
+                        :src="`/api/ships/${item.id}/photo`"
                     />
                 </v-avatar>
             </template>
@@ -145,7 +145,7 @@ export default {
 
         loadItems({ page, itemsPerPage, search }) {
             this.loading = true;
-            fetch("ships-realtime/search", {
+            fetch("/api/ships/realtime/search", {
                 method: "post",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ page, itemsPerPage, search }),

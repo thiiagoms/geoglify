@@ -36,13 +36,17 @@ return new class extends Migration
                 countries.iso_code AS country_iso_code,
                 countries.name AS country_name
             FROM ships
-            INNER JOIN ship_realtime_positions
+            INNER JOIN (
+                SELECT DISTINCT ON (mmsi) *
+                FROM ship_realtime_positions
+                ORDER BY mmsi, updated_at DESC
+            ) AS ship_realtime_positions
                 ON ships.mmsi = ship_realtime_positions.mmsi
             LEFT JOIN cargo_types
                 ON ships.cargo = cargo_types.code::varchar
             LEFT JOIN countries
                 ON LEFT(ships.mmsi::text, 3) = countries.number::text;
-        ');
+            ');
     }
 
     public function down()
