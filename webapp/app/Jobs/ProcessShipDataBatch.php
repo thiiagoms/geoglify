@@ -12,7 +12,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 
 class ProcessShipDataBatch implements ShouldQueue
 {
@@ -23,7 +22,7 @@ class ProcessShipDataBatch implements ShouldQueue
     /**
      * Create a new job instance.
      *
-     * @param array $batchData
+     * @param array $batchData Array containing ship data in batch
      */
     public function __construct(array $batchData)
     {
@@ -33,35 +32,38 @@ class ProcessShipDataBatch implements ShouldQueue
     /**
      * Execute the job.
      *
+     * Process the ship data batch by dividing it into chunks
+     * and then process each chunk to update ship data.
+     *
      * @return void
      */
     public function handle()
     {
-        // Process the batch data in chunks
-        $chunkSize = 100; // Number of ships to include per chunk
+        // Define chunk size for processing the batch in smaller sets
+        $chunkSize = 100; // Number of ships per chunk
         collect($this->batchData)
             ->chunk($chunkSize)
             ->each(function (Collection $chunk) {
-                // Update ships and broadcast in chunks
+                // Process each chunk
                 $this->processChunk($chunk);
             });
     }
 
     /**
-     * Process a chunk of ship data and broadcast it.
+     * Process a chunk of ship data and broadcast updated information.
      *
-     * @param \Illuminate\Support\Collection $chunk
+     * @param \Illuminate\Support\Collection $chunk Collection of ship data
      * @return void
      */
     protected function processChunk(Collection $chunk)
     {
-        // Prepare the data to be broadcasted
+        // Prepare data for broadcasting
         $broadcastData = $chunk->map(function ($shipData) {
 
             // Update or create the ship's general information
             Ship::updateOrCreate(
                 ['mmsi' => $shipData['mmsi']],
-                [
+                $this->filterUpdateData([
                     'name' => $shipData['name'] ?? null,
                     'dim_a' => $shipData['dim_a'] ?? null,
                     'dim_b' => $shipData['dim_b'] ?? null,
@@ -71,13 +73,13 @@ class ProcessShipDataBatch implements ShouldQueue
                     'callsign' => $shipData['callsign'] ?? null,
                     'draught' => $shipData['draught'] ?? null,
                     'cargo' => $shipData['cargo'] ?? null,
-                ]
+                ])
             );
 
-            // Update or create the real-time position of the ship
+            // Update or create the ship's real-time position
             ShipRealtimePosition::updateOrCreate(
                 ['mmsi' => $shipData['mmsi']],
-                [
+                $this->filterUpdateData([
                     'cog' => $shipData['cog'] ?? null,
                     'sog' => $shipData['sog'] ?? null,
                     'hdg' => $shipData['hdg'] ?? null,
@@ -85,10 +87,10 @@ class ProcessShipDataBatch implements ShouldQueue
                     'eta' => $shipData['eta'] ?? null,
                     'destination' => $shipData['destination'] ?? null,
                     'geojson' => isset($shipData['location']) ? json_encode($shipData['location']) : null,
-                ]
+                ])
             );
 
-            // Create a new historical position record for tracking
+            // Insert a historical position record for tracking
             ShipHistoricalPosition::create([
                 'mmsi' => $shipData['mmsi'],
                 'cog' => $shipData['cog'] ?? null,
@@ -100,13 +102,12 @@ class ProcessShipDataBatch implements ShouldQueue
                 'geojson' => isset($shipData['location']) ? json_encode($shipData['location']) : null,
             ]);
 
-            // Retrieve the most up-to-date data from the database, including `name` and other fields
+            // Retrieve the latest data from the database
             $updatedShip = Ship::where('mmsi', $shipData['mmsi'])->first();
             $updatedRealtimePosition = ShipRealtimePosition::where('mmsi', $shipData['mmsi'])->first();
 
-            // Check if ship is found and merge data
+            // Merge data for broadcasting
             if ($updatedShip && $updatedRealtimePosition) {
-                // Combine data from ship and realtime position
                 return [
                     'mmsi' => $updatedShip->mmsi,
                     'name' => $updatedShip->name,
@@ -129,7 +130,19 @@ class ProcessShipDataBatch implements ShouldQueue
             }
         });
 
-        // Dispatch the event with the chunk of ships' data
+        // Dispatch the event with the processed data for broadcasting
         broadcast(new ShipPositionUpdated($broadcastData->toArray()));
+    }
+
+    /**
+     * Filter the data to include only non-empty and non-null values.
+     *
+     * @param array $data Array of data to filter
+     * @return array Filtered data
+     */
+    function filterUpdateData($data) {
+        return array_filter($data, function ($value) {
+            return $value !== '' && $value !== null;
+        });
     }
 }

@@ -18,8 +18,17 @@ export default {
         mapInstance: null,
         shipData: [],
         isShipListVisible: false,
+        isShipDetailsVisible: false,
         activeShip: null,
     }),
+
+    watch: {
+        isShipDetailsVisible(value) {
+            if (!value) {
+                this.activeShip = null;
+            }
+        },
+    },
 
     mounted() {
         this.mapInstance = MapHelper.createMap("map"); // Create the map
@@ -52,6 +61,7 @@ export default {
                 "shipIcon",
                 "/images/boat.png"
             );
+
             await MapHelper.addIcon(
                 this.mapInstance,
                 "circleIcon",
@@ -88,6 +98,7 @@ export default {
                     this.mapInstance.on("click", "shipLayer", (e) => {
                         const ship = e.features[0].properties;
                         this.activeShip = ship;
+                        this.isShipDetailsVisible = true;
                         this.highlightShip(ship.mmsi);
                     });
 
@@ -178,7 +189,6 @@ export default {
     <v-navigation-drawer
         v-model="isShipListVisible"
         location="bottom"
-        style="z-index: 1001"
         permanent
     >
         <ShipTable
@@ -190,13 +200,17 @@ export default {
 
     <v-navigation-drawer
         width="400"
-        v-model="activeShip"
+        v-model="isShipDetailsVisible"
         location="right"
-        style="z-index: 1002"
         permanent
-        v-if="!!activeShip"
+        floating
     >
-        <ShipDetails :key="activeShip.mmsi" :ship="activeShip" />
+        <ShipDetails
+            v-if="isShipDetailsVisible"
+            :key="activeShip.mmsi"
+            :ship="activeShip"
+            @close="isShipDetailsVisible = false"
+        />
     </v-navigation-drawer>
 </template>
 

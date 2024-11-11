@@ -1,16 +1,35 @@
 <template>
     <v-card flat>
-        <v-card-title class="d-flex align-center pe-2 bg-primary">
+        <!-- Fixed title at the top -->
+        <v-card-title class="d-flex align-center pe-2 bg-primary sticky-title">
             <country-flag
                 :country="data.country_iso_code ?? 'XX'"
                 class="flag"
                 left
             />
             {{ ship.mmsi }}
+            <v-spacer></v-spacer>
+            <v-btn icon variant="tonal" size="small" @click="$emit('close')">
+                <v-icon>mdi-close</v-icon>
+            </v-btn>
         </v-card-title>
 
-        <v-card-text class="ma-0 pa-0" v-if="!this.loading">
-            <v-table>
+        <!-- Scrollable content -->
+        <v-card-text class="scrollable-content" v-if="!this.loading">
+            <v-avatar
+                rounded="0"
+                class="ma-0"
+                color="#ccc"
+                style="width: 100%; height: 200px"
+            >
+                <v-img
+                    cover
+                    v-if="!!data.id"
+                    :src="`/api/ships/${data.id}/photo`"
+                />
+            </v-avatar>
+
+            <v-table density="compact">
                 <tbody>
                     <tr>
                         <td class="font-weight-black">MMSI</td>
@@ -30,9 +49,7 @@
                     </tr>
                     <tr>
                         <td class="font-weight-black">Country</td>
-                        <td>
-                            {{ data.country_name }}
-                        </td>
+                        <td>{{ data.country_name }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Vessel Type</td>
@@ -53,14 +70,6 @@
                         <td>{{ data.destination }}</td>
                     </tr>
                     <tr>
-                        <td class="font-weight-black">Latitude</td>
-                        <td>{{ data.lat }}</td>
-                    </tr>
-                    <tr>
-                        <td class="font-weight-black">Longitude</td>
-                        <td>{{ data.lon }}</td>
-                    </tr>
-                    <tr>
                         <td class="font-weight-black">Speed Over Ground</td>
                         <td>{{ data.sog }}</td>
                     </tr>
@@ -72,14 +81,13 @@
                         <td class="font-weight-black">Heading</td>
                         <td>{{ data.hdg }}</td>
                     </tr>
-
                     <tr>
                         <td class="font-weight-black">Last Updated</td>
                         <td>
                             {{
                                 data.last_updated
                                     ? new Date(
-                                        data.last_updated
+                                          data.last_updated
                                       ).toLocaleString()
                                     : ""
                             }}
@@ -92,9 +100,8 @@
 </template>
 
 <script>
-
 export default {
-    props: ["ship"], // Receives ship from the map component
+    props: ["ship"],
     data() {
         return {
             loading: false,
@@ -129,6 +136,19 @@ export default {
 </script>
 
 <style scoped>
+.scrollable-content {
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.sticky-title {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    color: white;
+}
+
 table tbody * {
     font-family: "Roboto Mono", monospace !important;
 }

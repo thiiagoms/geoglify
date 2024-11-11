@@ -23,6 +23,7 @@ services:
     depends_on:
       - database
       - redis
+      - typesense
 
   database:
     image: pgrouting/pgrouting:16-3.4-3.6.1
@@ -76,18 +77,6 @@ services:
       - "5540:5540"
     volumes:
       - redis-insight-data:/data
-
-  ldap:
-    image: osixia/openldap:1.5.0
-    container_name: gldap
-    environment:
-      - LDAP_ORGANISATION=exampleorg
-      - LDAP_DOMAIN=example.in
-      - "LDAP_BASE_DN=dc=example,dc=in"
-      - LDAP_ADMIN_PASSWORD=password
-    ports:
-      - 389:389
-      - 636:636
 
   ais-stream:
     build: ./ais-stream

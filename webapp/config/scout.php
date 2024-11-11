@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ShipRealtimeView;
+use App\Models\ShipLatestPositionView;
 
 return [
 
@@ -177,7 +177,7 @@ return [
         ],
         // 'max_total_results' => env('TYPESENSE_MAX_TOTAL_RESULTS', 1000),
         'model-settings' => [
-            ShipRealtimeView::class => [
+            ShipLatestPositionView::class => [
                 'collection-schema' => [
                     'fields' => [
                         [

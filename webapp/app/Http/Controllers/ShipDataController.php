@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ShipRealtimeView;
+use App\Models\ShipLatestPositionView;
+use App\Models\Ship;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
 
@@ -33,7 +35,7 @@ class ShipDataController extends Controller
      */
     public function all()
     {
-        return response()->json(ShipRealtimeView::all());
+        return response()->json(ShipLatestPositionView::all());
     }
 
     /**
@@ -41,7 +43,7 @@ class ShipDataController extends Controller
      */
     public function details($mmsi)
     {
-        return response()->json(ShipRealtimeView::where('mmsi', $mmsi)->first());
+        return response()->json(ShipLatestPositionView::where('mmsi', $mmsi)->first());
     }
 
     /**
@@ -56,8 +58,8 @@ class ShipDataController extends Controller
 
         // Perform the search directly
         $realtimeShips = empty(trim($search))
-            ? ShipRealtimeView::all()
-            : ShipRealtimeView::search($search)->get();
+            ? ShipLatestPositionView::all()
+            : ShipLatestPositionView::search($search)->get();
 
         // Total count and apply pagination
         $total = $realtimeShips->count();

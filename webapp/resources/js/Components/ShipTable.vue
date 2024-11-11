@@ -31,7 +31,7 @@
             density="compact"
         >
             <template v-slot:loading>
-                <v-skeleton-loader type="table-row@10"></v-skeleton-loader>
+                <v-skeleton-loader type="table-row@5"></v-skeleton-loader>
             </template>
 
             <!-- Photo -->
@@ -111,7 +111,7 @@ export default {
     props: ["ships"],
     data() {
         return {
-            itemsPerPage: 10,
+            itemsPerPage: 5,
             serverItems: [],
             paginatedItems: [],
             loading: false,
