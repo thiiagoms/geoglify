@@ -2,7 +2,7 @@
 import MapHelper from "@/Helpers/MapHelper";
 import ShipHelper from "@/Helpers/ShipHelper";
 import PortHelper from "@/Helpers/PortHelper";
-import SearoutesHelper from "@/Helpers/SearoutesHelper";
+import SearouteHelper from "@/Helpers/SearouteHelper";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import ShipTable from "@/Components/ShipTable.vue";
@@ -43,6 +43,13 @@ export default {
 
             // Add the ports layer using the same source ID
             PortHelper.addLayer(this.mapInstance, "portLayer", "portSource");
+
+            // Add the searoutes layer using the same source ID
+            SearouteHelper.addLayer(
+                this.mapInstance,
+                "searouteLayer",
+                "searouteSource"
+            );
 
             // Fetch ports data from the server
             fetch(route("ports.geojson"))
@@ -147,6 +154,7 @@ export default {
         highlightShip(mmsi) {
             const features =
                 this.mapInstance.getSource("shipSource")._data.features;
+
             const selectedFeature = features.find(
                 (feature) => feature.properties.mmsi === mmsi
             );
@@ -164,6 +172,32 @@ export default {
                     center: selectedFeature.geometry.coordinates,
                     zoom: 15,
                 });
+
+                let geojson = null;
+
+                fetch(`/api/ships/details/${mmsi}`, {
+                    method: "get",
+                    headers: { "Content-Type": "application/json" },
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        geojson = [
+                            {
+                                type: "Feature",
+                                geometry: data.route.geojson,
+                            },
+                        ];
+                    })
+                    .catch(() => {
+                        geojson = [];
+                    })
+                    .finally(() => {
+                        MapHelper.updateSource(
+                            this.mapInstance,
+                            "searouteSource",
+                            geojson
+                        );
+                    });
             }
         },
     },

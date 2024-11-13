@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ShipLatestPositionView;
 use App\Models\Ship;
+use App\Models\Port;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
+use Illuminate\Support\Facades\DB;
 
 class ShipDataController extends Controller
 {
@@ -43,7 +45,55 @@ class ShipDataController extends Controller
      */
     public function details($mmsi)
     {
-        return response()->json(ShipLatestPositionView::where('mmsi', $mmsi)->first());
+        $ship = ShipLatestPositionView::where('mmsi', $mmsi)->first();
+        $ship->route = $this->calculateRoute($ship);
+
+        return response()->json($ship);
+    }
+
+    private function calculateRoute($ship)
+    {
+
+        $toPort = Port::where('name', 'ALGECIRAS')->first();
+
+        // Find the closest port to the ship's current position
+        $closestFromPoint = DB::selectOne("
+            SELECT source, target
+            FROM searoutes
+            ORDER BY geom <-> ?
+            LIMIT 1;
+        ", [$ship->geom]);
+
+        // Find the closest port to the destination
+        $closestToPoint = DB::selectOne("
+            SELECT source, target
+            FROM searoutes
+            ORDER BY geom <-> ?
+            LIMIT 1;
+        ", [$toPort->geom]);
+
+        // Find the shortest path between the two closest ports
+        $routeResult = DB::select("
+            SELECT ST_AsGeoJSON(ST_LineMerge(ST_Collect(geom))) as path_geom, SUM(cost) as total_cost
+            FROM pgr_dijkstra(
+                'SELECT id, source, target, ST_Length(ST_Transform(geom,3857)) AS cost FROM searoutes',
+                CAST(? AS integer), CAST(? AS integer), directed := false
+            )
+            JOIN searoutes ON searoutes.id = edge;
+        ", [$closestFromPoint->source, $closestToPoint->source]);
+
+
+        // Calcular a distância em quilômetros e milhas náuticas
+        $totalCost = (float) $routeResult[0]->total_cost;
+        $distanceKm = round($totalCost / 1000, 2);
+        $distanceNm = round($totalCost / 1852, 2);
+
+        // Retornar a rota e a distância
+        return [
+            'geojson' => json_decode($routeResult[0]->path_geom),
+            'distance_km' => $distanceKm,
+            'distance_nm' => $distanceNm,
+        ];
     }
 
     /**

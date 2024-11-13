@@ -18,7 +18,7 @@ export default {
 
         const paintOptions = {
             "line-color": "#D13E56",
-            "line-width": 2,
+            "line-width": 6,
             "line-opacity": 0.8,
         };
 

@@ -89,9 +89,9 @@ export default {
 
     /**
      * Update the source data in the map
-     * @param {*} map 
-     * @param {*} id 
-     * @param {*} features 
+     * @param {*} map
+     * @param {*} id
+     * @param {*} features
      */
     updateSource(map, id, features) {
         const source = map.getSource(id);
@@ -105,9 +105,9 @@ export default {
 
     /**
      * Add a icon to the map
-     * @param {*} map 
-     * @param {*} id 
-     * @param {*} imageUrl 
+     * @param {*} map
+     * @param {*} id
+     * @param {*} imageUrl
      */
     async addIcon(map, id, imageUrl) {
         try {
@@ -122,8 +122,8 @@ export default {
 
     /**
      * Load an image from a URL
-     * @param {*} imageUrl 
-     * @returns 
+     * @param {*} imageUrl
+     * @returns
      */
     loadImage(imageUrl) {
         return new Promise((resolve, reject) => {

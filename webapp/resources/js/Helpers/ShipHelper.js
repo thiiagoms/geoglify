@@ -32,7 +32,9 @@ export default {
                 type: "Feature",
                 geometry: JSON.parse(ship.geojson),
                 properties: {
+                    ...feature.properties,
                     mmsi: ship.mmsi,
+                    route: ship.route,
                     ...(name && { name }),
                     ...(cargo && { cargo }),
                     ...(ship.hdg !== undefined && { hdg: ship.hdg }),
@@ -45,6 +47,7 @@ export default {
             // Update the existing feature and its properties
             feature.geometry = JSON.parse(ship.geojson);
             feature.properties = {
+                route: ship.route,
                 ...feature.properties,
                 ...(ship.hdg !== undefined && { hdg: ship.hdg }),
                 ...(cargo && { cargo }),
@@ -93,7 +96,8 @@ export default {
     updateShipFeatures(currentFeatures, newFeatures) {
         newFeatures.forEach((newFeature) => {
             const existingFeatureIndex = currentFeatures.findIndex(
-                (feature) => feature.properties.mmsi === newFeature.properties.mmsi
+                (feature) =>
+                    feature.properties.mmsi === newFeature.properties.mmsi
             );
 
             if (existingFeatureIndex !== -1) {

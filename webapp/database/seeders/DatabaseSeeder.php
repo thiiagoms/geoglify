@@ -1,7 +1,7 @@
 <?php
- 
+
 namespace Database\Seeders;
- 
+
 use Illuminate\Database\Seeder;
 use Database\Seeders\RolesTableSeeder;
 use Database\Seeders\PermissionsTableSeeder;
@@ -12,7 +12,7 @@ use Database\Seeders\CargoTypesSeeder;
 use Database\Seeders\CountriesTableSeeder;
 use Database\Seeders\PortsTableSeeder;
 use Database\Seeders\SearoutesTableSeeder;
- 
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -28,8 +28,8 @@ class DatabaseSeeder extends Seeder
             RoleUserTableSeeder::class,
             CargoTypesSeeder::class,
             CountriesTableSeeder::class,
-            //PortsTableSeeder::class,
-            //SearoutesTableSeeder::class,
+            PortsTableSeeder::class,
+            SearoutesTableSeeder::class,
         ]);
     }
 }
