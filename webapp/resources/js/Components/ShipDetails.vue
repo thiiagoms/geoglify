@@ -29,7 +29,7 @@
                 />
             </v-avatar>
 
-            <v-table density="compact">
+            <v-table>
                 <tbody>
                     <tr>
                         <td class="font-weight-black">MMSI</td>
@@ -56,16 +56,6 @@
                         <td>{{ data.cargo_name }}</td>
                     </tr>
                     <tr>
-                        <td class="font-weight-black">ETA</td>
-                        <td>
-                            {{
-                                data.eta
-                                    ? new Date(data.eta).toLocaleString()
-                                    : ""
-                            }}
-                        </td>
-                    </tr>
-                    <tr>
                         <td class="font-weight-black">Destination</td>
                         <td>{{ data.destination }}</td>
                     </tr>
@@ -88,6 +78,32 @@
                                 data.last_updated
                                     ? new Date(
                                           data.last_updated
+                                      ).toLocaleString()
+                                    : ""
+                            }}
+                        </td>
+                    </tr>
+                    <tr class="bg-secondary">
+                        <td class="font-weight-black">ETA</td>
+                        <td>
+                            {{
+                                data.eta
+                                    ? new Date(data.eta).toLocaleString()
+                                    : ""
+                            }}
+                        </td>
+                    </tr>
+                    <tr class="bg-primary">
+                        <td class="font-weight-black">Distance Planned (NM)</td>
+                        <td>{{ data.routes.planned.distance_nm }}</td>
+                    </tr>
+                    <tr class="bg-primary">
+                        <td class="font-weight-black">Predicted ETA</td>
+                        <td>
+                            {{
+                                data.predicted_eta
+                                    ? new Date(
+                                          data.predicted_eta
                                       ).toLocaleString()
                                     : ""
                             }}

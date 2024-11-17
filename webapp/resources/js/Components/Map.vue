@@ -2,7 +2,8 @@
 import MapHelper from "@/Helpers/MapHelper";
 import ShipHelper from "@/Helpers/ShipHelper";
 import PortHelper from "@/Helpers/PortHelper";
-import SearouteHelper from "@/Helpers/SearouteHelper";
+import PlannedRouteHelper from "@/Helpers/PlannedRouteHelper";
+import RealRouteHelper from "@/Helpers/RealRouteHelper";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import ShipTable from "@/Components/ShipTable.vue";
@@ -35,8 +36,11 @@ export default {
         MapHelper.addNavigationControl(this.mapInstance); // Add navigation control
 
         this.mapInstance.on("load", async () => {
-            // Create the source for searoutes
-            MapHelper.addSource(this.mapInstance, "searouteSource");
+            // Create the source for planned routes
+            MapHelper.addSource(this.mapInstance, "plannedRouteSource");
+
+            // Create the source for real routes
+            MapHelper.addSource(this.mapInstance, "realRouteSource");
 
             // Create the source for ports
             MapHelper.addSource(this.mapInstance, "portSource");
@@ -44,11 +48,18 @@ export default {
             // Add the ports layer using the same source ID
             PortHelper.addLayer(this.mapInstance, "portLayer", "portSource");
 
-            // Add the searoutes layer using the same source ID
-            SearouteHelper.addLayer(
+            // Add the planned route layer using the same source ID
+            PlannedRouteHelper.addLayer(
                 this.mapInstance,
-                "searouteLayer",
-                "searouteSource"
+                "plannedRouteLayer",
+                "plannedRouteSource"
+            );
+
+            // Add the real route layer using the same source ID
+            RealRouteHelper.addLayer(
+                this.mapInstance,
+                "realRouteLayer",
+                "realRouteSource"
             );
 
             // Fetch ports data from the server
@@ -173,7 +184,8 @@ export default {
                     zoom: 15,
                 });
 
-                let geojson = null;
+                let plannedGeojson = [];
+                let realGeojson = [];
 
                 fetch(`/api/ships/details/${mmsi}`, {
                     method: "get",
@@ -181,21 +193,37 @@ export default {
                 })
                     .then((response) => response.json())
                     .then((data) => {
-                        geojson = [
+                        plannedGeojson = [
                             {
                                 type: "Feature",
-                                geometry: data.route.geojson,
+                                geometry: data.routes.planned.geojson,
+                            },
+                        ];
+
+                        realGeojson = [
+                            {
+                                type: "Feature",
+                                geometry: data.routes.real.geojson,
                             },
                         ];
                     })
                     .catch(() => {
-                        geojson = [];
+                        plannedGeojson = [];
+                        realGeojson = [];
                     })
                     .finally(() => {
+                        console.log(plannedGeojson);
+                        console.log(realGeojson);
                         MapHelper.updateSource(
                             this.mapInstance,
-                            "searouteSource",
-                            geojson
+                            "plannedRouteSource",
+                            plannedGeojson
+                        );
+
+                        MapHelper.updateSource(
+                            this.mapInstance,
+                            "realRouteSource",
+                            realGeojson
                         );
                     });
             }
@@ -233,7 +261,7 @@ export default {
     </v-navigation-drawer>
 
     <v-navigation-drawer
-        width="400"
+        width="450"
         v-model="isShipDetailsVisible"
         location="right"
         permanent
