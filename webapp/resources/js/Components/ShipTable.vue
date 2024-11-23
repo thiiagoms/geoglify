@@ -168,7 +168,7 @@ export default {
         },
 
         emitFilteredShips() {
-            this.$emit("filteredShips", this.serverItems);
+            this.$emit("filtered-ships", this.serverItems);
         },
     },
 };

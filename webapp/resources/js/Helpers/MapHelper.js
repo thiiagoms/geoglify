@@ -112,6 +112,12 @@ export default {
     async addIcon(map, id, imageUrl) {
         try {
             const icon = await this.loadImage(imageUrl);
+
+            // Check if id already exists
+            if (map.hasImage(id)) {
+                map.removeImage(id);
+            }
+
             if (icon) {
                 map.addImage(id, icon);
             }

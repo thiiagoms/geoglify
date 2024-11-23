@@ -1,101 +1,110 @@
 services:
-  webapp:
-    build: ./webapp
-    image: geoglify/webapp
-    container_name: gwebapp
-    restart: always
-    environment:
-      PHP_OPCACHE_ENABLE: 0
-      PRODUCTION: 0
-    ports:
-      - 81:80
-      - 8080:8080
-      - 5173:5173
-    volumes:
-      - ./webapp:/var/www/webapp
-      - node-modules-data:/var/www/webapp/node_modules
-      - vendor-data:/var/www/webapp/vendor
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://webapp/" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    depends_on:
-      - database
-      - redis
-      - typesense
+    webapp:
+        build: ./webapp
+        image: geoglify/webapp
+        container_name: gwebapp
+        restart: always
+        environment:
+            PHP_OPCACHE_ENABLE: 0
+            PRODUCTION: 0
+        ports:
+            - 81:80
+            - 8080:8080
+            - 5173:5173
+        volumes:
+            - ./webapp:/var/www/webapp
+            - node-modules-data:/var/www/webapp/node_modules
+            - vendor-data:/var/www/webapp/vendor
+        healthcheck:
+            test: ['CMD', 'curl', '-f', 'http://webapp/']
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        depends_on:
+            - database
+            - redis
+            - typesense
 
-  database:
-    image: pgrouting/pgrouting:16-3.4-3.6.1
-    restart: always
-    container_name: gdatabase
-    ports:
-      - "5432:5432"
-    volumes:
-      - database-data:/var/lib/postgresql/data
-    environment:
-      POSTGRES_USER: dbadmin
-      POSTGRES_PASSWORD: geoglify2024
-      POSTGRES_DB: geoglify
+    database:
+        image: pgrouting/pgrouting:16-3.4-3.6.1
+        restart: always
+        container_name: gdatabase
+        ports:
+            - '5432:5432'
+        volumes:
+            - database-data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_DB: geoglify
+            POSTGRES_USER: dbadmin
+            POSTGRES_PASSWORD: geoglify2024
 
-  typesense:
-    image: 'typesense/typesense:26.0'
-    restart: always
-    container_name: gtypesense
-    ports:
-      - "8108:8108"
-    volumes:
-      - typesense-data:/data
-    command: '--data-dir /data --api-key=xyz --enable-cors'
+    typesense:
+        image: 'typesense/typesense:26.0'
+        restart: always
+        container_name: gtypesense
+        ports:
+            - '8108:8108'
+        volumes:
+            - typesense-data:/data
+        command: '--data-dir /data --api-key=xyz --enable-cors'
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: gmailpit
-    restart: always
-    ports:
-      - "8025:8025"
-      - "1025:1025"
-    volumes:
-      - mailpit-data:/data
+    mailpit:
+        image: axllent/mailpit:latest
+        container_name: gmailpit
+        restart: always
+        ports:
+            - '8025:8025'
+            - '1025:1025'
+        volumes:
+            - mailpit-data:/data
 
-  redis:
-    build: ./redis
-    container_name: gredis
-    restart: always
-    ports:
-      - 6379:6379
-    command: sh -c "./init.sh"
-    privileged: true
-    volumes:
-      - redis-data:/data
+    redis:
+        image: redis:latest
+        container_name: gredis
+        restart: always
+        ports:
+            - '6379:6379'
+        command: redis-server --save 20 1 --loglevel warning
+        volumes:
+            - redis-data:/data
 
-  redis-insight:
-    image: redis/redisinsight:latest
-    container_name: gredisinsight
-    restart: always
-    ports:
-      - "5540:5540"
-    volumes:
-      - redis-insight-data:/data
+    redis-insight:
+        image: redis/redisinsight:latest
+        container_name: gredisinsight
+        restart: always
+        ports:
+            - '5540:5540'
+        volumes:
+            - redis-insight-data:/data
 
-  ais-stream:
-    build: ./ais-stream
-    container_name: gaisstream
-    working_dir: /opt/ais-stream
-    environment:
-      - NODE_ENV=production
-      - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
-      - LARAVEL_API_URL=http://webapp/api/ships
-    command: "node main.js"
-    depends_on:
-      - webapp
+    ais-stream:
+        build: ./ais-stream
+        container_name: gaisstream
+        working_dir: /opt/ais-stream
+        environment:
+            - NODE_ENV=production
+            - AISSTREAM_API_KEY=7fb1e16f93a4d520d83a95e325c55e69b3b4fc0b
+            - LARAVEL_API_URL=http://webapp/api/ships
+        command: 'node main.js'
+        depends_on:
+            - webapp
+
+    martin:
+        image: ghcr.io/maplibre/martin:v0.13.0
+        restart: unless-stopped
+        ports:
+            - '3000:3000'
+        environment:
+            - DATABASE_URL=postgresql://dbadmin:geoglify2024@database/geoglify
+        depends_on:
+            - database
 
 volumes:
-  vendor-data:
-  storage-data:
-  database-data:
-  node-modules-data:
-  mailpit-data:
-  redis-data:
-  redis-insight-data:
-  typesense-data:
+    vendor-data:
+    storage-data:
+    database-data:
+    node-modules-data:
+    mailpit-data:
+    redis-data:
+    redis-insight-data:
+    typesense-data:

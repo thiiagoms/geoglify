@@ -68,6 +68,11 @@ class ShipDataController extends Controller
         // Calculate the average speed of the ship
         $averageSpeed = $this->calculateAverageSpeed($ship);
 
+        // Check if the average speed is zero or empty
+        if (empty($averageSpeed)) {
+            return null;
+        }
+
         // Calculate the predicted ETA
         $predictedEta = now()->addMinutes($distanceNm / $averageSpeed * 60);
 
@@ -101,7 +106,7 @@ class ShipDataController extends Controller
     public function calculateRoutes($ship)
     {
         // Define the destination port
-        $destinationPort = Port::where('name', 'REKA LUGA')->first();
+        $destinationPort = Port::where('name', 'VIGO')->first();
 
         // Find the closest departure point for the ship
         $departurePoint = DB::selectOne("

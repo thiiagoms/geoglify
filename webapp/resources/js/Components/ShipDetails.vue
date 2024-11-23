@@ -95,7 +95,7 @@
                     </tr>
                     <tr class="bg-primary">
                         <td class="font-weight-black">Distance Planned (NM)</td>
-                        <td>{{ data.routes.planned.distance_nm }}</td>
+                        <td>{{ data?.routes?.planned.distance_nm }}</td>
                     </tr>
                     <tr class="bg-primary">
                         <td class="font-weight-black">Predicted ETA</td>
@@ -139,6 +139,10 @@ export default {
                 .then((response) => response.json())
                 .then((data) => {
                     this.data = data; // Sets the ship details
+                    this.$emit("ship-details-fetched", {
+                        plannedGeojson: data.routes.planned.geojson,
+                        realGeojson: data.routes.real.geojson,
+                    });
                 })
                 .catch(() => {
                     this.data = {}; // Resets the ship details

@@ -33,6 +33,6 @@
         "vue": "^3.4.38",
         "vue-country-flag-next": "^2.3.2",
         "vue-router": "^4.4.3",
-        "vuetify": "^3.7.0"
+        "vuetify": "^3.7.0",
     }
 }
