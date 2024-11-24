@@ -76,6 +76,34 @@ export default {
         elevation="2"
     ></v-fab>
 
+    <v-fab
+        color="primary"
+        icon="mdi-directions-fork"
+        location="top start"
+        density="comfortable"
+        absolute
+        app
+        appear
+        style="margin-top: 45px"
+        @click="$refs.searouteLayer.toggleVisibility()"
+        rounded="sm"
+        elevation="2"
+    ></v-fab>
+
+    <v-fab
+        color="primary"
+        icon="mdi-anchor"
+        location="top start"
+        density="comfortable"
+        absolute
+        app
+        appear
+        style="margin-top: 90px"
+        @click="$refs.portsLayer.toggleVisibility()"
+        rounded="sm"
+        elevation="2"
+    ></v-fab>
+
     <MapInstance
         :mapInstance="mapInstance"
         @map-instance-created="setMapInstance"
@@ -89,8 +117,8 @@ export default {
     />
     <PlannedRouteLayer ref="plannedRouteLayer" :mapInstance="mapInstance" />
     <RealRouteLayer ref="realRouteLayer" :mapInstance="mapInstance" />
-    <PortLayer :mapInstance="mapInstance" />
-    <SearouteLayer :mapInstance="mapInstance" />
+    <PortLayer ref="portsLayer" :mapInstance="mapInstance" />
+    <SearouteLayer ref="searouteLayer" :mapInstance="mapInstance" />
 
     <v-navigation-drawer
         v-model="isShipListVisible"

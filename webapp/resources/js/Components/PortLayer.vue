@@ -37,14 +37,35 @@ export default {
                 source: "ports",
                 "source-layer": "ports",
                 paint: {
-                    "circle-radius": 4,
-                    "circle-color": "#004c97",
+                    "circle-radius": 5,
+                    "circle-color": "BLACK",
                     "circle-stroke-color": "white",
                     "circle-stroke-width": 1,
                     "circle-opacity": 0.8,
                     "circle-stroke-opacity": 0.2,
                 },
+                layout: {
+                    visibility: "none",
+                },
             });
+        },
+
+        // Toggle visibility of the layer
+        toggleVisibility() {
+            if (this.mapInstance) {
+                let visibility = this.mapInstance.getLayoutProperty(
+                    "ports",
+                    "visibility"
+                );
+
+                visibility = visibility == "visible" ? "none" : "visible";
+
+                this.mapInstance.setLayoutProperty(
+                    "ports",
+                    "visibility",
+                    visibility
+                );
+            }
         },
     },
 };

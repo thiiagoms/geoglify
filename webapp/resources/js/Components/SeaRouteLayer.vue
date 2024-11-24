@@ -39,9 +39,30 @@ export default {
                 paint: {
                     "line-color": "rgba(0, 0, 0, 0.5)",
                     "line-dasharray": [2, 2],
-                    "line-width": 2,
+                    "line-width": 1,
+                },
+                layout: {
+                    visibility: "none",
                 },
             });
+        },
+
+        // Toggle visibility of the layer
+        toggleVisibility() {
+            if (this.mapInstance) {
+                let visibility = this.mapInstance.getLayoutProperty(
+                    "searoutes",
+                    "visibility"
+                );
+
+                visibility = visibility == "visible" ? "none" : "visible";
+
+                this.mapInstance.setLayoutProperty(
+                    "searoutes",
+                    "visibility",
+                    visibility
+                );
+            }
         },
     },
 };
