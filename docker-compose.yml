@@ -90,14 +90,16 @@ services:
             - webapp
 
     martin:
-        image: ghcr.io/maplibre/martin:v0.13.0
-        restart: unless-stopped
+        image: ghcr.io/maplibre/martin:latest
+        container_name: gmartin
+        restart: always
+        command: --config /app/config.yml
         ports:
             - '3000:3000'
-        environment:
-            - DATABASE_URL=postgresql://dbadmin:geoglify2024@database/geoglify
         depends_on:
             - database
+        volumes:
+            - ./martin:/app
 
 volumes:
     vendor-data:
