@@ -1,3 +1,8 @@
+-- This view is used to get the latest position of each ship in the database.
+
+-- Drop the view if it exists
+DROP VIEW IF EXISTS ships_latest_positions_view;
+
 CREATE OR REPLACE VIEW ships_latest_positions_view AS
 SELECT 
     LEFT(ships.mmsi::text, 3) AS country_code,
@@ -6,6 +11,10 @@ SELECT
     ships.name,
     ships.callsign,
     ships.imo,
+    ships.dim_a,
+    ships.dim_b,
+    ships.dim_c,
+    ships.dim_d,
     cargo_types.code AS cargo_code,
     cargo_types.category AS cargo_name,
     ships.draught,
@@ -32,4 +41,9 @@ LEFT JOIN cargo_types
     ON ships.cargo = cargo_types.code::varchar
 LEFT JOIN countries
     ON LEFT(ships.mmsi::text, 3) = countries.number::text
-WHERE ship_realtime_positions.updated_at IS NOT NULL;
+WHERE ship_realtime_positions.updated_at IS NOT NULL AND 
+--dimention of the ship
+    ships.dim_a IS NOT NULL AND 
+    ships.dim_b IS NOT NULL AND 
+    ships.dim_c IS NOT NULL AND 
+    ships.dim_d IS NOT NULL 

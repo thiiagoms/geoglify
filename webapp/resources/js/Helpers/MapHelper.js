@@ -1,4 +1,10 @@
 import maplibregl from "maplibre-gl";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+
+MapboxDraw.constants.classes.CONTROL_BASE = "maplibregl-ctrl";
+MapboxDraw.constants.classes.CONTROL_PREFIX = "maplibregl-ctrl-";
+MapboxDraw.constants.classes.CONTROL_GROUP = "maplibregl-ctrl-group";
+
 import {
     isMapboxURL,
     transformMapboxUrl,
@@ -142,5 +148,16 @@ export default {
                 reject(error);
             };
         });
+    },
+
+    /**
+     * Add a draw control to the map
+     * @param {*} map
+     * @param {*} options
+     */
+    addDrawControl(map, options) {
+        const draw = new MapboxDraw(options);
+        map.addControl(draw);
+        return draw;
     },
 };

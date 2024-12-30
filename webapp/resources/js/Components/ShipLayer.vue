@@ -69,7 +69,7 @@ export default {
                     window.Echo.channel("realtime_ships").listen(
                         "ShipPositionUpdated",
                         (data) => {
-                            this.updateShipSource(data);
+                            //this.updateShipSource(data);
                         }
                     );
                 });
@@ -78,10 +78,6 @@ export default {
         updateShipSource(shipData) {
             const features = ShipHelper.createShipFeatures(shipData);
             MapHelper.updateSource(this.mapInstance, "shipSource", features);
-        },
-
-        updateShipsOnMap(filteredShips) {
-            this.updateShipSource(filteredShips);
         },
     },
 };
