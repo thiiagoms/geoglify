@@ -41,9 +41,4 @@ LEFT JOIN cargo_types
     ON ships.cargo = cargo_types.code::varchar
 LEFT JOIN countries
     ON LEFT(ships.mmsi::text, 3) = countries.number::text
-WHERE ship_realtime_positions.updated_at IS NOT NULL AND 
---dimention of the ship
-    ships.dim_a IS NOT NULL AND 
-    ships.dim_b IS NOT NULL AND 
-    ships.dim_c IS NOT NULL AND 
-    ships.dim_d IS NOT NULL 
+WHERE ship_realtime_positions.updated_at IS NOT NULL;

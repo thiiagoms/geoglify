@@ -4,12 +4,23 @@ const { LARAVEL_API_URL, BATCH_SIZE } = require('./config');
 // Event queue to hold AIS events before sending them to Laravel in batches
 let eventQueue = [];
 
-// Add a new event to the queue
+// Add a new event to the queue, maintaining only the latest event for each mmsi
 function queueEvent(event) {
-    eventQueue.push(event);
+    // Find if an event with the same mmsi already exists in the queue
+    const existingEventIndex = eventQueue.findIndex(
+        (e) => e.mmsi === event.mmsi,
+    );
+
+    if (existingEventIndex !== -1) {
+        // Replace the existing event with the new one
+        eventQueue[existingEventIndex] = event;
+    } else {
+        // Add the new event if it doesn't exist in the queue
+        eventQueue.push(event);
+    }
 }
 
-// Flush the queue, sending a batch of ships to api
+// Flush the queue, sending a batch of ships to API
 async function flushEvents() {
     if (eventQueue.length === 0) return;
 
@@ -20,9 +31,13 @@ async function flushEvents() {
         const response = await axios.post(LARAVEL_API_URL, chunk, {
             headers: { 'Content-Type': 'application/json' },
         });
-        console.log(`Sent ${chunk.length} of ${eventQueue.length + chunk.length} ships to api. Status: ${response.status}`);
+        console.log(
+            `Sent ${chunk.length} of ${
+                eventQueue.length + chunk.length
+            } ships to API. Status: ${response.status}`,
+        );
     } catch (error) {
-        console.error(`Failed to send ships to api:`, error.message);
+        console.error(`Failed to send ships to API:`, error.message);
         // Reinsert the chunk to the front of the queue on failure
         eventQueue = [...chunk, ...eventQueue];
     }

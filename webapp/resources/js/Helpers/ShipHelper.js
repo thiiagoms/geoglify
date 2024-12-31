@@ -1,4 +1,8 @@
 import MapHelper from "@/Helpers/MapHelper";
+import * as turf from "@turf/turf";
+import proj4 from "proj4";
+
+const ZOOM_THRESHOLD = 14;
 
 /**
  * Helper functions for the ships
@@ -10,7 +14,7 @@ export default {
      * @returns {string} - The string without <em> tags
      */
     removeEmTags(str) {
-        return str.replace("/</?em>/g", "");
+        return str.replace(/<\/?em>/g, "");
     },
 
     /**
@@ -19,17 +23,15 @@ export default {
      * @returns {Object} - The properties to be used in GeoJSON for the ship
      */
     generateShipProperties(ship) {
-        // Clean up <em> tags from name and cargo
         const name = ship.name ? this.removeEmTags(ship.name) : undefined;
         const cargo = ship.cargo ? this.removeEmTags(ship.cargo) : undefined;
 
         return {
             mmsi: ship.mmsi,
             route: ship.route,
-            ...(name && { name }), // Only include name if it exists
-            ...(cargo && { cargo }), // Only include cargo if it exists
-            ...(ship.hdg !== undefined && { hdg: ship.hdg }), // Only include hdg if it exists
-            // Set icon and priority based on heading
+            ...(name && { name }),
+            ...(cargo && { cargo }),
+            ...(ship.hdg !== undefined && { hdg: ship.hdg }),
             ...(ship.hdg && ship.hdg != 511
                 ? { image: "shipIcon", priority: 100 }
                 : { image: "circleIcon", priority: 0 }),
@@ -37,140 +39,84 @@ export default {
     },
 
     /**
-     * Update the position of the ship in the map
-     * @param {*} features - The list of current features
-     * @param {*} ship - The ship data
+     * Get UTM zone from longitude
+     * @param {number} lon_deg - Longitude in degrees
+     * @returns {number} - UTM zone
      */
-    updateShipPosition(features, ship) {
-        // Generate the properties once using the helper function
-        const shipProperties = this.generateShipProperties(ship);
+    utmzone_from_lon(lon_deg) {
+        return 1 + Math.floor((lon_deg + 180) / 6);
+    },
 
-        // Calculate the square geometry around the ship's position (1 meter approx)
-        const geojsonSquare = this.createSquareGeoJson(ship);
+    /**
+     * Set projection definition based on longitude
+     * @param {number} lon_deg - Longitude in degrees
+     * @returns {string} - Projection definition
+     */
+    proj4_setdef(lon_deg) {
+        const utm_zone = this.utmzone_from_lon(lon_deg);
+        return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
+    },
 
-        // Find the existing feature for the ship in the map
-        const feature = features.find((f) => f.properties.mmsi === ship.mmsi);
-
-        if (!feature) {
-            // If the feature doesn't exist, create a new one and add the ship
-            features.push({
-                type: "Feature",
-                geometry: JSON.parse(ship.geojson),
-                properties: shipProperties,
-            });
-
-            // Add the square around the ship's position
-            features.push({
-                type: "Feature",
-                geometry: geojsonSquare,
-                properties: {
-                    mmsi: ship.mmsi,
-                    image: "squareIcon",
-                    priority: 50,
-                },
-            });
-        } else {
-            // If the feature exists, update its geometry and properties
-            feature.geometry = JSON.parse(ship.geojson);
-            feature.properties = { ...feature.properties, ...shipProperties };
-
-            // Update the square geometry
-            const squareFeature = features.find(
-                (f) =>
-                    f.properties.mmsi === ship.mmsi &&
-                    f.properties.image === "squareIcon"
-            );
-            if (squareFeature) {
-                squareFeature.geometry = geojsonSquare;
-            } else {
-                // If square does not exist, add it
-                features.push({
-                    type: "Feature",
-                    geometry: geojsonSquare,
-                    properties: {
-                        mmsi: ship.mmsi,
-                        image: "squareIcon",
-                        priority: 50,
-                    },
-                });
-            }
+    /**
+     * Convert coordinates to meters
+     * @param {Array} coords - Coordinates [longitude, latitude]
+     * @param {string} target - Target projection
+     * @returns {Array|null} - Converted coordinates or null if invalid
+     */
+    convertCoordsToMeters(coords, target) {
+        if (!coords || !Array.isArray(coords) || coords.length !== 2) {
+            console.error("Invalid coordinates:", coords);
+            return null;
         }
+
+        const [longitude, latitude] = coords;
+
+        if (!isFinite(longitude) || !isFinite(latitude)) {
+            console.error("Invalid longitude or latitude:", coords);
+            return null;
+        }
+
+        const source =
+            "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
+
+        return proj4(source, target, coords);
     },
 
     /**
-     * Convert a distance in meters to a degree of latitude
-     * @param {number} meters - The distance in meters
-     * @returns {number} - The equivalent distance in degrees of latitude
+     * Convert coordinates to WGS84
+     * @param {Array} coords - Coordinates [x, y]
+     * @param {string} source - Source projection
+     * @returns {Array|null} - Converted coordinates or null if invalid
      */
-    metersToLatitude(meters) {
-        return meters / 111320; // 1 degree of latitude is approximately 111320 meters
-    },
+    convertCoordsToWGS84(coords, source) {
+        if (!coords || !Array.isArray(coords) || coords.length !== 2) {
+            console.error("Invalid coordinates:", coords);
+            return null;
+        }
 
-    /**
-     * Convert a distance in meters to a degree of longitude
-     * @param {number} meters - The distance in meters
-     * @param {number} latitude - The current latitude
-     * @returns {number} - The equivalent distance in degrees of longitude
-     */
-    metersToLongitude(meters, latitude) {
-        const longitudeDegreeLength = 40008000 / 360; // meters per degree of longitude
-        return (
-            meters /
-            (longitudeDegreeLength * Math.cos((latitude * Math.PI) / 180))
-        );
-    },
+        const [x, y] = coords;
 
-    /**
-     * Create a bounding box GeoJSON around the ship using AIS dimensions
-     * @param {Object} ship - The ship data (with geojson and dimensions A, B, C, D)
-     * @returns {Object} - The GeoJSON object for the ship's bounding area (rectangle)
-     */
-    createSquareGeoJson(ship) {
-        const position = JSON.parse(ship.geojson).coordinates;
-        const lat = position[1];
-        const lng = position[0];
-        const dimA = ship.dimA || 0; // Distance from the center to the bow (in meters)
-        const dimB = ship.dimB || 0; // Distance from the center to the port side (in meters)
-        const dimC = ship.dimC || 0; // Distance from the center to the stern (in meters)
-        const dimD = ship.dimD || 0; // Distance from the center to the starboard side (in meters)
+        if (!isFinite(x) || !isFinite(y)) {
+            console.error("Invalid x or y:", coords);
+            return null;
+        }
 
-        // Convert dimensions to latitude/longitude displacements
-        const latDisplacementA = this.metersToLatitude(dimA); // Displacement in latitude for dimA (bow)
-        const latDisplacementC = this.metersToLatitude(dimC); // Displacement in latitude for dimC (stern)
-        const lngDisplacementB = this.metersToLongitude(dimB, lat); // Displacement in longitude for dimB (port side)
-        const lngDisplacementD = this.metersToLongitude(dimD, lat); // Displacement in longitude for dimD (starboard side)
+        const target =
+            "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
 
-        // Calculate the 4 corners of the bounding box
-        const points = [
-            [lng - lngDisplacementB, lat + latDisplacementA], // Top-left (bow-left corner)
-            [lng + lngDisplacementD, lat + latDisplacementA], // Top-right (bow-right corner)
-            [lng + lngDisplacementD, lat - latDisplacementC], // Bottom-right (stern-right corner)
-            [lng - lngDisplacementB, lat - latDisplacementC], // Bottom-left (stern-left corner)
-        ];
-
-        // Close the polygon by adding the first point at the end
-        points.push(points[0]);
-
-        // Return the GeoJSON for the bounding box
-        return {
-            type: "Polygon",
-            coordinates: [points],
-        };
+        return proj4(source, target, coords);
     },
 
     /**
      * Create a feature collection for the ships
-     * @param {*} ships - Array of ship objects
+     * @param {Array} ships - Array of ship objects
      * @returns {Array} - An array of GeoJSON features for the ships
      */
     createShipFeatures(ships) {
         return ships
             .map((ship) => {
-                // Generate properties for the ship
                 const shipProperties = this.generateShipProperties(ship);
-
-                // Calculate square geometry around the ship's position (1 meter approx)
-                const geojsonSquare = this.createSquareGeoJson(ship);
+                const geojsonSkeleton = this.createShipGeoJson(ship);
 
                 return [
                     {
@@ -180,10 +126,10 @@ export default {
                     },
                     {
                         type: "Feature",
-                        geometry: geojsonSquare,
+                        geometry: geojsonSkeleton,
                         properties: {
                             mmsi: ship.mmsi,
-                            image: "squareIcon",
+                            image: "skeletonIcon",
                             priority: 50,
                         },
                     },
@@ -192,38 +138,129 @@ export default {
             .flat();
     },
 
-    /**
-     * Update a feature collection with new or updated ships
-     * @param {*} currentFeatures - The existing feature collection
-     * @param {*} newFeatures - The new features to be added/updated
-     * @returns {Array} - The updated feature collection
-     */
-    updateShipFeatures(currentFeatures, newFeatures) {
-        newFeatures.forEach((newFeature) => {
-            const existingFeatureIndex = currentFeatures.findIndex(
-                (feature) =>
-                    feature.properties.mmsi === newFeature.properties.mmsi
+    createShipGeoJson(ship) {
+        let { dim_a, dim_b, dim_c, dim_d, geojson, hdg } = ship;
+
+        if (!geojson) {
+            return null;
+        }
+
+        //if dim_a, dim_b, dim_c, dim_d is missing, return dim_a = 50, dim_b = 50, dim_c = 10, dim_d = 10
+        if (!dim_a && !dim_b && !dim_c && !dim_d) {
+            dim_a = 10;
+            dim_b = 10;
+            dim_c = 5;
+            dim_d = 5;
+        }
+
+        const [longitude, latitude] = JSON.parse(geojson).coordinates;
+
+        if (hdg && hdg !== 511) {
+            return this.createSkeletonGeoJson(
+                longitude,
+                latitude,
+                dim_a,
+                dim_b,
+                dim_c,
+                dim_d,
+                hdg
             );
-
-            if (existingFeatureIndex !== -1) {
-                // If feature exists, replace it
-                currentFeatures[existingFeatureIndex] = newFeature;
-            } else {
-                // If not, add the new feature
-                currentFeatures.push(newFeature);
-            }
-        });
-
-        return currentFeatures;
+        } else {
+            let radius = Math.max((dim_a + dim_b) / 2, (dim_c, dim_d) / 2);
+            return this.createCircleGeoJson(longitude, latitude, radius);
+        }
     },
 
     /**
-     * Add a layer for ships with squares around each ship's position
-     * @param {*} map - The Map instance
-     * @param {*} id - The layer ID
-     * @param {*} source - The data source for the ships
+     * Create a skeleton GeoJSON feature
+     * @param {number} longitude - Longitude
+     * @param {number} latitude - Latitude
+     * @param {number} lengthA - Length A
+     * @param {number} lengthB - Length B
+     * @param {number} lengthC - Length C
+     * @param {number} lengthD - Length D
+     * @param {number} heading - Heading
+     * @returns {Object} - GeoJSON geometry
+     */
+    createSkeletonGeoJson(
+        longitude,
+        latitude,
+        lengthA,
+        lengthB,
+        lengthC,
+        lengthD,
+        heading
+    ) {
+        // Set the target projection based on the longitude
+        const targetProjection = this.proj4_setdef(longitude);
+
+        // Calculate a threshold and center middle for further offset calculations
+        const threshold = (lengthA + lengthB) * 0.1;
+        const centerMiddle = (lengthC + lengthD) / 2;
+
+        // Define offsets for the skeleton vertices
+        const offsets = [
+            { x: -lengthC, y: -lengthB },
+            { x: -lengthC, y: lengthA - threshold },
+            { x: lengthD - centerMiddle, y: lengthA },
+            { x: lengthD, y: lengthA - threshold },
+            { x: lengthD, y: -lengthB },
+            { x: -lengthC, y: -lengthB },
+        ];
+
+        // Convert the geographic coordinates to meters
+        const centerInMeters = this.convertCoordsToMeters(
+            [longitude, latitude],
+            targetProjection
+        );
+
+        // Translate and rotate the coordinates based on the offsets
+        const rotatedCoordinates = offsets.map(({ x, y }) => {
+            const adjustedCoordinatesInMeters = [
+                centerInMeters[0] + x,
+                centerInMeters[1] + y,
+            ];
+
+            // Convert back to geographic coordinates (WGS84)
+            return this.convertCoordsToWGS84(
+                adjustedCoordinatesInMeters,
+                targetProjection
+            );
+        });
+
+        // Create a polygon using the rotated coordinates
+        const polygon = turf.polygon([rotatedCoordinates]);
+
+        // Rotate the polygon according to the heading
+        const options = { pivot: [longitude, latitude] };
+        const rotatedPolygon = turf.transformRotate(polygon, heading, options);
+
+        return rotatedPolygon.geometry;
+    },
+
+    /**
+     * Create a circle GeoJSON feature
+     * @param {number} longitude - Longitude
+     * @param {number} latitude - Latitude
+     * @param {number} radius - Radius in meters
+     * @returns {Object} - GeoJSON geometry
+     */
+    createCircleGeoJson(longitude, latitude, radius) {
+        const center = [longitude, latitude];
+        const options = { steps: 64, units: "meters" };
+        const circle = turf.circle(center, radius, options);
+        return circle.geometry;
+    },
+
+    /**
+     * Add a layer for ships with skeletons around each ship's position
+     * @param {Object} map - The Map instance
+     * @param {string} id - The layer ID
+     * @param {Object} source - The data source for the ships
      */
     addLayer(map, id, source) {
+        const paintOptions = {};
+
         const layoutOptions = {
             "icon-rotate": ["get", "hdg"],
             "icon-rotation-alignment": "map",
@@ -237,11 +274,11 @@ export default {
             "text-letter-spacing": 0.05,
             "text-offset": [0, 1.5],
             "symbol-sort-key": ["-", ["get", "priority"]],
+            visibility: map.getZoom() > ZOOM_THRESHOLD ? "none" : "visible",
         };
 
-        const paintOptions = {};
+        const zoom = map.getZoom();
 
-        // Add ship icon layer
         MapHelper.addLayer(
             map,
             id,
@@ -251,42 +288,98 @@ export default {
             paintOptions
         );
 
-        // Add square layer for ship positions
-        const squareLayoutOptions = {
-            visibility: "none", // Initially set as invisible
+        const skeletonFillLayoutOptions = {
+            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
         };
 
-        const squarePaintOptions = {
-            "fill-color": "#FF0000", // Red square color
-            "fill-opacity": 0.3, // Square opacity
+        const skeletonLineLayoutOptions = {
+            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
+            "line-cap": "round",
+            "line-join": "round",
         };
 
+        const skeletonPaintOptions = {
+            "fill-color": "#FF0000",
+            "fill-opacity": 0.3,
+            "fill-outline-color": "#000000",
+        };
+
+        // Add a polygon skeleton around each ship
         MapHelper.addLayer(
             map,
-            `${id}-square`,
+            `${id}-polygon-skeleton`,
             source,
             "fill",
-            squareLayoutOptions,
-            squarePaintOptions
+            skeletonFillLayoutOptions,
+            skeletonPaintOptions
         );
 
-        // Control the visibility of layers based on zoom level
+        // Add a line skeleton around each ship
+        MapHelper.addLayer(
+            map,
+            `${id}-line-skeleton`,
+            source,
+            "line",
+            skeletonLineLayoutOptions,
+            {
+                "line-color": "#000000",
+                "line-width": 3,
+            }
+        );
+
+        // Update the visibility of the layers based on the zoom level
         map.on("zoom", () => {
             const zoom = map.getZoom();
 
-            // Ship icons: Toggle visibility based on zoom level
             map.setLayoutProperty(
                 id,
                 "visibility",
-                zoom > 16 ? "none" : "visible"
+                zoom > ZOOM_THRESHOLD ? "none" : "visible"
             );
 
-            // Squares: Toggle visibility based on zoom level
             map.setLayoutProperty(
-                `${id}-square`,
+                `${id}-polygon-skeleton`,
                 "visibility",
-                zoom >= 16 ? "visible" : "none"
+                zoom >= ZOOM_THRESHOLD ? "visible" : "none"
+            );
+
+            map.setLayoutProperty(
+                `${id}-line-skeleton`,
+                "visibility",
+                zoom >= ZOOM_THRESHOLD ? "visible" : "none"
             );
         });
+    },
+
+    /**
+     * Remove a layer and its source from the map
+     * @param {Object} map - The Map instance
+     * @param {string} id - The layer ID
+     */
+    removeLayers(map, id) {
+        // Check if the layer exists
+        if (!map.getLayer(id)) {
+            return;
+        }
+
+        // Remove the main layer and the skeleton layer
+        map.removeLayer(id);
+        map.removeLayer(`${id}-line-skeleton`);
+        map.removeLayer(`${id}-polygon-skeleton`);
+    },
+
+    /**
+     * Remove a source from the map
+     * @param {*} map
+     * @param {*} id
+     */
+    removeSource(map, id) {
+        // Check if the source exists
+        if (!map.getSource(id)) {
+            return;
+        }
+
+        // Remove the source
+        map.removeSource(id);
     },
 };

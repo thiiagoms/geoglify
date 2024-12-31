@@ -140,7 +140,8 @@ class ProcessShipDataBatch implements ShouldQueue
      * @param array $data Array of data to filter
      * @return array Filtered data
      */
-    function filterUpdateData($data) {
+    function filterUpdateData($data)
+    {
         return array_filter($data, function ($value) {
             return $value !== '' && $value !== null;
         });
