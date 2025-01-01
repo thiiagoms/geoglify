@@ -23,6 +23,8 @@ export default {
      * @returns {Object} - The properties to be used in GeoJSON for the ship
      */
     generateShipProperties(ship) {
+        let color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+
         const name = ship.name ? this.removeEmTags(ship.name) : undefined;
         const cargo = ship.cargo ? this.removeEmTags(ship.cargo) : undefined;
 
@@ -31,6 +33,7 @@ export default {
             route: ship.route,
             ...(name && { name }),
             ...(cargo && { cargo }),
+            ...(color && { color }),
             ...(ship.hdg !== undefined && { hdg: ship.hdg }),
             ...(ship.hdg && ship.hdg != 511
                 ? { image: "shipIcon", priority: 100 }
@@ -129,6 +132,7 @@ export default {
                         geometry: geojsonSkeleton,
                         properties: {
                             mmsi: ship.mmsi,
+                            color: shipProperties.color,
                             image: "skeletonIcon",
                             priority: 50,
                         },
@@ -259,14 +263,16 @@ export default {
      * @param {Object} source - The data source for the ships
      */
     addLayer(map, id, source) {
-        const paintOptions = {};
+        const paintOptions = {
+            "icon-color": ["get", "color"],
+        };
 
         const layoutOptions = {
             "icon-rotate": ["get", "hdg"],
             "icon-rotation-alignment": "map",
             "icon-image": ["get", "image"],
             "icon-allow-overlap": true,
-            "icon-size": 0.8,
+            "icon-size": 1,
             "text-field": ["get", "name"],
             "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
             "text-size": 11,
@@ -299,9 +305,8 @@ export default {
         };
 
         const skeletonPaintOptions = {
-            "fill-color": "#FF0000",
-            "fill-opacity": 0.3,
-            "fill-outline-color": "#000000",
+            "fill-color": ["get", "color"],
+            "fill-opacity": 1,
         };
 
         // Add a polygon skeleton around each ship
@@ -323,7 +328,7 @@ export default {
             skeletonLineLayoutOptions,
             {
                 "line-color": "#000000",
-                "line-width": 3,
+                "line-width": 1,
             }
         );
 

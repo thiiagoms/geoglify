@@ -125,7 +125,7 @@ export default {
             }
 
             if (icon) {
-                map.addImage(id, icon);
+                map.addImage(id, icon, { sdf: true });
             }
         } catch (error) {
             console.error("Error loading image:", error);

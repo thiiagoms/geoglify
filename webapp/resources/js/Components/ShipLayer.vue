@@ -36,14 +36,14 @@ export default {
             await MapHelper.addIcon(
                 this.mapInstance,
                 "shipIcon",
-                "/images/boat.png"
+                "/images/boat-sdf.png"
             );
 
             // Adds the circle icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "circleIcon",
-                "/images/circle.png"
+                "/images/circle-sdf.png"
             );
 
             // Removes existing layers and sources to ensure no overlapping
