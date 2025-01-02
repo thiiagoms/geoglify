@@ -24,8 +24,8 @@ class Ship extends Model
         'imo',
         'callsign',
         'draught',
-        'cargo',
         'imo',
         'draught',
+        'cargo_type_id'
     ];
 }

@@ -6,21 +6,16 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
-        // Create the ships table
-        Schema::create('ships', function (Blueprint $table) {
+        Schema::create('cargo_types', function (Blueprint $table) {
             $table->id();
-            $table->string('mmsi')->unique();
-            $table->string('name')->nullable();
-            $table->string('callsign')->nullable();
-            $table->string('imo')->nullable();
-            $table->integer('dim_a')->nullable();
-            $table->integer('dim_b')->nullable();
-            $table->integer('dim_c')->nullable();
-            $table->integer('dim_d')->nullable();
-            $table->string('cargo')->nullable();
-            $table->decimal('draught', 5, 2)->nullable();
+            $table->integer('code')->unique();
+            $table->string('name');
+            $table->integer('cargo_category_id')->nullable();
 
             // Audit Fields
             $table->timestamps();
@@ -33,15 +28,15 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('set null');
-
-            // Indexes
-            $table->index('mmsi');
+            $table->foreign('cargo_category_id')->references('id')->on('cargo_categories')->onDelete('set null');
         });
     }
 
-    public function down()
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        // Drop the ships table
-        Schema::dropIfExists('ships');
+        Schema::dropIfExists('cargo_types');
     }
 };

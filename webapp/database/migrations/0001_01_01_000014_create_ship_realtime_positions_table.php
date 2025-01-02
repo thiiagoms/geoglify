@@ -13,9 +13,9 @@ return new class extends Migration
         Schema::create('ship_realtime_positions', function (Blueprint $table) {
             $table->id();
             $table->string('mmsi')->unique();
-            $table->decimal('cog', 5, 2)->nullable(); // Course over ground
-            $table->decimal('sog', 5, 2)->nullable(); // Speed over ground
-            $table->integer('hdg')->nullable(); // Heading
+            $table->decimal('cog', 5, 2)->nullable();
+            $table->decimal('sog', 5, 2)->nullable();
+            $table->integer('hdg')->nullable();
             $table->timestamp('last_updated')->nullable();
             $table->timestamp('eta')->nullable();
             $table->string('destination')->nullable();
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('deleted_by')->references('id')->on('users')->onDelete('set null');
-            
+
             // Indexes
             $table->index('mmsi');
         });
@@ -64,7 +64,7 @@ return new class extends Migration
         // Drop the trigger and function before dropping the table
         DB::unprepared('DROP TRIGGER IF EXISTS ship_realtime_positions_geom_trg ON ship_realtime_positions;');
         DB::unprepared('DROP FUNCTION IF EXISTS trg_ship_realtime_positions_geom();');
-        
+
         // Drop the table
         Schema::dropIfExists('ship_realtime_positions');
     }

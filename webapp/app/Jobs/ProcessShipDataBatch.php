@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\CargoType;
 use App\Models\Ship;
 use App\Models\ShipRealtimePosition;
 use App\Models\ShipHistoricalPosition;
@@ -60,6 +61,9 @@ class ProcessShipDataBatch implements ShouldQueue
         // Prepare data for broadcasting
         $broadcastData = $chunk->map(function ($shipData) {
 
+            // Find ship cargo_type_id based on the cargo name
+            $cargoType = CargoType::where('code', (int)($shipData['cargo'] ?? 0))->first();
+
             // Update or create the ship's general information
             Ship::updateOrCreate(
                 ['mmsi' => $shipData['mmsi']],
@@ -72,7 +76,7 @@ class ProcessShipDataBatch implements ShouldQueue
                     'imo' => $shipData['imo'] ?? null,
                     'callsign' => $shipData['callsign'] ?? null,
                     'draught' => $shipData['draught'] ?? null,
-                    'cargo' => $shipData['cargo'] ?? null,
+                    'cargo_type_id' => $cargoType ? $cargoType->id : null,
                 ])
             );
 
@@ -118,7 +122,6 @@ class ProcessShipDataBatch implements ShouldQueue
                     'imo' => $updatedShip->imo,
                     'callsign' => $updatedShip->callsign,
                     'draught' => $updatedShip->draught,
-                    'cargo' => $updatedShip->cargo,
                     'cog' => $updatedRealtimePosition->cog,
                     'sog' => $updatedRealtimePosition->sog,
                     'hdg' => $updatedRealtimePosition->hdg,
@@ -126,6 +129,10 @@ class ProcessShipDataBatch implements ShouldQueue
                     'eta' => $updatedRealtimePosition->eta,
                     'destination' => $updatedRealtimePosition->destination,
                     'geojson' => $updatedRealtimePosition->geojson,
+                    'cargo_name' => $updatedShip->cargo_type_name,
+                    'cargo_code' => $updatedShip->cargo_type_code,
+                    'category_name' => $updatedShip->cargo_category_name,
+                    'category_color' => $updatedShip->cargo_category_color,
                 ];
             }
         });
@@ -143,7 +150,7 @@ class ProcessShipDataBatch implements ShouldQueue
     function filterUpdateData($data)
     {
         return array_filter($data, function ($value) {
-            return $value !== '' && $value !== null;
+            return $value !== '' && $value !== null || is_numeric($value);
         });
     }
 }

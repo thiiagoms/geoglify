@@ -72,6 +72,12 @@ chmod -R ugo+rw storage
 # Queue clear
 php artisan queue:clear
 
+# Optimize composer autoloader
+composer dump-autoload --optimize
+
+# Route cache
+php artisan route:cache
+
 # Install node dependencies
 npm install
 

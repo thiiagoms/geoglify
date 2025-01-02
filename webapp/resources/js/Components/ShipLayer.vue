@@ -1,3 +1,6 @@
+<template>
+    <div></div>
+</template>
 <script>
 import MapHelper from "@/Helpers/MapHelper"; // Imports the MapHelper, which contains helper functions for manipulating the map.
 import ShipHelper from "@/Helpers/ShipHelper"; // Imports the ShipHelper, which contains helper functions for handling ship layers.
@@ -79,7 +82,7 @@ export default {
                     window.Echo.channel("realtime_ships").listen(
                         "ShipPositionUpdated", // The event for updating the ship's position
                         (data) => {
-                            this.updateShipSource(data); // Updates the source with the received data
+                            //this.updateShipSource(data); // Updates the source with the received data
                         }
                     );
                 });

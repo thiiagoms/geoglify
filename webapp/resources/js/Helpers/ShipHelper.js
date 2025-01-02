@@ -23,21 +23,25 @@ export default {
      * @returns {Object} - The properties to be used in GeoJSON for the ship
      */
     generateShipProperties(ship) {
-        let color = "#" + Math.floor(Math.random() * 16777215).toString(16);
+        const name = ship.name ? this.removeEmTags(ship.name) : "N/A";
 
-        const name = ship.name ? this.removeEmTags(ship.name) : undefined;
-        const cargo = ship.cargo ? this.removeEmTags(ship.cargo) : undefined;
+        const priority = ship.cargo_category_priority
+            ? -ship.cargo_category_priority
+            : 0;
+
+        const color = ship.cargo_category_color
+            ? ship.cargo_category_color
+            : "#000000";
 
         return {
             mmsi: ship.mmsi,
             route: ship.route,
             ...(name && { name }),
-            ...(cargo && { cargo }),
             ...(color && { color }),
             ...(ship.hdg !== undefined && { hdg: ship.hdg }),
             ...(ship.hdg && ship.hdg != 511
-                ? { image: "shipIcon", priority: 100 }
-                : { image: "circleIcon", priority: 0 }),
+                ? { image: "shipIcon", priority: priority }
+                : { image: "circleIcon", priority: priority * 1000 }),
         };
     },
 
@@ -134,12 +138,33 @@ export default {
                             mmsi: ship.mmsi,
                             color: shipProperties.color,
                             image: "skeletonIcon",
-                            priority: 50,
                         },
                     },
                 ];
             })
             .flat();
+    },
+
+    /**
+     * Update an existing ship feature with new data
+     * @param {Object} existingFeature - Existing GeoJSON feature of the ship
+     * @param {Object} ship - Updated ship data
+     * @returns {Object} - Updated GeoJSON feature
+     */
+    updateShipFeature(existingFeature, ship) {
+        const updatedProperties = this.generateShipProperties(ship);
+
+        // Update properties and geometry if needed
+        existingFeature.properties = {
+            ...existingFeature.properties,
+            ...updatedProperties,
+        };
+
+        if (ship.geojson) {
+            existingFeature.geometry = JSON.parse(ship.geojson);
+        }
+
+        return existingFeature;
     },
 
     createShipGeoJson(ship) {
@@ -271,15 +296,16 @@ export default {
             "icon-rotate": ["get", "hdg"],
             "icon-rotation-alignment": "map",
             "icon-image": ["get", "image"],
-            "icon-allow-overlap": true,
-            "icon-size": 1,
+            "icon-allow-overlap": false,
+            "icon-size": 0.9,
+            "icon-overlap": "always",
             "text-field": ["get", "name"],
             "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-            "text-size": 11,
+            "text-size": 12,
+            "text-offset": [0, 1],
             "text-transform": "uppercase",
             "text-letter-spacing": 0.05,
-            "text-offset": [0, 1.5],
-            "symbol-sort-key": ["-", ["get", "priority"]],
+            "symbol-sort-key": ["to-number", ["get", "priority"]],
             visibility: map.getZoom() > ZOOM_THRESHOLD ? "none" : "visible",
         };
 
@@ -332,6 +358,27 @@ export default {
             }
         );
 
+        // Add a text label for each ship
+        MapHelper.addLayer(
+            map,
+            `${id}-text`,
+            source,
+            "symbol",
+            {
+                "text-field": ["get", "name"],
+                "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+                "text-size": 12,
+                "text-offset": [0, 1],
+                "text-transform": "uppercase",
+                "text-letter-spacing": 0.05,
+                "symbol-sort-key": ["to-number", ["get", "priority"]],
+                visibility: map.getZoom() > ZOOM_THRESHOLD ? "visible" : "none",
+            },
+            {
+                "text-color": "#000000",
+            }
+        );
+
         // Update the visibility of the layers based on the zoom level
         map.on("zoom", () => {
             const zoom = map.getZoom();
@@ -353,6 +400,12 @@ export default {
                 "visibility",
                 zoom >= ZOOM_THRESHOLD ? "visible" : "none"
             );
+
+            map.setLayoutProperty(
+                `${id}-text`,
+                "visibility",
+                zoom > ZOOM_THRESHOLD ? "visible" : "none"
+            );
         });
     },
 
@@ -371,6 +424,7 @@ export default {
         map.removeLayer(id);
         map.removeLayer(`${id}-line-skeleton`);
         map.removeLayer(`${id}-polygon-skeleton`);
+        map.removeLayer(`${id}-text`);
     },
 
     /**

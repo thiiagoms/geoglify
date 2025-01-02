@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
 use Illuminate\Support\Facades\DB;
 
-class ShipDataController extends Controller
+class ShipController extends Controller
 {
     /**
      * Store incoming ship data in batches and dispatch job.
@@ -47,11 +47,13 @@ class ShipDataController extends Controller
     {
         $ship = ShipLatestPositionView::where('mmsi', $mmsi)->first();
 
+        /*
         $routes = $this->calculateRoutes($ship);
         $predicted_eta = $this->calculatePredictedEta($ship, $routes['planned']['distance_nm']);
 
         $ship->routes = $routes;
         $ship->predicted_eta = $predicted_eta;
+        */
 
         return response()->json($ship);
     }

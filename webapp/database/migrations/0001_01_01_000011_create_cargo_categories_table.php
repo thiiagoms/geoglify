@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cargo_types', function (Blueprint $table) {
+        Schema::create('cargo_categories', function (Blueprint $table) {
+
             $table->id();
-            $table->integer('code')->unique();
-            $table->string('category');
-            $table->string('description');
+            $table->string('name');
+            $table->string('color');
+            $table->integer('priority');
 
             // Audit Fields
             $table->timestamps();
@@ -36,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cargo_types');
+        Schema::dropIfExists('cargo_categories');
     }
 };

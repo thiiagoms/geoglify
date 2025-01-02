@@ -15,12 +15,19 @@
         </v-card-title>
 
         <!-- Scrollable content -->
-        <v-card-text class="scrollable-content" v-if="!this.loading">
+        <v-card-text class="scrollable-content">
+            <v-skeleton-loader
+                class="mx-auto"
+                type="image, article"
+                v-if="this.loading"
+            ></v-skeleton-loader>
+
             <v-avatar
                 rounded="0"
                 class="ma-0"
                 color="#ccc"
                 style="width: 100%; height: 200px"
+                v-if="!this.loading"
             >
                 <v-img
                     cover
@@ -29,7 +36,7 @@
                 />
             </v-avatar>
 
-            <v-table>
+            <v-table v-if="!this.loading">
                 <tbody>
                     <tr>
                         <td class="font-weight-black">MMSI</td>
@@ -52,8 +59,20 @@
                         <td>{{ data.country_name }}</td>
                     </tr>
                     <tr>
-                        <td class="font-weight-black">Vessel Type</td>
-                        <td>{{ data.cargo_name }}</td>
+                        <td class="font-weight-black">Cargo Type</td>
+                        <td>{{ data.cargo_type_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-black">Cargo Category</td>
+                        <td>{{ data.cargo_category_name }}</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-black">Length</td>
+                        <td>{{ (data.dim_a + data.dim_b) / 2 }}m</td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-black">Width</td>
+                        <td>{{ (data.dim_c + data.dim_d) / 2 }}m</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Destination</td>
@@ -61,15 +80,15 @@
                     </tr>
                     <tr>
                         <td class="font-weight-black">Speed Over Ground</td>
-                        <td>{{ data.sog }}</td>
+                        <td>{{ data.sog }} knots</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Course Over Ground</td>
-                        <td>{{ data.cog }}</td>
+                        <td>{{ data.cog }} degrees</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Heading</td>
-                        <td>{{ data.hdg }}</td>
+                        <td>{{ data.hdg }} degrees</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Last Updated</td>
@@ -93,11 +112,11 @@
                             }}
                         </td>
                     </tr>
-                    <tr class="bg-primary">
+                    <tr class="bg-primary" v-if="data.routes?.planned">
                         <td class="font-weight-black">Distance Planned (NM)</td>
                         <td>{{ data?.routes?.planned.distance_nm }}</td>
                     </tr>
-                    <tr class="bg-primary">
+                    <tr class="bg-primary" v-if="data.routes?.real">
                         <td class="font-weight-black">Predicted ETA</td>
                         <td>
                             {{
@@ -139,10 +158,10 @@ export default {
                 .then((response) => response.json())
                 .then((data) => {
                     this.data = data; // Sets the ship details
-                    this.$emit("ship-details-fetched", {
+                    /*this.$emit("ship-details-fetched", {
                         plannedGeojson: data.routes.planned.geojson,
                         realGeojson: data.routes.real.geojson,
-                    });
+                    });*/
                 })
                 .catch(() => {
                     this.data = {}; // Resets the ship details
