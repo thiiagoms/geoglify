@@ -70,13 +70,7 @@ export default {
                 })
                 .finally(() => {
                     // After the data is loaded, calls the function to update the ship source
-                    this.updateShipSource(this.ships);
-
-                    // Initializes the click listener for ship selection
-                    this.mapInstance.on("click", "shipLayer", (e) => {
-                        const ship = e.features[0].properties; // Gets the properties of the clicked ship
-                        this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
-                    });
+                    this.updateShipSource(this.ships);                   
 
                     // Listens for real-time updates on the ship's position
                     window.Echo.channel("realtime_ships").listen(

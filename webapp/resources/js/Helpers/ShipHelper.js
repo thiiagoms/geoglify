@@ -300,7 +300,7 @@ export default {
             "icon-size": 0.9,
             "icon-overlap": "always",
             "text-field": ["get", "name"],
-            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-font": ["Open Sans Bold"],
             "text-size": 12,
             "text-offset": [0, 1],
             "text-transform": "uppercase",
@@ -378,6 +378,27 @@ export default {
                 "text-color": "#000000",
             }
         );
+        
+        map.on("click", `${id}`, (e) => {
+            const ship = e.features[0].properties; // Gets the properties of the clicked ship
+            this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+        });
+        
+        // Initializes the click listener for ship selection
+        map.on("click", `${id}-polygon-skeleton`, (e) => {
+            const ship = e.features[0].properties; // Gets the properties of the clicked ship
+            this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+        });
+        
+        // Change the cursor to a pointer when the mouse is over the ship layer
+        map.on("mouseenter", `${id}`, () => {
+            this.mapInstance.getCanvas().style.cursor = "pointer";
+        });
+        
+        // Change the cursor back to the default when the mouse leaves the ship layer
+        map.on("mouseleave", `${id}`, () => {
+            this.mapInstance.getCanvas().style.cursor = "";
+        });                            
 
         // Update the visibility of the layers based on the zoom level
         map.on("zoom", () => {
