@@ -37,7 +37,11 @@
             </v-avatar>
 
             <v-table v-if="!this.loading">
-                <tbody>
+                <tbody class="details-table">
+                    <tr  class="bg-secondary">
+                        <td class="font-weight-black">Name</td>
+                        <td>{{ data.name }}</td>
+                    </tr>
                     <tr>
                         <td class="font-weight-black">MMSI</td>
                         <td>{{ data.mmsi }}</td>
@@ -45,10 +49,6 @@
                     <tr>
                         <td class="font-weight-black">IMO</td>
                         <td>{{ data.imo }}</td>
-                    </tr>
-                    <tr>
-                        <td class="font-weight-black">Name</td>
-                        <td>{{ data.name }}</td>
                     </tr>
                     <tr>
                         <td class="font-weight-black">Call Sign</td>
@@ -90,19 +90,8 @@
                         <td class="font-weight-black">Heading</td>
                         <td>{{ data.hdg }} degrees</td>
                     </tr>
+                    
                     <tr>
-                        <td class="font-weight-black">Last Updated</td>
-                        <td>
-                            {{
-                                data.last_updated
-                                    ? new Date(
-                                          data.last_updated
-                                      ).toLocaleString()
-                                    : ""
-                            }}
-                        </td>
-                    </tr>
-                    <tr class="bg-secondary">
                         <td class="font-weight-black">ETA</td>
                         <td>
                             {{
@@ -123,6 +112,18 @@
                                 data.predicted_eta
                                     ? new Date(
                                           data.predicted_eta
+                                      ).toLocaleString()
+                                    : ""
+                            }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-weight-black">Last Updated</td>
+                        <td>
+                            {{
+                                data.last_updated
+                                    ? new Date(
+                                          data.last_updated
                                       ).toLocaleString()
                                     : ""
                             }}
@@ -190,6 +191,10 @@ export default {
 
 table tbody * {
     font-family: "Roboto Mono", monospace !important;
+}
+
+table tbody td:first-child {
+    width: 40%;
 }
 
 .flag {

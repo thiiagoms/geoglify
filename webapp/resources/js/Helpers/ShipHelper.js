@@ -290,6 +290,9 @@ export default {
     addLayer(map, id, source) {
         const paintOptions = {
             "icon-color": ["get", "color"],
+            "text-color": "#000000",
+            "text-halo-color": "#fff",
+            "text-halo-width": 2,
         };
 
         const layoutOptions = {
@@ -297,13 +300,64 @@ export default {
             "icon-rotation-alignment": "map",
             "icon-image": ["get", "image"],
             "icon-allow-overlap": false,
-            "icon-size": 0.9,
+            "icon-size": 0.8,
             "icon-overlap": "always",
+            "icon-ignore-placement": false,
             "text-field": ["get", "name"],
             "text-font": ["Open Sans Bold"],
-            "text-size": 12,
+            "text-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                10,
+                0,
+                11,
+                ["*", ["^", ["-", 11, map.getZoom()], 2], ["get", "textsize"]],
+                12,
+                ["*", ["^", ["-", 12, map.getZoom()], 2], ["get", "textsize"]],
+                13,
+                ["*", ["^", ["-", 13, map.getZoom()], 2], ["get", "textsize"]],
+                14,
+                ["*", ["^", ["-", 14, map.getZoom()], 2], ["get", "textsize"]],
+                15,
+                ["*", ["^", ["-", 15, map.getZoom()], 2], ["get", "textsize"]],
+                16,
+                ["*", ["^", ["-", 16, map.getZoom()], 2], ["get", "textsize"]],
+                17,
+                ["*", ["^", ["-", 17, map.getZoom()], 2], ["get", "textsize"]],
+                18,
+                ["*", ["^", ["-", 18, map.getZoom()], 2], ["get", "textsize"]],
+                19,
+                ["*", ["^", ["-", 19, map.getZoom()], 2], ["get", "textsize"]],
+                20,
+                ["*", ["^", ["-", 20, map.getZoom()], 2], ["get", "textsize"]],
+                21,
+                ["*", ["^", ["-", 21, map.getZoom()], 2], ["get", "textsize"]],
+                22,
+                ["*", ["^", ["-", 22, map.getZoom()], 2], ["get", "textsize"]],
+                23,
+                ["*", ["^", ["-", 23, map.getZoom()], 2], ["get", "textsize"]],
+                24,
+                ["*", ["^", ["-", 24, map.getZoom()], 2], ["get", "textsize"]],
+                25,
+                ["*", ["^", ["-", 25, map.getZoom()], 2], ["get", "textsize"]],
+                26,
+                ["*", ["^", ["-", 26, map.getZoom()], 2], ["get", "textsize"]],
+                27,
+                ["*", ["^", ["-", 27, map.getZoom()], 2], ["get", "textsize"]],
+                28,
+                ["*", ["^", ["-", 28, map.getZoom()], 2], ["get", "textsize"]],
+                29,
+                ["*", ["^", ["-", 29, map.getZoom()], 2], ["get", "textsize"]],
+                30,
+                ["*", ["^", ["-", 30, map.getZoom()], 2], ["get", "textsize"]],
+            ],
             "text-offset": [0, 1],
             "text-transform": "uppercase",
+            "text-variable-anchor": ["top", "bottom", "left"],
+            "text-radial-offset": 0.1,
+            "text-allow-overlap": false,
+            "text-ignore-placement": false,
             "text-letter-spacing": 0.05,
             "symbol-sort-key": ["to-number", ["get", "priority"]],
             visibility: map.getZoom() > ZOOM_THRESHOLD ? "none" : "visible",
@@ -353,8 +407,8 @@ export default {
             "line",
             skeletonLineLayoutOptions,
             {
-                "line-color": "#000000",
-                "line-width": 1,
+                "line-color": "#263238",
+                "line-width": 2,
             }
         );
 
@@ -366,39 +420,160 @@ export default {
             "symbol",
             {
                 "text-field": ["get", "name"],
-                "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
-                "text-size": 12,
+                "text-font": ["Open Sans Bold"],
+                "text-size": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    10,
+                    0,
+                    11,
+                    [
+                        "*",
+                        ["^", ["-", 11, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    12,
+                    [
+                        "*",
+                        ["^", ["-", 12, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    13,
+                    [
+                        "*",
+                        ["^", ["-", 13, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    14,
+                    [
+                        "*",
+                        ["^", ["-", 14, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    15,
+                    [
+                        "*",
+                        ["^", ["-", 15, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    16,
+                    [
+                        "*",
+                        ["^", ["-", 16, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    17,
+                    [
+                        "*",
+                        ["^", ["-", 17, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    18,
+                    [
+                        "*",
+                        ["^", ["-", 18, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    19,
+                    [
+                        "*",
+                        ["^", ["-", 19, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    20,
+                    [
+                        "*",
+                        ["^", ["-", 20, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    21,
+                    [
+                        "*",
+                        ["^", ["-", 21, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    22,
+                    [
+                        "*",
+                        ["^", ["-", 22, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    23,
+                    [
+                        "*",
+                        ["^", ["-", 23, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    24,
+                    [
+                        "*",
+                        ["^", ["-", 24, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    25,
+                    [
+                        "*",
+                        ["^", ["-", 25, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    26,
+                    [
+                        "*",
+                        ["^", ["-", 26, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    27,
+                    [
+                        "*",
+                        ["^", ["-", 27, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    28,
+                    [
+                        "*",
+                        ["^", ["-", 28, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    29,
+                    [
+                        "*",
+                        ["^", ["-", 29, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                    30,
+                    [
+                        "*",
+                        ["^", ["-", 30, map.getZoom()], 2],
+                        ["get", "textsize"],
+                    ],
+                ],
                 "text-offset": [0, 1],
+                "text-variable-anchor": ["top", "bottom", "left"],
                 "text-transform": "uppercase",
+                "text-radial-offset": 0.1,
+                "text-allow-overlap": false,
+                "text-ignore-placement": false,
                 "text-letter-spacing": 0.05,
                 "symbol-sort-key": ["to-number", ["get", "priority"]],
                 visibility: map.getZoom() > ZOOM_THRESHOLD ? "visible" : "none",
             },
             {
                 "text-color": "#000000",
+                "text-halo-color": "#fff",
+                "text-halo-width": 2,
             }
         );
-        
-        map.on("click", `${id}`, (e) => {
-            const ship = e.features[0].properties; // Gets the properties of the clicked ship
-            this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
-        });
-        
-        // Initializes the click listener for ship selection
-        map.on("click", `${id}-polygon-skeleton`, (e) => {
-            const ship = e.features[0].properties; // Gets the properties of the clicked ship
-            this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
-        });
-        
+
         // Change the cursor to a pointer when the mouse is over the ship layer
         map.on("mouseenter", `${id}`, () => {
-            this.mapInstance.getCanvas().style.cursor = "pointer";
+            map.getCanvas().style.cursor = "pointer";
         });
-        
+
         // Change the cursor back to the default when the mouse leaves the ship layer
         map.on("mouseleave", `${id}`, () => {
-            this.mapInstance.getCanvas().style.cursor = "";
-        });                            
+            map.getCanvas().style.cursor = "";
+        });
 
         // Update the visibility of the layers based on the zoom level
         map.on("zoom", () => {

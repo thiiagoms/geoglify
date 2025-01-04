@@ -39,6 +39,7 @@ export default {
             zoom: zoom,
             antialias: true,
             hash: "map",
+            glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
             transformRequest,
         });
     },
