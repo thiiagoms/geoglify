@@ -59,6 +59,18 @@ export default {
             // Adds the ships layer using the same source ID
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
+            // Adds the ships layer using the same source ID
+            this.mapInstance.on("click", "shipLayer", (e) => {
+                const ship = e.features[0].properties; // Gets the properties of the clicked ship
+                this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+            });
+
+            // Initializes the skeleton layer for the ships
+            this.mapInstance.on("click", "shipLayer-polygon-skeleton", (e) => {
+                const ship = e.features[0].properties; // Gets the properties of the clicked ship
+                this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+            });
+
             // Fetches ship data in real-time from the server
             fetch("/api/ships/realtime/all")
                 .then((response) => response.json()) // Converts the response to JSON format
@@ -70,7 +82,7 @@ export default {
                 })
                 .finally(() => {
                     // After the data is loaded, calls the function to update the ship source
-                    this.updateShipSource(this.ships);                   
+                    this.updateShipSource(this.ships);
 
                     // Listens for real-time updates on the ship's position
                     window.Echo.channel("realtime_ships").listen(

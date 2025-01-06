@@ -5,42 +5,19 @@ MapboxDraw.constants.classes.CONTROL_BASE = "maplibregl-ctrl";
 MapboxDraw.constants.classes.CONTROL_PREFIX = "maplibregl-ctrl-";
 MapboxDraw.constants.classes.CONTROL_GROUP = "maplibregl-ctrl-group";
 
-const initialStyle = {
-    version: 8,
-    projection: {
-        type: "globe",
-    },
-    glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-    sources: {
-        satellite: {
-            url: "https://api.maptiler.com/maps/satellite/tiles.json?key=Qbwxcd8lf8BWDwAZyp5B",
-            type: "raster",
-        },
-    },
-    layers: [
-        {
-            id: "Satellite",
-            type: "raster",
-            source: "satellite",
-        },
-    ],
-    sky: {
-        "atmosphere-blend": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0,
-            1,
-            5,
-            1,
-            7,
-            0,
-        ],
-    },
-    light: {
-        anchor: "map",
-        position: [1.5, 90, 80],
-    },
+import {
+    isMapboxURL,
+    transformMapboxUrl,
+} from "maplibregl-mapbox-request-transformer";
+
+const mapboxKey =
+    "pk.eyJ1IjoibGVvbmVsZGlhcyIsImEiOiJjbGV5ZjhiNXMxaHYwM3dta2phanp3ajhxIn0.XQtv4xNQ9x4H99AIcpJW7g";
+
+const transformRequest = (url, resourceType) => {
+    if (isMapboxURL(url)) {
+        return transformMapboxUrl(url, resourceType, mapboxKey);
+    }
+    return { url };
 };
 
 /**
@@ -55,18 +32,16 @@ export default {
      * @returns
      */
     createMap(container, center = [0, 0], zoom = 1) {
-        let map = new maplibregl.Map({
+        return new maplibregl.Map({
             container: container,
-            style: initialStyle,
+            style: "https://api.mapbox.com/styles/v1/leoneldias/cm2agqkby003h01pgb4gr0ei7?access_token=pk.eyJ1IjoibGVvbmVsZGlhcyIsImEiOiJjbGV5ZjhiNXMxaHYwM3dta2phanp3ajhxIn0.XQtv4xNQ9x4H99AIcpJW7g",
             center: center,
             zoom: zoom,
             antialias: true,
             hash: "map",
+            glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+            transformRequest,
         });
-
-        map.addControl(new maplibregl.GlobeControl(), "top-right");
-
-        return map;
     },
 
     /**
