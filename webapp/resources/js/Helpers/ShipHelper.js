@@ -300,7 +300,6 @@ export default {
             "icon-size": 0.9,
             "icon-overlap": "always",
             "text-field": ["get", "name"],
-            "text-font": ["Open Sans Bold"],
             "text-size": 12,
             "text-offset": [0, 1],
             "text-transform": "uppercase",
@@ -366,7 +365,6 @@ export default {
             "symbol",
             {
                 "text-field": ["get", "name"],
-                "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
                 "text-size": 12,
                 "text-offset": [0, 1],
                 "text-transform": "uppercase",
