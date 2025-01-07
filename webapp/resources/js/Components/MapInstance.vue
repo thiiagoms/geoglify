@@ -25,6 +25,9 @@ export default {
 
             // Add navigation control
             MapHelper.addNavigationControl(this.mapRef);
+            
+            // Add globe projection control
+            MapHelper.addGlobeProjectionControl(this.mapRef);
 
             // Check if the map is loaded and do somethings
             this.mapRef.on("load", async () => {

@@ -53,6 +53,14 @@ export default {
     },
 
     /**
+     * Add the globe projection control to the map
+     * @param {*} map
+     */
+    addGlobeProjectionControl(map) {
+        map.addControl(new maplibregl.GlobeControl(), "top-right");
+    },
+    
+    /**
      * Add new source to the map
      * @param {*} map
      * @param {*} id

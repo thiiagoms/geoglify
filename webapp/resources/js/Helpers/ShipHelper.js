@@ -170,19 +170,16 @@ export default {
     createShipGeoJson(ship) {
         let { dim_a, dim_b, dim_c, dim_d, geojson, hdg } = ship;
 
-        if (!geojson) {
+        if (!lon || !lat) {
             return null;
         }
 
-        //if dim_a, dim_b, dim_c, dim_d is missing, return dim_a = 50, dim_b = 50, dim_c = 10, dim_d = 10
-        if (!dim_a && !dim_b && !dim_c && !dim_d) {
-            dim_a = 10;
-            dim_b = 10;
-            dim_c = 5;
-            dim_d = 5;
-        }
-
         const [longitude, latitude] = JSON.parse(geojson).coordinates;
+
+        if (dim_a === undefined || dim_a === null) dim_a = 50;
+        if (dim_b === undefined || dim_b === null) dim_b = 50;
+        if (dim_c === undefined || dim_c === null) dim_c = 10;
+        if (dim_d === undefined || dim_d === null) dim_d = 10;
 
         if (hdg && hdg !== 511) {
             return this.createSkeletonGeoJson(
