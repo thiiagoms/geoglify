@@ -5,10 +5,6 @@ My mission is to offer geospatial tools and resources to unlock insights within 
 
 ![image](https://github.com/user-attachments/assets/fae9daf8-bf1e-4d2b-a9c6-4e14bed985d1)
 
-## Architecture Overview
-
-To understand the architecture overview, follow [this link to the detailed explanation](ARCH.md).
-
 ## How to Contribute
 
 Here's how you can get involved:
