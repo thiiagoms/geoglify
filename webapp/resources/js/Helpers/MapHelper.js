@@ -5,67 +5,34 @@ MapboxDraw.constants.classes.CONTROL_BASE = "maplibregl-ctrl";
 MapboxDraw.constants.classes.CONTROL_PREFIX = "maplibregl-ctrl-";
 MapboxDraw.constants.classes.CONTROL_GROUP = "maplibregl-ctrl-group";
 
-import {
-    isMapboxURL,
-    transformMapboxUrl,
-} from "maplibregl-mapbox-request-transformer";
-
-const mapboxKey =
-    "pk.eyJ1IjoibGVvbmVsZGlhcyIsImEiOiJjbGV5ZjhiNXMxaHYwM3dta2phanp3ajhxIn0.XQtv4xNQ9x4H99AIcpJW7g";
-
-const transformRequest = (url, resourceType) => {
-    if (isMapboxURL(url)) {
-        return transformMapboxUrl(url, resourceType, mapboxKey);
-    }
-    return { url };
-};
-
 /**
  * Map helper functions
  */
 export default {
-    /**
-     * Create a map
-     * @param {*} container
-     * @param {*} center
-     * @param {*} zoom
-     * @returns
-     */
+    // Create a new map
     createMap(container, center = [0, 0], zoom = 1) {
         return new maplibregl.Map({
             container: container,
-            style: "https://api.mapbox.com/styles/v1/leoneldias/cm2agqkby003h01pgb4gr0ei7?access_token=pk.eyJ1IjoibGVvbmVsZGlhcyIsImEiOiJjbGV5ZjhiNXMxaHYwM3dta2phanp3ajhxIn0.XQtv4xNQ9x4H99AIcpJW7g",
+            style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
             center: center,
             zoom: zoom,
             antialias: true,
             hash: "map",
             glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-            transformRequest,
         });
     },
 
-    /**
-     * Add the navigation control to the map
-     * @param {*} map
-     */
+    // Add the navigation control to the map
     addNavigationControl(map) {
         map.addControl(new maplibregl.NavigationControl());
     },
 
-    /**
-     * Add the globe projection control to the map
-     * @param {*} map
-     */
+    // Add the scale control to the map
     addGlobeProjectionControl(map) {
         map.addControl(new maplibregl.GlobeControl(), "top-right");
     },
-    
-    /**
-     * Add new source to the map
-     * @param {*} map
-     * @param {*} id
-     * @param {*} data
-     */
+
+    // Add a new source to the map
     addSource(map, id, data = { type: "FeatureCollection", features: [] }) {
         map.addSource(id, {
             type: "geojson",
@@ -73,15 +40,7 @@ export default {
         });
     },
 
-    /**
-     * Add new layer to the map
-     * @param {*} map
-     * @param {*} id
-     * @param {*} source
-     * @param {*} type
-     * @param {*} layoutOptions
-     * @param {*} paintOptions
-     */
+    // Add a new layer to the map
     addLayer(
         map,
         id,
@@ -102,12 +61,7 @@ export default {
         map.addLayer(layerConfig);
     },
 
-    /**
-     * Update the source data in the map
-     * @param {*} map
-     * @param {*} id
-     * @param {*} features
-     */
+    // Update the source data
     updateSource(map, id, features) {
         const source = map.getSource(id);
         if (source) {
@@ -118,12 +72,7 @@ export default {
         }
     },
 
-    /**
-     * Add a icon to the map
-     * @param {*} map
-     * @param {*} id
-     * @param {*} imageUrl
-     */
+    // Add an icon to the map
     async addIcon(map, id, imageUrl) {
         try {
             const icon = await this.loadImage(imageUrl);
@@ -141,11 +90,7 @@ export default {
         }
     },
 
-    /**
-     * Load an image from a URL
-     * @param {*} imageUrl
-     * @returns
-     */
+    // Load an image
     loadImage(imageUrl) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -159,11 +104,7 @@ export default {
         });
     },
 
-    /**
-     * Add a draw control to the map
-     * @param {*} map
-     * @param {*} options
-     */
+    // Add a draw control to the map
     addDrawControl(map, options) {
         const draw = new MapboxDraw(options);
         map.addControl(draw);
