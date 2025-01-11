@@ -1,5 +1,6 @@
 import maplibregl from "maplibre-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import { bearing } from "@turf/turf";
 
 MapboxDraw.constants.classes.CONTROL_BASE = "maplibregl-ctrl";
 MapboxDraw.constants.classes.CONTROL_PREFIX = "maplibregl-ctrl-";
@@ -10,12 +11,13 @@ MapboxDraw.constants.classes.CONTROL_GROUP = "maplibregl-ctrl-group";
  */
 export default {
     // Create a new map
-    createMap(container, center = [0, 0], zoom = 1) {
+    createMap(container, center = [0, 0], zoom = 1, bearing = 0) {
         return new maplibregl.Map({
             container: container,
             style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
             center: center,
             zoom: zoom,
+            bearing: bearing,
             antialias: true,
             hash: "map",
             glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
@@ -47,22 +49,27 @@ export default {
         source,
         type = "circle",
         layoutOptions = {},
-        paintOptions = {}
+        paintOptions = {},
+        filterOptions = []
     ) {
         const layerConfig = {
             id: id,
             source: source,
-            type: type,
+            type: type
         };
 
         layerConfig.layout = layoutOptions;
         layerConfig.paint = paintOptions;
+
+        if (filterOptions.length > 0) layerConfig.filter = filterOptions;
 
         map.addLayer(layerConfig);
     },
 
     // Update the source data
     updateSource(map, id, features) {
+        console.log(features);
+
         const source = map.getSource(id);
         if (source) {
             source.setData({

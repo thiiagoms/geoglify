@@ -4,157 +4,109 @@ import proj4 from "proj4";
 
 const ZOOM_THRESHOLD = 14;
 
-/**
- * Helper functions for the ships
- */
 export default {
-    /**
-     * Remove <em> tags from a string
-     * @param {string} str - The string to process
-     * @returns {string} - The string without <em> tags
-     */
-    removeEmTags(str) {
-        return str.replace(/<\/?em>/g, "");
-    },
-
-    /**
-     * Generate properties for the ship based on available data
-     * @param {Object} ship - The ship data object
-     * @returns {Object} - The properties to be used in GeoJSON for the ship
-     */
+    // Generate properties for the ship based on available data
     generateShipProperties(ship) {
-        const name = ship.name ? this.removeEmTags(ship.name) : "N/A";
-
+        const name = ship.name ? ship.name : "N/A";
         const priority = ship.cargo_category_priority
             ? -ship.cargo_category_priority
             : 0;
-
-        const color = ship.cargo_category_color
-            ? ship.cargo_category_color
-            : "#000000";
+        const color = ship.cargo_category_color || "#000000";
 
         return {
             mmsi: ship.mmsi,
-            route: ship.route,
             ...(name && { name }),
             ...(color && { color }),
-            ...(ship.hdg !== undefined && { hdg: ship.hdg }),
-            ...(ship.hdg && ship.hdg != 511
-                ? { image: "shipIcon", priority: priority }
-                : { image: "circleIcon", priority: priority * 1000 }),
+            hdg: ship.hdg ?? 511,
+            image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon",
+            priority: ship.hdg && ship.hdg !== 511 ? priority : priority * 1000,
         };
     },
 
-    /**
-     * Get UTM zone from longitude
-     * @param {number} lon_deg - Longitude in degrees
-     * @returns {number} - UTM zone
-     */
+    // Get UTM zone from longitude
     utmzone_from_lon(lon_deg) {
         return 1 + Math.floor((lon_deg + 180) / 6);
     },
 
-    /**
-     * Set projection definition based on longitude
-     * @param {number} lon_deg - Longitude in degrees
-     * @returns {string} - Projection definition
-     */
+    // Set projection definition based on longitude
     proj4_setdef(lon_deg) {
         const utm_zone = this.utmzone_from_lon(lon_deg);
         return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
     },
 
-    /**
-     * Convert coordinates to meters
-     * @param {Array} coords - Coordinates [longitude, latitude]
-     * @param {string} target - Target projection
-     * @returns {Array|null} - Converted coordinates or null if invalid
-     */
+    // Convert coordinates to meters
     convertCoordsToMeters(coords, target) {
-        if (!coords || !Array.isArray(coords) || coords.length !== 2) {
+        if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
             console.error("Invalid coordinates:", coords);
             return null;
         }
 
-        const [longitude, latitude] = coords;
-
-        if (!isFinite(longitude) || !isFinite(latitude)) {
-            console.error("Invalid longitude or latitude:", coords);
-            return null;
-        }
-
-        const source =
-            "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
-
+        const source = "+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
         return proj4(source, target, coords);
     },
 
-    /**
-     * Convert coordinates to WGS84
-     * @param {Array} coords - Coordinates [x, y]
-     * @param {string} source - Source projection
-     * @returns {Array|null} - Converted coordinates or null if invalid
-     */
+    // Convert coordinates to WGS84
     convertCoordsToWGS84(coords, source) {
-        if (!coords || !Array.isArray(coords) || coords.length !== 2) {
+        if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
             console.error("Invalid coordinates:", coords);
             return null;
         }
 
-        const [x, y] = coords;
-
-        if (!isFinite(x) || !isFinite(y)) {
-            console.error("Invalid x or y:", coords);
-            return null;
-        }
-
-        const target =
-            "+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
-
+        const target = "+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
         return proj4(source, target, coords);
     },
 
-    /**
-     * Create a feature collection for the ships
-     * @param {Array} ships - Array of ship objects
-     * @returns {Array} - An array of GeoJSON features for the ships
-     */
-    createShipFeatures(ships) {
-        return ships
-            .map((ship) => {
-                const shipProperties = this.generateShipProperties(ship);
-                const geojsonSkeleton = this.createShipGeoJson(ship);
-
-                return [
-                    {
-                        type: "Feature",
-                        geometry: JSON.parse(ship.geojson),
-                        properties: shipProperties,
-                    },
-                    {
-                        type: "Feature",
-                        geometry: geojsonSkeleton,
-                        properties: {
-                            mmsi: ship.mmsi,
-                            color: shipProperties.color,
-                            image: "skeletonIcon",
-                        },
-                    },
-                ];
-            })
-            .flat();
+    // Calculate the centroid of a geometry
+    calculateCentroid(geometry) {
+        if (geometry.type === "Polygon") {
+            return turf.centroid(turf.polygon(geometry.coordinates)).geometry
+                .coordinates;
+        } else if (geometry.type === "Point") {
+            return geometry.coordinates;
+        }
+        return null;
     },
 
-    /**
-     * Update an existing ship feature with new data
-     * @param {Object} existingFeature - Existing GeoJSON feature of the ship
-     * @param {Object} ship - Updated ship data
-     * @returns {Object} - Updated GeoJSON feature
-     */
+    // Create a collection of GeoJSON features for the ships
+    createShipFeatures(ships) {
+        return ships.flatMap((ship) => {
+            const shipProperties = this.generateShipProperties(ship);
+            const { geometry, centroid } = this.createShipGeoJson(ship);
+
+            return [
+                {
+                    type: "Feature",
+                    geometry: JSON.parse(ship.geojson),
+                    properties: shipProperties,
+                },
+                {
+                    type: "Feature",
+                    geometry,
+                    properties: {
+                        mmsi: ship.mmsi,
+                        color: shipProperties.color,
+                        image: "skeletonIcon",
+                    },
+                },
+                {
+                    type: "Feature",
+                    geometry: {
+                        type: "Point",
+                        coordinates: centroid,
+                    },
+                    properties: {
+                        mmsi: ship.mmsi,
+                        name: shipProperties.name,
+                        hdg: shipProperties.hdg,
+                    },
+                },
+            ];
+        });
+    },
+
+    // Update an existing feature with new data
     updateShipFeature(existingFeature, ship) {
         const updatedProperties = this.generateShipProperties(ship);
-
-        // Update properties and geometry if needed
         existingFeature.properties = {
             ...existingFeature.properties,
             ...updatedProperties,
@@ -167,22 +119,26 @@ export default {
         return existingFeature;
     },
 
+    // Create GeoJSON for the ship (skeleton or circle)
     createShipGeoJson(ship) {
-        let { dim_a, dim_b, dim_c, dim_d, geojson, hdg } = ship;
-
-        if (!lon || !lat) {
-            return null;
-        }
-
+        const {
+            dim_a = 10,
+            dim_b = 10,
+            dim_c = 5,
+            dim_d = 5,
+            geojson,
+            hdg,
+        } = ship;
         const [longitude, latitude] = JSON.parse(geojson).coordinates;
 
-        if (dim_a === undefined || dim_a === null) dim_a = 50;
-        if (dim_b === undefined || dim_b === null) dim_b = 50;
-        if (dim_c === undefined || dim_c === null) dim_c = 10;
-        if (dim_d === undefined || dim_d === null) dim_d = 10;
+        if (!isFinite(longitude) || !isFinite(latitude)) {
+            console.error("Invalid longitude or latitude:", geojson);
+            return { geometry: null, centroid: null };
+        }
 
+        let geometry;
         if (hdg && hdg !== 511) {
-            return this.createSkeletonGeoJson(
+            geometry = this.createSkeletonGeoJson(
                 longitude,
                 latitude,
                 dim_a,
@@ -192,22 +148,15 @@ export default {
                 hdg
             );
         } else {
-            let radius = Math.max((dim_a + dim_b) / 2, (dim_c, dim_d) / 2);
-            return this.createCircleGeoJson(longitude, latitude, radius);
+            const radius = Math.max((dim_a + dim_b) / 2, (dim_c + dim_d) / 2);
+            geometry = this.createCircleGeoJson(longitude, latitude, radius);
         }
+
+        const centroid = this.calculateCentroid(geometry);
+        return { geometry, centroid };
     },
 
-    /**
-     * Create a skeleton GeoJSON feature
-     * @param {number} longitude - Longitude
-     * @param {number} latitude - Latitude
-     * @param {number} lengthA - Length A
-     * @param {number} lengthB - Length B
-     * @param {number} lengthC - Length C
-     * @param {number} lengthD - Length D
-     * @param {number} heading - Heading
-     * @returns {Object} - GeoJSON geometry
-     */
+    // Create a skeleton GeoJSON for the ship
     createSkeletonGeoJson(
         longitude,
         latitude,
@@ -217,77 +166,51 @@ export default {
         lengthD,
         heading
     ) {
-        // Set the target projection based on the longitude
         const targetProjection = this.proj4_setdef(longitude);
-
-        // Calculate a threshold and center middle for further offset calculations
-        const threshold = (lengthA + lengthB) * 0.1;
-        const centerMiddle = (lengthC + lengthD) / 2;
-
-        // Define offsets for the skeleton vertices
-        const offsets = [
-            { x: -lengthC, y: -lengthB },
-            { x: -lengthC, y: lengthA - threshold },
-            { x: lengthD - centerMiddle, y: lengthA },
-            { x: lengthD, y: lengthA - threshold },
-            { x: lengthD, y: -lengthB },
-            { x: -lengthC, y: -lengthB },
-        ];
-
-        // Convert the geographic coordinates to meters
         const centerInMeters = this.convertCoordsToMeters(
             [longitude, latitude],
             targetProjection
         );
 
-        // Translate and rotate the coordinates based on the offsets
+        const offsets = [
+            { x: -lengthC, y: -lengthB },
+            { x: -lengthC, y: lengthA - (lengthA + lengthB) * 0.1 },
+            { x: lengthD - (lengthC + lengthD) / 2, y: lengthA },
+            { x: lengthD, y: lengthA - (lengthA + lengthB) * 0.1 },
+            { x: lengthD, y: -lengthB },
+            { x: -lengthC, y: -lengthB },
+        ];
+
         const rotatedCoordinates = offsets.map(({ x, y }) => {
-            const adjustedCoordinatesInMeters = [
+            const adjustedCoords = [
                 centerInMeters[0] + x,
                 centerInMeters[1] + y,
             ];
-
-            // Convert back to geographic coordinates (WGS84)
-            return this.convertCoordsToWGS84(
-                adjustedCoordinatesInMeters,
-                targetProjection
-            );
+            return this.convertCoordsToWGS84(adjustedCoords, targetProjection);
         });
 
-        // Create a polygon using the rotated coordinates
         const polygon = turf.polygon([rotatedCoordinates]);
-
-        // Rotate the polygon according to the heading
-        const options = { pivot: [longitude, latitude] };
-        const rotatedPolygon = turf.transformRotate(polygon, heading, options);
+        const rotatedPolygon = turf.transformRotate(polygon, heading, {
+            pivot: [longitude, latitude],
+        });
 
         return rotatedPolygon.geometry;
     },
 
-    /**
-     * Create a circle GeoJSON feature
-     * @param {number} longitude - Longitude
-     * @param {number} latitude - Latitude
-     * @param {number} radius - Radius in meters
-     * @returns {Object} - GeoJSON geometry
-     */
+    // Create a circle GeoJSON for the ship
     createCircleGeoJson(longitude, latitude, radius) {
-        const center = [longitude, latitude];
-        const options = { steps: 64, units: "meters" };
-        const circle = turf.circle(center, radius, options);
+        const circle = turf.circle([longitude, latitude], radius, {
+            steps: 64,
+            units: "meters",
+        });
         return circle.geometry;
     },
 
-    /**
-     * Add a layer for ships with skeletons around each ship's position
-     * @param {Object} map - The Map instance
-     * @param {string} id - The layer ID
-     * @param {Object} source - The data source for the ships
-     */
+    // Add a ship layer to the map
     addLayer(map, id, source) {
         const paintOptions = {
             "icon-color": ["get", "color"],
-            "text-color": "#000000",
+            "text-color": "#FF0000",
             "text-halo-color": "#fff",
             "text-halo-width": 2,
         };
@@ -296,71 +219,10 @@ export default {
             "icon-rotate": ["get", "hdg"],
             "icon-rotation-alignment": "map",
             "icon-image": ["get", "image"],
-            "icon-allow-overlap": false,
             "icon-size": 0.8,
-            "icon-overlap": "always",
-            "icon-ignore-placement": false,
-            "text-field": ["get", "name"],
-            "text-font": ["Open Sans Bold"],
-            "text-size": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                10,
-                0,
-                11,
-                ["*", ["^", ["-", 11, map.getZoom()], 2], ["get", "textsize"]],
-                12,
-                ["*", ["^", ["-", 12, map.getZoom()], 2], ["get", "textsize"]],
-                13,
-                ["*", ["^", ["-", 13, map.getZoom()], 2], ["get", "textsize"]],
-                14,
-                ["*", ["^", ["-", 14, map.getZoom()], 2], ["get", "textsize"]],
-                15,
-                ["*", ["^", ["-", 15, map.getZoom()], 2], ["get", "textsize"]],
-                16,
-                ["*", ["^", ["-", 16, map.getZoom()], 2], ["get", "textsize"]],
-                17,
-                ["*", ["^", ["-", 17, map.getZoom()], 2], ["get", "textsize"]],
-                18,
-                ["*", ["^", ["-", 18, map.getZoom()], 2], ["get", "textsize"]],
-                19,
-                ["*", ["^", ["-", 19, map.getZoom()], 2], ["get", "textsize"]],
-                20,
-                ["*", ["^", ["-", 20, map.getZoom()], 2], ["get", "textsize"]],
-                21,
-                ["*", ["^", ["-", 21, map.getZoom()], 2], ["get", "textsize"]],
-                22,
-                ["*", ["^", ["-", 22, map.getZoom()], 2], ["get", "textsize"]],
-                23,
-                ["*", ["^", ["-", 23, map.getZoom()], 2], ["get", "textsize"]],
-                24,
-                ["*", ["^", ["-", 24, map.getZoom()], 2], ["get", "textsize"]],
-                25,
-                ["*", ["^", ["-", 25, map.getZoom()], 2], ["get", "textsize"]],
-                26,
-                ["*", ["^", ["-", 26, map.getZoom()], 2], ["get", "textsize"]],
-                27,
-                ["*", ["^", ["-", 27, map.getZoom()], 2], ["get", "textsize"]],
-                28,
-                ["*", ["^", ["-", 28, map.getZoom()], 2], ["get", "textsize"]],
-                29,
-                ["*", ["^", ["-", 29, map.getZoom()], 2], ["get", "textsize"]],
-                30,
-                ["*", ["^", ["-", 30, map.getZoom()], 2], ["get", "textsize"]],
-            ],
-            "text-offset": [0, 1],
-            "text-transform": "uppercase",
-            "text-variable-anchor": ["top", "bottom", "left"],
-            "text-radial-offset": 0.1,
-            "text-allow-overlap": false,
-            "text-ignore-placement": false,
-            "text-letter-spacing": 0.05,
             "symbol-sort-key": ["to-number", ["get", "priority"]],
-            visibility: map.getZoom() > ZOOM_THRESHOLD ? "none" : "visible",
+            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "none" : "visible",
         };
-
-        const zoom = map.getZoom();
 
         MapHelper.addLayer(
             map,
@@ -371,267 +233,203 @@ export default {
             paintOptions
         );
 
-        const skeletonFillLayoutOptions = {
-            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
-        };
+        // Add skeleton layers (polygon and line)
+        this.addSkeletonLayers(map, id, source);
 
-        const skeletonLineLayoutOptions = {
-            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
-            "line-cap": "round",
-            "line-join": "round",
-        };
+        // Add text layer centered on the ship
+        this.addTextLayer(map, id, source);
 
-        const skeletonPaintOptions = {
-            "fill-color": ["get", "color"],
-            "fill-opacity": 1,
-        };
+        // Update Text HDG
+        this.updateTextHdg(map, id);
 
-        // Add a polygon skeleton around each ship
+        // Update layer visibility on zoom
+        map.on("zoom", () => this.updateLayerVisibility(map, id));
+
+        // Update Text HDG on rotate
+        map.on("rotate", () => this.updateTextHdg(map, id));
+    },
+
+    // Add skeleton layers (polygon and line)
+    addSkeletonLayers(map, id, source) {
         MapHelper.addLayer(
             map,
             `${id}-polygon-skeleton`,
             source,
             "fill",
-            skeletonFillLayoutOptions,
-            skeletonPaintOptions
+            {
+                visibility:
+                    map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
+            },
+            {
+                "fill-color": ["get", "color"],
+                "fill-opacity": 1,
+            }
         );
 
-        // Add a line skeleton around each ship
         MapHelper.addLayer(
             map,
             `${id}-line-skeleton`,
             source,
             "line",
-            skeletonLineLayoutOptions,
+            {
+                visibility:
+                    map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
+                "line-cap": "round",
+                "line-join": "round",
+            },
             {
                 "line-color": "#263238",
                 "line-width": 2,
             }
         );
+    },
 
-        // Add a text label for each ship
+    // Add text layer centered on the ship
+    addTextLayer(map, id, source) {
+        const zoom = map.getZoom();
+
+        // Add text layer centered on the ship
         MapHelper.addLayer(
             map,
-            `${id}-text`,
+            `${id}-text-centroid`,
             source,
             "symbol",
             {
                 "text-field": ["get", "name"],
                 "text-font": ["Open Sans Bold"],
-                "text-size": [
-                    "interpolate",
-                    ["linear"],
-                    ["zoom"],
-                    10,
-                    0,
-                    11,
-                    [
-                        "*",
-                        ["^", ["-", 11, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    12,
-                    [
-                        "*",
-                        ["^", ["-", 12, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    13,
-                    [
-                        "*",
-                        ["^", ["-", 13, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    14,
-                    [
-                        "*",
-                        ["^", ["-", 14, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    15,
-                    [
-                        "*",
-                        ["^", ["-", 15, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    16,
-                    [
-                        "*",
-                        ["^", ["-", 16, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    17,
-                    [
-                        "*",
-                        ["^", ["-", 17, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    18,
-                    [
-                        "*",
-                        ["^", ["-", 18, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    19,
-                    [
-                        "*",
-                        ["^", ["-", 19, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    20,
-                    [
-                        "*",
-                        ["^", ["-", 20, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    21,
-                    [
-                        "*",
-                        ["^", ["-", 21, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    22,
-                    [
-                        "*",
-                        ["^", ["-", 22, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    23,
-                    [
-                        "*",
-                        ["^", ["-", 23, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    24,
-                    [
-                        "*",
-                        ["^", ["-", 24, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    25,
-                    [
-                        "*",
-                        ["^", ["-", 25, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    26,
-                    [
-                        "*",
-                        ["^", ["-", 26, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    27,
-                    [
-                        "*",
-                        ["^", ["-", 27, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    28,
-                    [
-                        "*",
-                        ["^", ["-", 28, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    29,
-                    [
-                        "*",
-                        ["^", ["-", 29, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                    30,
-                    [
-                        "*",
-                        ["^", ["-", 30, map.getZoom()], 2],
-                        ["get", "textsize"],
-                    ],
-                ],
-                "text-offset": [0, 1],
-                "text-variable-anchor": ["top", "bottom", "left"],
+                "text-size": this.calculateTextSize(map),
+                "text-offset": [0, 0],
+                "text-rotate": ["get", "hdg"],
+                "text-rotation-alignment": "map",
+                "text-anchor": "center",
                 "text-transform": "uppercase",
-                "text-radial-offset": 0.1,
-                "text-allow-overlap": false,
-                "text-ignore-placement": false,
-                "text-letter-spacing": 0.05,
-                "symbol-sort-key": ["to-number", ["get", "priority"]],
-                visibility: map.getZoom() > ZOOM_THRESHOLD ? "visible" : "none",
+                visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
             },
             {
                 "text-color": "#000000",
                 "text-halo-color": "#fff",
                 "text-halo-width": 2,
-            }
+            },
+            ["has", "name"]
+        );
+    },
+
+    // Calculate text size based on zoom level
+    calculateTextSize(map) {
+        return [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            10,
+            0,
+            11,
+            ["*", ["^", ["-", 11, map.getZoom()], 2], ["get", "textsize"]],
+            12,
+            ["*", ["^", ["-", 12, map.getZoom()], 2], ["get", "textsize"]],
+            13,
+            ["*", ["^", ["-", 13, map.getZoom()], 2], ["get", "textsize"]],
+            14,
+            ["*", ["^", ["-", 14, map.getZoom()], 2], ["get", "textsize"]],
+            15,
+            ["*", ["^", ["-", 15, map.getZoom()], 2], ["get", "textsize"]],
+            16,
+            ["*", ["^", ["-", 16, map.getZoom()], 2], ["get", "textsize"]],
+            17,
+            ["*", ["^", ["-", 17, map.getZoom()], 2], ["get", "textsize"]],
+            18,
+            ["*", ["^", ["-", 18, map.getZoom()], 2], ["get", "textsize"]],
+            19,
+            ["*", ["^", ["-", 19, map.getZoom()], 2], ["get", "textsize"]],
+            20,
+            ["*", ["^", ["-", 20, map.getZoom()], 2], ["get", "textsize"]],
+            21,
+            ["*", ["^", ["-", 21, map.getZoom()], 2], ["get", "textsize"]],
+            22,
+            ["*", ["^", ["-", 22, map.getZoom()], 2], ["get", "textsize"]],
+            23,
+            ["*", ["^", ["-", 23, map.getZoom()], 2], ["get", "textsize"]],
+            24,
+            ["*", ["^", ["-", 24, map.getZoom()], 2], ["get", "textsize"]],
+            25,
+            ["*", ["^", ["-", 25, map.getZoom()], 2], ["get", "textsize"]],
+            26,
+            ["*", ["^", ["-", 26, map.getZoom()], 2], ["get", "textsize"]],
+            27,
+            ["*", ["^", ["-", 27, map.getZoom()], 2], ["get", "textsize"]],
+            28,
+            ["*", ["^", ["-", 28, map.getZoom()], 2], ["get", "textsize"]],
+            29,
+            ["*", ["^", ["-", 29, map.getZoom()], 2], ["get", "textsize"]],
+            30,
+            ["*", ["^", ["-", 30, map.getZoom()], 2], ["get", "textsize"]],
+        ];
+    },
+
+    // Update layer visibility based on zoom level
+    updateLayerVisibility(map, id) {
+        const zoom = map.getZoom();
+
+        // Update the visibility of the ship layer (icon and text)
+        map.setLayoutProperty(
+            id,
+            "visibility",
+            zoom >= ZOOM_THRESHOLD ? "none" : "visible"
         );
 
-        // Change the cursor to a pointer when the mouse is over the ship layer
-        map.on("mouseenter", `${id}`, () => {
-            map.getCanvas().style.cursor = "pointer";
-        });
-
-        // Change the cursor back to the default when the mouse leaves the ship layer
-        map.on("mouseleave", `${id}`, () => {
-            map.getCanvas().style.cursor = "";
-        });
-
-        // Update the visibility of the layers based on the zoom level
-        map.on("zoom", () => {
-            const zoom = map.getZoom();
-
-            map.setLayoutProperty(
-                id,
-                "visibility",
-                zoom > ZOOM_THRESHOLD ? "none" : "visible"
-            );
-
-            map.setLayoutProperty(
-                `${id}-polygon-skeleton`,
-                "visibility",
-                zoom >= ZOOM_THRESHOLD ? "visible" : "none"
-            );
-
-            map.setLayoutProperty(
-                `${id}-line-skeleton`,
-                "visibility",
-                zoom >= ZOOM_THRESHOLD ? "visible" : "none"
-            );
-
-            map.setLayoutProperty(
-                `${id}-text`,
-                "visibility",
-                zoom > ZOOM_THRESHOLD ? "visible" : "none"
-            );
-        });
+        // Update the visibility of the ship layer (skeleton and text centroid)
+        map.setLayoutProperty(
+            `${id}-polygon-skeleton`,
+            "visibility",
+            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
+        );
+        map.setLayoutProperty(
+            `${id}-line-skeleton`,
+            "visibility",
+            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
+        );
+        map.setLayoutProperty(
+            `${id}-text-centroid`,
+            "visibility",
+            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
+        );
     },
 
-    /**
-     * Remove a layer and its source from the map
-     * @param {Object} map - The Map instance
-     * @param {string} id - The layer ID
-     */
+    updateTextHdg(map, id) {
+        // Get the current bearing of the map
+        let bearing = map.getBearing();
+
+        // Update the text-rotate property based on the hdg value
+        map.setLayoutProperty(`${id}-text-centroid`, "text-rotate", [
+            "case",
+            ["all", ["has", "hdg"], ["!=", ["get", "hdg"], null]],
+            [
+                "case",
+                ["==", ["get", "hdg"], 511], // Check if hdg is 511
+                bearing, // Use the bearing of the map
+                [
+                    "case",
+                    ["<", ["%", ["+", ["get", "hdg"], 90 + bearing], 360], 180], // Check if angle is good for legibility
+                    ["+", ["%", ["+", ["get", "hdg"], 90], 360], 180], // Adjust the angle to be more legible
+                    ["%", ["+", ["get", "hdg"], 90], 360], //otherwise, use the hdg value
+                ],
+            ],
+            bearing, // Use the bearing of the map
+        ]);
+    },
+
+    // Remove layers and sources from the map
     removeLayers(map, id) {
-        // Check if the layer exists
-        if (!map.getLayer(id)) {
-            return;
+        if (map.getLayer(id)) {
+            map.removeLayer(id);
+            map.removeLayer(`${id}-line-skeleton`);
+            map.removeLayer(`${id}-polygon-skeleton`);
+            map.removeLayer(`${id}-text-centroid`);
         }
-
-        // Remove the main layer and the skeleton layer
-        map.removeLayer(id);
-        map.removeLayer(`${id}-line-skeleton`);
-        map.removeLayer(`${id}-polygon-skeleton`);
-        map.removeLayer(`${id}-text`);
     },
 
-    /**
-     * Remove a source from the map
-     * @param {*} map
-     * @param {*} id
-     */
     removeSource(map, id) {
-        // Check if the source exists
-        if (!map.getSource(id)) {
-            return;
+        if (map.getSource(id)) {
+            map.removeSource(id);
         }
-
-        // Remove the source
-        map.removeSource(id);
     },
 };

@@ -1,6 +1,7 @@
 <template>
     <div></div>
 </template>
+
 <script>
 import MapHelper from "@/Helpers/MapHelper"; // Imports the MapHelper, which contains helper functions for manipulating the map.
 import ShipHelper from "@/Helpers/ShipHelper"; // Imports the ShipHelper, which contains helper functions for handling ship layers.
@@ -25,6 +26,7 @@ export default {
     },
 
     mounted() {
+        
         // When the component is mounted, checks if 'mapInstance' is available.
         if (this.mapInstance) {
             this.initializeLayer();
@@ -32,9 +34,9 @@ export default {
     },
 
     methods: {
+        // Function responsible for initializing the layer on the map.
         async initializeLayer() {
-            // Function responsible for initializing the layer on the map.
-
+            
             // Adds the ship icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,

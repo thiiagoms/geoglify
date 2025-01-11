@@ -1,5 +1,5 @@
 <script setup>
-import Dashboard from "@/Components/Dashboard.vue";
+import Map from "@/Components/Map.vue";
 import DashboardLayout from "@/Layouts/DashboardLayout.vue";
 import { Head } from "@inertiajs/vue3";
 </script>
@@ -18,6 +18,15 @@ import { Head } from "@inertiajs/vue3";
             />
         </template>
 
-        <Dashboard></Dashboard>
+        <Map></Map>
     </DashboardLayout>
 </template>
+
+<style>
+html, body {
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+</style>
