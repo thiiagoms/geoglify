@@ -1,7 +1,7 @@
 <script>
 import MapHelper from "@/Helpers/MapHelper";
-import { StyleControl } from "@/Helpers/StyleControl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { StyleFlipperControl } from 'maplibre-gl-style-flipper';
 
 // Map styles with URLs and image paths
 const mapStyles = {
@@ -58,7 +58,7 @@ export default {
                 this.$emit("map-instance-created", this.mapRef);
 
                 // Create style control
-                const styleControl = new StyleControl(mapStyles, (styleClass, styleCode) => {
+                const styleControl = new StyleFlipperControl(mapStyles, (styleClass, styleCode) => {
                     console.log(`Style changed to: ${styleClass} (${styleCode})`);
                 });
 
