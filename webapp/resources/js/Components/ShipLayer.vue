@@ -23,10 +23,21 @@ export default {
                 this.initializeLayer();
             }
         },
+
+        selectedShip(newShip) {
+            if (newShip) {
+                this.centerOnMap(newShip);
+            }
+        },
+    },
+
+    computed: {
+        selectedShip() {
+            return this.$store.state.selectedShip;
+        },
     },
 
     mounted() {
-        
         // When the component is mounted, checks if 'mapInstance' is available.
         if (this.mapInstance) {
             this.initializeLayer();
@@ -36,7 +47,6 @@ export default {
     methods: {
         // Function responsible for initializing the layer on the map.
         async initializeLayer() {
-            
             // Adds the ship icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,
@@ -135,6 +145,30 @@ export default {
                 // After the update is completed, resets the 'isUpdating' flag
                 this.isUpdating = false;
             });
+        },
+
+        // Function to center the map on a selected ship
+        centerOnMap(ship) {
+            
+            // Find the ship in the list of ships by MMSI
+            const selectedShip = this.ships.find((s) => s.mmsi === ship.mmsi);
+            
+            // Parse geojson data to get the coordinates
+            const point = JSON.parse(selectedShip.geojson);
+            
+            // Get the coordinates of the ship
+            const coordinates = point.coordinates;
+            
+            // If the ship is found, fly to its position on the map
+            if (coordinates) {
+                this.mapInstance.flyTo({
+                    center: coordinates,
+                    zoom: 17,
+                    bearing: -37.5,
+                    speed: 1.5,
+                    curve: 1,
+                });
+            }
         },
     },
 };

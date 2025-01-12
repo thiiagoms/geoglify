@@ -17,7 +17,7 @@ Route::get('/ships/{id}/photo', [ShipController::class, 'photo'])->name('ships.p
 Route::get('/ships/realtime/all', [ShipController::class, 'all'])->name('ships.realtime.all');
 
 // Real-time ship search
-Route::post('/ships/realtime/search', [ShipController::class, 'search'])->name('ships.realtime.search');
+Route::get('/ships/realtime/search', [ShipController::class, 'search'])->name('ships.realtime.search');
 
 // Real-time ship details
 Route::get('/ships/details/{mmsi}', [ShipController::class, 'details'])->name('ships.details');

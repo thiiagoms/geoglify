@@ -50,42 +50,35 @@ class ShipController extends Controller
     }
 
     /**
-     * Returns a paginated list of ships based on search parameters.
+     * Returns a list of ships based on search text (GET)
      */
     public function search(Request $request)
     {
-        // Pagination and search parameters
-        $itemsPerPage = $request->input('itemsPerPage', 5);
-        $page = $request->input('page', 1);
-        $search = $request->input('search', '');
+        // Define pagination parameters
+        $text = $request->input('text');
 
         // Perform the search directly
-        $realtimeShips = empty(trim($search))
+        $realtimeShips = empty(trim($text))
             ? ShipLatestPositionView::all()
-            : ShipLatestPositionView::search($search)->get();
+            : ShipLatestPositionView::search($text)->get();
 
-        // Total count and apply pagination
-        $total = $realtimeShips->count();
-        $paginatedShips = $realtimeShips->forPage($page, $itemsPerPage)->values();
+        // Filter first 5 ships
+        $realtimeShips = $realtimeShips->take(5);
 
         // Highlight search term in the results
-        $paginatedShips = $paginatedShips->transform(function ($ship) use ($search) {
-            $ship->name = $this->highlightString($ship->name, $search);
-            $ship->imo = $this->highlightString($ship->imo, $search);
-            $ship->callsign = $this->highlightString($ship->callsign, $search);
-            $ship->mmsi = $this->highlightString($ship->mmsi, $search);
-            $ship->destination = $this->highlightString($ship->destination, $search);
-            $ship->country_name = $this->highlightString($ship->country_name, $search);
-            $ship->cargo_name = $this->highlightString($ship->cargo_name, $search);
+        $realtimeShips = $realtimeShips->transform(function ($ship) use ($text) {
+            $ship->name = $this->highlightString($ship->name, $text);
+            $ship->imo = $this->highlightString($ship->imo, $text);
+            $ship->callsign = $this->highlightString($ship->callsign, $text);
+            $ship->mmsi = $this->highlightString($ship->mmsi, $text);
+            $ship->destination = $this->highlightString($ship->destination, $text);
+            $ship->country_name = $this->highlightString($ship->country_name, $text);
+            $ship->cargo_name = $this->highlightString($ship->cargo_name, $text);
             return $ship;
         });
+        
+        return response()->json($realtimeShips);
 
-        // Return JSON response with paginated data
-        return response()->json([
-            'filtered_items' => $realtimeShips,
-            'paginated_items' => $paginatedShips,
-            'total' => $total,
-        ]);
     }
 
     // Helper function to highlight search terms in a string

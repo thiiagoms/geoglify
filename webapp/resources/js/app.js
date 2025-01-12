@@ -5,6 +5,8 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import store from './store';
+import Vuex from "vuex";
 import vuetify from "./vuetify";
 import fetchInterceptor from './fetchInterceptor';
 import CountryFlag from 'vue-country-flag-next';
@@ -21,6 +23,8 @@ createInertiaApp({
             .use(ZiggyVue)
             .use(fetchInterceptor)
             .use(CountryFlag)
+            .use(Vuex)
+            .use(store)
             .mixin({
                 methods: {
                     formatDateTime(value) {

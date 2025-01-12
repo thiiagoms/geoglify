@@ -1,5 +1,10 @@
 <script>
+import ShipSearch from "@/Components/ShipSearch.vue";
+
 export default {
+    components: {
+        ShipSearch,
+    },
     data() {
         return {
             menubar: false,
@@ -49,6 +54,10 @@ export default {
                 <v-app-bar-nav-icon
                     @click.stop="menubar = !menubar"
                 ></v-app-bar-nav-icon>
+            </template>
+
+            <template #append>
+                <ShipSearch class="mr-2"/>
             </template>
         </v-app-bar>
 

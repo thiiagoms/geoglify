@@ -23,7 +23,8 @@ import { Head } from "@inertiajs/vue3";
 </template>
 
 <style>
-html, body {
+html,
+body {
     height: 100%;
     overflow: hidden;
     margin: 0;

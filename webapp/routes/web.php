@@ -5,7 +5,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LdapController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\LayerController;
-use App\Http\Controllers\PortController;
 use App\Http\Controllers\SearouteController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -44,10 +43,6 @@ Route::middleware('auth')->group(function () {
     // Layers
     Route::resource('layers', LayerController::class);
     Route::post('/layers/list', [LayerController::class, 'list'])->name('layers.list');
-
-    // Ports
-    Route::get('/ports/geojson', [PortController::class, 'geojson'])->name('ports.geojson');
-    Route::resource('ports', PortController::class);
 
     // Searoutes
     Route::get('/searoutes/geojson', [SearouteController::class, 'geojson'])->name('searoutes.geojson');
