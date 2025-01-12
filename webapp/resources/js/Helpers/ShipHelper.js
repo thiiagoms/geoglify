@@ -7,16 +7,16 @@ const ZOOM_THRESHOLD = 14;
 export default {
     // Generate properties for the ship based on available data
     generateShipProperties(ship) {
-        const name = ship.name ? ship.name : "N/A";
         const priority = ship.cargo_category_priority
             ? -ship.cargo_category_priority
             : 0;
-        const color = ship.cargo_category_color || "#000000";
 
         return {
             mmsi: ship.mmsi,
-            ...(name && { name }),
-            ...(color && { color }),
+            name: ship.name ? ship.name : "N/A",
+            color: !!ship.cargo_category_color
+                ? ship.cargo_category_color
+                : "#000000",
             hdg: ship.hdg ?? 511,
             image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon",
             priority: ship.hdg && ship.hdg !== 511 ? priority : priority * 1000,
@@ -77,7 +77,13 @@ export default {
                 {
                     type: "Feature",
                     geometry: JSON.parse(ship.geojson),
-                    properties: shipProperties,
+                    properties: {
+                        mmsi: ship.mmsi,
+                        color: shipProperties.color,
+                        hdg: shipProperties.hdg,
+                        image: shipProperties.image,
+                        type: "icon",
+                    },
                 },
                 {
                     type: "Feature",
@@ -85,7 +91,8 @@ export default {
                     properties: {
                         mmsi: ship.mmsi,
                         color: shipProperties.color,
-                        image: "skeletonIcon",
+                        hdg: shipProperties.hdg,
+                        type: "skeleton",
                     },
                 },
                 {
@@ -95,9 +102,9 @@ export default {
                         coordinates: centroid,
                     },
                     properties: {
-                        mmsi: ship.mmsi,
                         name: shipProperties.name,
                         hdg: shipProperties.hdg,
+                        type: "text",
                     },
                 },
             ];
@@ -210,19 +217,20 @@ export default {
     addLayer(map, id, source) {
         const paintOptions = {
             "icon-color": ["get", "color"],
-            "text-color": "#FF0000",
-            "text-halo-color": "#fff",
-            "text-halo-width": 2,
         };
 
         const layoutOptions = {
             "icon-rotate": ["get", "hdg"],
             "icon-rotation-alignment": "map",
             "icon-image": ["get", "image"],
-            "icon-size": 0.8,
+            "icon-size": 1,
+            "icon-allow-overlap": false,
+            "icon-ignore-placement": false,
             "symbol-sort-key": ["to-number", ["get", "priority"]],
             visibility: map.getZoom() >= ZOOM_THRESHOLD ? "none" : "visible",
         };
+
+        const filterOptions = ["all", ["==", ["get", "type"], "icon"]];
 
         MapHelper.addLayer(
             map,
@@ -230,7 +238,8 @@ export default {
             source,
             "symbol",
             layoutOptions,
-            paintOptions
+            paintOptions,
+            filterOptions
         );
 
         // Add skeleton layers (polygon and line)
@@ -251,36 +260,45 @@ export default {
 
     // Add skeleton layers (polygon and line)
     addSkeletonLayers(map, id, source) {
+        let layoutPolygonOptions = {
+            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
+        };
+
+        let paintPolygonOptions = {
+            "fill-color": ["get", "color"],
+            "fill-opacity": 0.1,
+        };
+
+        let filterOptions = ["all", ["==", ["get", "type"], "skeleton"]];
+
         MapHelper.addLayer(
             map,
             `${id}-polygon-skeleton`,
             source,
             "fill",
-            {
-                visibility:
-                    map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
-            },
-            {
-                "fill-color": ["get", "color"],
-                "fill-opacity": 1,
-            }
+            layoutPolygonOptions,
+            paintPolygonOptions,
+            filterOptions
         );
+
+        let layoutLineOptions = {
+            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
+            'line-join': 'round',
+        };
+
+        let paintLineOptions = {
+            "line-color": ["get", "color"],
+            "line-width": 3,
+        };
 
         MapHelper.addLayer(
             map,
             `${id}-line-skeleton`,
             source,
             "line",
-            {
-                visibility:
-                    map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
-                "line-cap": "round",
-                "line-join": "round",
-            },
-            {
-                "line-color": "#263238",
-                "line-width": 2,
-            }
+            layoutLineOptions,
+            paintLineOptions,
+            filterOptions
         );
     },
 
@@ -288,81 +306,37 @@ export default {
     addTextLayer(map, id, source) {
         const zoom = map.getZoom();
 
+        let layoutOptions = {
+            "text-field": ["get", "name"],
+            "text-font": ["Open Sans Bold"],
+            "text-size": 14,
+            "text-rotate": ["get", "hdg"],
+            "text-rotation-alignment": "map",
+            "text-transform": "uppercase",
+            "text-optional": true,
+            'text-anchor': 'center',
+            'text-offset': [0, 0],
+            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
+        };
+
+        let paintOptions = {
+            "text-color": "#000000",
+            "text-halo-color": "#fff",
+            "text-halo-width": 2,
+        };
+
+        let filterOptions = ["all", ["==", ["get", "type"], "text"]];
+
         // Add text layer centered on the ship
         MapHelper.addLayer(
             map,
             `${id}-text-centroid`,
             source,
             "symbol",
-            {
-                "text-field": ["get", "name"],
-                "text-font": ["Open Sans Bold"],
-                "text-size": this.calculateTextSize(map),
-                "text-offset": [0, 0],
-                "text-rotate": ["get", "hdg"],
-                "text-rotation-alignment": "map",
-                "text-anchor": "center",
-                "text-transform": "uppercase",
-                visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
-            },
-            {
-                "text-color": "#000000",
-                "text-halo-color": "#fff",
-                "text-halo-width": 2,
-            },
-            ["has", "name"]
+            layoutOptions,
+            paintOptions,
+            filterOptions
         );
-    },
-
-    // Calculate text size based on zoom level
-    calculateTextSize(map) {
-        return [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            10,
-            0,
-            11,
-            ["*", ["^", ["-", 11, map.getZoom()], 2], ["get", "textsize"]],
-            12,
-            ["*", ["^", ["-", 12, map.getZoom()], 2], ["get", "textsize"]],
-            13,
-            ["*", ["^", ["-", 13, map.getZoom()], 2], ["get", "textsize"]],
-            14,
-            ["*", ["^", ["-", 14, map.getZoom()], 2], ["get", "textsize"]],
-            15,
-            ["*", ["^", ["-", 15, map.getZoom()], 2], ["get", "textsize"]],
-            16,
-            ["*", ["^", ["-", 16, map.getZoom()], 2], ["get", "textsize"]],
-            17,
-            ["*", ["^", ["-", 17, map.getZoom()], 2], ["get", "textsize"]],
-            18,
-            ["*", ["^", ["-", 18, map.getZoom()], 2], ["get", "textsize"]],
-            19,
-            ["*", ["^", ["-", 19, map.getZoom()], 2], ["get", "textsize"]],
-            20,
-            ["*", ["^", ["-", 20, map.getZoom()], 2], ["get", "textsize"]],
-            21,
-            ["*", ["^", ["-", 21, map.getZoom()], 2], ["get", "textsize"]],
-            22,
-            ["*", ["^", ["-", 22, map.getZoom()], 2], ["get", "textsize"]],
-            23,
-            ["*", ["^", ["-", 23, map.getZoom()], 2], ["get", "textsize"]],
-            24,
-            ["*", ["^", ["-", 24, map.getZoom()], 2], ["get", "textsize"]],
-            25,
-            ["*", ["^", ["-", 25, map.getZoom()], 2], ["get", "textsize"]],
-            26,
-            ["*", ["^", ["-", 26, map.getZoom()], 2], ["get", "textsize"]],
-            27,
-            ["*", ["^", ["-", 27, map.getZoom()], 2], ["get", "textsize"]],
-            28,
-            ["*", ["^", ["-", 28, map.getZoom()], 2], ["get", "textsize"]],
-            29,
-            ["*", ["^", ["-", 29, map.getZoom()], 2], ["get", "textsize"]],
-            30,
-            ["*", ["^", ["-", 30, map.getZoom()], 2], ["get", "textsize"]],
-        ];
     },
 
     // Update layer visibility based on zoom level

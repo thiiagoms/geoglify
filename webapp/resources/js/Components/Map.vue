@@ -9,17 +9,17 @@ import { StyleFlipperControl } from "maplibre-gl-style-flipper";
 const mapStyles = {
     "carto-positron": {
         code: "carto-positron",
-        url: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        url: "https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json",
         image: "https://carto.com/help/images/building-maps/basemaps/positron_labels.png",
     },
     "carto-dark": {
         code: "carto-dark",
-        url: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        url: "https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json",
         image: "https://carto.com/help/images/building-maps/basemaps/dark_labels.png",
     },
     "carto-voyager": {
         code: "carto-voyager",
-        url: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+        url: "https://basemaps.cartocdn.com/gl/voyager-nolabels-gl-style/style.json",
         image: "https://carto.com/help/images/building-maps/basemaps/voyager_labels.png",
     },
 };

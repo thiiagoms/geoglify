@@ -14,7 +14,7 @@ export default {
     createMap(container, center = [0, 0], zoom = 1, bearing = 0) {
         return new maplibregl.Map({
             container: container,
-            style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+            style: "https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json",
             center: center,
             zoom: zoom,
             bearing: bearing,
@@ -50,26 +50,22 @@ export default {
         type = "circle",
         layoutOptions = {},
         paintOptions = {},
-        filterOptions = []
+        filterOptions = ['all']
     ) {
         const layerConfig = {
             id: id,
             source: source,
-            type: type
+            type: type,
+            layout: layoutOptions,
+            paint: paintOptions,
+            filter: filterOptions,
         };
-
-        layerConfig.layout = layoutOptions;
-        layerConfig.paint = paintOptions;
-
-        if (filterOptions.length > 0) layerConfig.filter = filterOptions;
 
         map.addLayer(layerConfig);
     },
 
     // Update the source data
     updateSource(map, id, features) {
-        console.log(features);
-
         const source = map.getSource(id);
         if (source) {
             source.setData({
