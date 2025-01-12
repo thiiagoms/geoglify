@@ -58,6 +58,7 @@ export default {
 
                 // Check if the map is loaded and do something
                 this.map.on("load", async () => {
+                    
                     // Create style control
                     const styleControl = new StyleFlipperControl(mapStyles);
 

@@ -308,7 +308,7 @@ export default {
         let layoutOptions = {
             "text-field": ["get", "name"],
             "text-font": ["Open Sans Bold"],
-            "text-size": 22,
+            "text-size": 16,
             "text-rotate": ["get", "hdg"],
             "text-rotation-alignment": "map",
             "text-transform": "uppercase",

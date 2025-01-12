@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ShipLatestPositionView;
 use App\Models\Ship;
-use App\Models\Port;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
@@ -47,126 +46,7 @@ class ShipController extends Controller
     {
         $ship = ShipLatestPositionView::where('mmsi', $mmsi)->first();
 
-        /*
-        $routes = $this->calculateRoutes($ship);
-        $predicted_eta = $this->calculatePredictedEta($ship, $routes['planned']['distance_nm']);
-
-        $ship->routes = $routes;
-        $ship->predicted_eta = $predicted_eta;
-        */
-
         return response()->json($ship);
-    }
-
-    /**
-     * Calculate the predicted ETA for the ship based on the planned route.
-     *
-     * @param  Ship  $ship
-     * @param  float  $distanceNm
-     * @return string
-     */
-    public function calculatePredictedEta($ship, $distanceNm)
-    {
-        // Calculate the average speed of the ship
-        $averageSpeed = $this->calculateAverageSpeed($ship);
-
-        // Check if the average speed is zero or empty
-        if (empty($averageSpeed)) {
-            return null;
-        }
-
-        // Calculate the predicted ETA
-        $predictedEta = now()->addMinutes($distanceNm / $averageSpeed * 60);
-
-        return $predictedEta->format('Y-m-d H:i:s');
-    }
-
-    /**
-     * Calculate the average speed of the ship based on historical positions.
-     *
-     * @param  Ship  $ship
-     * @return float
-     */
-    public function calculateAverageSpeed($ship)
-    {
-        // Calculate the average speed over the last 24 hours
-        $sog = DB::selectOne("
-            SELECT AVG(sog) as avg_sog
-            FROM ship_historical_positions
-            WHERE mmsi = ? AND updated_at >= CURRENT_DATE - INTERVAL '1 day';
-        ", [$ship->mmsi]);
-
-        return (float) $sog->avg_sog;
-    }
-
-    /**
-     * Calculate the planned and real route for the ship.
-     *
-     * @param  Ship  $ship
-     * @return array
-     */
-    public function calculateRoutes($ship)
-    {
-        // Define the destination port
-        $destinationPort = Port::where('name', 'VIGO')->first();
-
-        // Find the closest departure point for the ship
-        $departurePoint = DB::selectOne("
-            SELECT source, target
-            FROM searoutes
-            ORDER BY geom <-> ?
-            LIMIT 1;
-        ", [$ship->geom]);
-
-        // Find the closest destination point
-        $destinationPoint = DB::selectOne("
-            SELECT source, target
-            FROM searoutes
-            ORDER BY geom <-> ?
-            LIMIT 1;
-        ", [$destinationPort->geom]);
-
-        // Calculate the planned route
-        $plannedRoute = DB::select("
-            SELECT ST_AsGeoJSON(ST_LineMerge(ST_Collect(geom))) as path_geom, SUM(cost) as total_cost
-            FROM pgr_dijkstra(
-                'SELECT id, source, target, ST_Length(ST_Transform(geom,3857)) AS cost FROM searoutes',
-                CAST(? AS integer), CAST(? AS integer), directed := false
-            )
-            JOIN searoutes ON searoutes.id = edge;
-        ", [$departurePoint->source, $destinationPoint->source]);
-
-        // Calculate the real route using ship positions and ST_AsGeoJSON
-        $realRoute = DB::selectOne("
-            SELECT 
-                ST_AsGeoJSON(ST_MakeLine(geom)) AS path_geom,
-                ST_Length(ST_Transform(ST_MakeLine(geom), 3857)) AS total_distance
-            FROM (
-                SELECT geom
-                FROM ship_historical_positions
-                WHERE mmsi = ? AND updated_at >= CURRENT_DATE - INTERVAL '1 day'
-                ORDER BY updated_at
-            ) AS ordered_positions;
-        ", [$ship->mmsi]);
-
-        // Distance calculation (nautical miles)
-        $totalCostPlanned = (float) $plannedRoute[0]->total_cost;
-        $distanceNmPlanned = round($totalCostPlanned / 1852, 2);
-
-        $totalDistance = (float) $realRoute->total_distance;
-        $distanceNmReal = round($totalDistance / 1852, 2);
-
-        // Return both routes as GeoJSON
-        return [
-            'planned' => [
-                'geojson' => json_decode($plannedRoute[0]->path_geom),
-                'distance_nm' => $distanceNmPlanned,
-            ],
-            'real' => [
-                'geojson' => json_decode($realRoute->path_geom),
-                'distance_nm' => $distanceNmReal,
-            ]
-        ];
     }
 
     /**
