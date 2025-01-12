@@ -128,14 +128,13 @@ export default {
 
     // Create GeoJSON for the ship (skeleton or circle)
     createShipGeoJson(ship) {
-        const {
-            dim_a = 10,
-            dim_b = 10,
-            dim_c = 5,
-            dim_d = 5,
-            geojson,
-            hdg,
-        } = ship;
+        let dim_a = ship.dim_a ? ship.dim_a : 10;
+        let dim_b = ship.dim_b ? ship.dim_b : 10;
+        let dim_c = ship.dim_c ? ship.dim_c : 5;
+        let dim_d = ship.dim_d ? ship.dim_d : 5;
+        let geojson = ship.geojson ? ship.geojson : null;
+        let hdg = ship.hdg ? ship.hdg : 511;
+
         const [longitude, latitude] = JSON.parse(geojson).coordinates;
 
         if (!isFinite(longitude) || !isFinite(latitude)) {
@@ -283,7 +282,7 @@ export default {
 
         let layoutLineOptions = {
             visibility: map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
-            'line-join': 'round',
+            "line-join": "round",
         };
 
         let paintLineOptions = {
@@ -314,8 +313,8 @@ export default {
             "text-rotation-alignment": "map",
             "text-transform": "uppercase",
             "text-optional": true,
-            'text-anchor': 'center',
-            'text-offset': [0, 0],
+            "text-anchor": "center",
+            "text-offset": [0, 0],
             visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
         };
 
