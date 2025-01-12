@@ -61,8 +61,12 @@ class ProcessShipDataBatch implements ShouldQueue
         // Prepare data for broadcasting
         $broadcastData = $chunk->map(function ($shipData) {
 
-            // Find ship cargo_type_id based on the cargo name
-            $cargoType = CargoType::where('code', (int)($shipData['cargo'] ?? 0))->first();
+            $cargoType = null;
+            
+            // Check if ship prop cargo exists and is not empty
+            if (isset($shipData['cargo']) && !empty($shipData['cargo'])) {
+                $cargoType = CargoType::where('code', (int)($shipData['cargo']))->first();
+            }
 
             // Update or create the ship's general information
             Ship::updateOrCreate(
@@ -76,7 +80,7 @@ class ProcessShipDataBatch implements ShouldQueue
                     'imo' => $shipData['imo'] ?? null,
                     'callsign' => $shipData['callsign'] ?? null,
                     'draught' => $shipData['draught'] ?? null,
-                    'cargo_type_id' => $cargoType ? $cargoType->id : null,
+                    'cargo_type_id' => is_null($cargoType) ? null : $cargoType->id,
                 ])
             );
 
@@ -150,7 +154,7 @@ class ProcessShipDataBatch implements ShouldQueue
     function filterUpdateData($data)
     {
         return array_filter($data, function ($value) {
-            return $value !== '' && $value !== null || is_numeric($value);
+            return $value !== '' && $value !== null;
         });
     }
 }
