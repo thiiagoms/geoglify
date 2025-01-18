@@ -10,7 +10,8 @@ export default defineConfig({
             host: 'localhost',
         },
         watch: {
-            usePolling: true
+            usePolling: true,
+            interval: 1000
         }
     },
     plugins: [

@@ -3,7 +3,7 @@ import ShipLayer from "@/Components/ShipLayer.vue";
 import MapHelper from "@/Helpers/MapHelper";
 import "maplibre-theme/icons.lucide.css";
 import "maplibre-theme/classic.css";
-import { StyleFlipperControl } from "maplibre-gl-style-flipper";
+import StyleFlipperControl from "maplibre-gl-style-flipper";
 
 // Map styles with URLs and image paths
 const mapStyles = {
@@ -44,9 +44,9 @@ export default {
         initializeMap() {
             // Check if the map instance is already created
             if (!this.map) {
-                let zoom = 15;
-                let center = [-8.694322, 41.187891];
-                let bearing = -37.5;
+                let zoom = 2;
+                let center = [0, 0];
+                let bearing = 0;
                 // Create the map instance
                 this.map = MapHelper.createMap("map", center, zoom, bearing);
 
@@ -55,7 +55,7 @@ export default {
 
                 // Add globe projection control
                 MapHelper.addGlobeProjectionControl(this.map);
-
+                
                 // Check if the map is loaded and do something
                 this.map.on("load", async () => {
                     // Create style control

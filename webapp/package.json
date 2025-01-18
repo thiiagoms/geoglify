@@ -29,7 +29,7 @@
         "@vitejs/plugin-vue": "^5.1.2",
         "lodash": "^4.17.21",
         "maplibre-gl": "^5.0.0",
-        "maplibre-gl-style-flipper": "^1.0.1",
+        "maplibre-gl-style-flipper": "^1.0.7",
         "maplibre-theme": "^0.2.0",
         "maplibregl-mapbox-request-transformer": "^0.0.2",
         "moment": "^2.30.1",

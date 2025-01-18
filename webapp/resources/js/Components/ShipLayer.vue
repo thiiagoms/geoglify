@@ -1,5 +1,7 @@
 <template>
-    <div></div>
+    <div style="position: absolute; top: 90px; left: 10px; z-index: 5000;">
+        <v-chip label color="primary">{{ this.ships.length }} ships </v-chip>
+    </div>
 </template>
 
 <script>
@@ -100,7 +102,7 @@ export default {
                     window.Echo.channel("realtime_ships").listen(
                         "ShipPositionUpdated", // The event for updating the ship's position
                         (data) => {
-                            //this.updateShipSource(data); // Updates the source with the received data
+                            this.updateShipSource(data); // Updates the source with the received data
                         }
                     );
                 });
@@ -149,16 +151,15 @@ export default {
 
         // Function to center the map on a selected ship
         centerOnMap(ship) {
-            
             // Find the ship in the list of ships by MMSI
             const selectedShip = this.ships.find((s) => s.mmsi === ship.mmsi);
-            
+
             // Parse geojson data to get the coordinates
             const point = JSON.parse(selectedShip.geojson);
-            
+
             // Get the coordinates of the ship
             const coordinates = point.coordinates;
-            
+
             // If the ship is found, fly to its position on the map
             if (coordinates) {
                 this.mapInstance.flyTo({

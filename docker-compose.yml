@@ -100,6 +100,23 @@ services:
         command: 'node main.js'
         depends_on:
             - webapp
+            
+    ais-decoder:
+        build: ./ais-decoder
+        container_name: gaisdecoder
+        working_dir: /opt/ais-decoder
+        restart: always
+        environment:
+            - NODE_ENV=production
+            - API_URL=http://webapp/api/ships
+            - AIS_ANTENNA_HOST=153.44.253.27
+            - AIS_ANTENNA_PORT=5631
+            - BATCH_SIZE=10
+            - SEND_INTERVAL=1000
+            - MAX_RECONNECT_ATTEMPTS=10
+        command: 'node main.js'
+        depends_on:
+            - webapp
 
     martin:
         image: ghcr.io/maplibre/martin:latest
