@@ -53,7 +53,7 @@ class AntennaClient {
 
     // Process each incoming line (AIS message)
     lineReader.on("line", (message) => {
-        this.decodeAndQueueMessage(message);
+      this.decodeAndQueueMessage(message);
     });
   }
 
@@ -61,10 +61,9 @@ class AntennaClient {
   decodeAndQueueMessage(rawMessage) {
     // Remove the initial metadata (e.g., \s:2573565,c:1737227486*06\)
     let aisPayload = rawMessage.split("\\")[2]; // Extract the part after the second backslash
-    if(!aisPayload) return;
-    
+    if (!aisPayload) return;
+
     // Replace text "!BSVDM" with "!AIVDM" to ensure proper decoding
-    console.log("Decoded message: ", aisPayload);
     let decMsg = "";
 
     // Try decoding as an NMEA message
@@ -106,10 +105,7 @@ class AntennaClient {
       cargo: message.cargo || null, // Cargo type
       callsign: message.callsign || null, // Call sign
       draught: message.draught || null, // Draught
-      eta:
-        message.etaDay && message.etaHr && message.etaMin
-          ? `${message.etaDay}/${message.etaMo} ${message.etaHr}:${message.etaMin}`
-          : null, // Estimated Time of Arrival
+      eta: null, // Estimated Time of Arrival
       navstatus: message.navstatus || null, // Navigation status
       rot: message.rot || null, // Rate of Turn
       length: message.length || null, // Ship length
@@ -120,7 +116,6 @@ class AntennaClient {
       utc: message.utc || null, // UTC timestamp
       smi: message.smi || null, // Ship and Mobile Identifier
     };
-    
   }
 
   // Add an event to the queue, updating existing events for the same MMSI
@@ -214,12 +209,17 @@ async function flushEvents() {
   const chunk = eventQueue.slice(0, BATCH_SIZE); // Extract a batch from the queue
 
   try {
+    console.info(
+      `Sending ${chunk.length} of ${eventQueue.length} ships to the API`
+    );
+
     const response = await axios.post(API_URL, chunk, {
       headers: { "Content-Type": "application/json" },
     });
-    console.info(
-      `Sent ${chunk.length} of ${eventQueue.length} ships to the API. Status: ${response.status}`
-    );
+
+    if (response.status === 202) {
+      console.info("Ships sent successfully to the API");
+    }
 
     // Remove the sent chunk from the queue only if the API request is successful
     eventQueue.splice(0, chunk.length);

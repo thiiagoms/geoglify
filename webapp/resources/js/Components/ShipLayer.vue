@@ -1,5 +1,5 @@
 <template>
-    <div style="position: absolute; top: 90px; left: 10px; z-index: 5000;">
+    <div style="position: absolute; top: 90px; left: 10px; z-index: 5000">
         <v-chip label color="primary">{{ this.ships.length }} ships </v-chip>
     </div>
 </template>
@@ -15,6 +15,7 @@ export default {
         return {
             ships: [], // List of ships that will be updated with data from the server.
             isUpdating: false, // Flag to check if an update is already in progress. Prevents simultaneous updates.
+            updateQueue: [], // Queue to store updates to be processed sequentially.
         };
     },
 
@@ -49,103 +50,127 @@ export default {
     methods: {
         // Function responsible for initializing the layer on the map.
         async initializeLayer() {
-            // Adds the ship icon to the map
+            // Add the ship icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "shipIcon",
                 "/images/boat-sdf.png"
             );
 
-            // Adds the circle icon to the map
+            // Add the circle icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "circleIcon",
                 "/images/circle-sdf.png"
             );
 
-            // Removes existing layers and sources to ensure no overlapping
+            // Remove existing layers and sources to ensure no overlapping
             ShipHelper.removeLayers(this.mapInstance, "shipLayer");
             ShipHelper.removeSource(this.mapInstance, "shipSource");
 
-            // Creates the source for ships
+            // Create the source for ships
             MapHelper.addSource(this.mapInstance, "shipSource");
 
-            // Adds the ships layer using the same source ID
+            // Add the ships layer using the same source ID
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
-            // Adds the ships layer using the same source ID
+            // Handle ship clicks
             this.mapInstance.on("click", "shipLayer", (e) => {
-                const ship = e.features[0].properties; // Gets the properties of the clicked ship
-                this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+                const ship = e.features[0].properties;
+                this.$emit("ship-clicked", ship.mmsi);
             });
 
-            // Initializes the skeleton layer for the ships
             this.mapInstance.on("click", "shipLayer-polygon-skeleton", (e) => {
-                const ship = e.features[0].properties; // Gets the properties of the clicked ship
-                this.$emit("ship-clicked", ship.mmsi); // Emits an event with the ship's 'mmsi'
+                const ship = e.features[0].properties;
+                this.$emit("ship-clicked", ship.mmsi);
             });
 
-            // Fetches ship data in real-time from the server
+            // Fetch ship data in real-time from the server
             fetch("/api/ships/realtime/all")
-                .then((response) => response.json()) // Converts the response to JSON format
+                .then((response) => response.json())
                 .then((data) => {
-                    this.ships = data; // Updates the ship list with the received data
+                    // Directly pass the API data to updateShipSource
+                    this.updateShipSource(data);
                 })
-                .catch(() => {
-                    this.ships = []; // If there's an error, resets the ship list to an empty array
+                .catch((error) => {
+                    console.error("API Error:", error);
+                    this.ships = []; // Reset the ship list on error
                 })
                 .finally(() => {
-                    // After the data is loaded, calls the function to update the ship source
-                    this.updateShipSource(this.ships);
-
-                    // Listens for real-time updates on the ship's position
+                    // Listen for real-time updates
                     window.Echo.channel("realtime_ships").listen(
-                        "ShipPositionUpdated", // The event for updating the ship's position
+                        "ShipPositionUpdated",
                         (data) => {
-                            this.updateShipSource(data); // Updates the source with the received data
+                            this.updateShipSource(data);
                         }
                     );
                 });
         },
 
-        // Function to update the map source with new ship data
         updateShipSource(data) {
-            // If an update is already in progress, do nothing to avoid overloading with updates.
+            // Adiciona os novos dados à fila
+            this.updateQueue.push(data);
+
+            // Se já estiver processando, retorna
             if (this.isUpdating) return;
 
-            // Marks that the update is in progress
+            // Processa a fila
+            this.processUpdateQueue();
+        },
+
+        processUpdateQueue() {
+            if (this.updateQueue.length === 0) {
+                this.isUpdating = false;
+                return;
+            }
+
             this.isUpdating = true;
 
-            // Uses 'requestAnimationFrame' to ensure the update happens in the next available animation frame, avoiding map freezes.
-            requestAnimationFrame(() => {
-                // Updates the ship list with the new data
-                data.forEach((ship) => {
-                    // Checks if the ship already exists in the list
-                    const shipIndex = this.ships.findIndex(
-                        (s) => s.mmsi === ship.mmsi
-                    );
+            // Pega os próximos dados da fila
+            const data = this.updateQueue.shift();
 
-                    // If the ship exists, updates the ship data
-                    if (shipIndex !== -1) {
-                        this.ships[shipIndex] = ship;
+            requestAnimationFrame(() => {
+                const existingShipsMap = new Map(
+                    this.ships.map((ship) => [ship.mmsi, ship])
+                );
+
+                let updatedFeatures = [];
+
+                data.forEach((ship) => {
+                    const existingShip = existingShipsMap.get(ship.mmsi);
+
+                    if (existingShip) {
+                        Object.assign(existingShip, ship);
+                        updatedFeatures.push(
+                            ShipHelper.createShipFeature(existingShip)
+                        );
                     } else {
-                        // If the ship doesn't exist, adds the new ship data
                         this.ships.push(ship);
+                        updatedFeatures.push(
+                            ShipHelper.createShipFeature(ship)
+                        );
                     }
                 });
 
-                // Creates the features for the ships using the updated data
-                const features = ShipHelper.createShipFeatures(this.ships);
-
-                // Updates the map source with the new or updated features
-                MapHelper.updateSource(
-                    this.mapInstance,
-                    "shipSource",
-                    features
+                // Clean null features
+                updatedFeatures = updatedFeatures.filter(
+                    (feature) => feature !== null
                 );
+                
+                // flat the array
+                updatedFeatures = updatedFeatures.flat();
 
-                // After the update is completed, resets the 'isUpdating' flag
-                this.isUpdating = false;
+                if (updatedFeatures.length > 0) {
+                    console.log("Updated Features:", updatedFeatures);
+                    MapHelper.updateSource(
+                        this.mapInstance,
+                        "shipSource",
+                        updatedFeatures
+                    );
+                }
+
+                // Processa a próxima atualização na fila
+                this.processUpdateQueue();
             });
         },
 

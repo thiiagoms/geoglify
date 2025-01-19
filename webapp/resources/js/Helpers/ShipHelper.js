@@ -66,6 +66,52 @@ export default {
         }
         return null;
     },
+    
+    // Create a collection of GeoJSON features for 1 ship
+    createShipFeature(ship) {
+        const shipProperties = this.generateShipProperties(ship);
+        const { geometry, centroid } = this.createShipGeoJson(ship);
+
+        if (!geometry || !centroid) {
+            return null;
+        }
+
+        return [
+            {
+                type: "Feature",
+                geometry: JSON.parse(ship.geojson),
+                properties: {
+                    mmsi: ship.mmsi,
+                    color: shipProperties.color,
+                    hdg: shipProperties.hdg,
+                    image: shipProperties.image,
+                    type: "icon",
+                },
+            },
+            {
+                type: "Feature",
+                geometry,
+                properties: {
+                    mmsi: ship.mmsi,
+                    color: shipProperties.color,
+                    hdg: shipProperties.hdg,
+                    type: "skeleton",
+                },
+            },
+            {
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: centroid,
+                },
+                properties: {
+                    name: shipProperties.name,
+                    hdg: shipProperties.hdg,
+                    type: "text",
+                },
+            },
+        ];
+    },
 
     // Create a collection of GeoJSON features for the ships
     createShipFeatures(ships) {

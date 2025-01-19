@@ -50,22 +50,20 @@ class ProcessShipDataBatch implements ShouldQueue
             });
     }
 
-    /**
-     * Process a chunk of ship data and broadcast updated information.
-     *
-     * @param \Illuminate\Support\Collection $chunk Collection of ship data
-     * @return void
-     */
     protected function processChunk(Collection $chunk)
     {
-        // Prepare data for broadcasting
         $broadcastData = $chunk->map(function ($shipData) {
-
             $cargoType = null;
-            
-            // Check if ship prop cargo exists and is not empty
+
+            // Check if the 'cargo' field exists and is not empty
             if (isset($shipData['cargo']) && !empty($shipData['cargo'])) {
                 $cargoType = CargoType::where('code', (int)($shipData['cargo']))->first();
+            }
+
+            // Prepare the 'geojson' field
+            $geojson = null;
+            if (isset($shipData['location']) && $this->isValidGeoJSON($shipData['location'])) {
+                $geojson = json_encode($shipData['location']);
             }
 
             // Update or create the ship's general information
@@ -94,7 +92,7 @@ class ProcessShipDataBatch implements ShouldQueue
                     'last_updated' => $shipData['last_updated'] ?? null,
                     'eta' => $shipData['eta'] ?? null,
                     'destination' => $shipData['destination'] ?? null,
-                    'geojson' => isset($shipData['location']) ? json_encode($shipData['location']) : null,
+                    'geojson' => $geojson, // Only updated if $geojson is not null
                 ])
             );
 
@@ -107,14 +105,14 @@ class ProcessShipDataBatch implements ShouldQueue
                 'last_updated' => $shipData['last_updated'] ?? null,
                 'eta' => $shipData['eta'] ?? null,
                 'destination' => $shipData['destination'] ?? null,
-                'geojson' => isset($shipData['location']) ? json_encode($shipData['location']) : null,
+                'geojson' => $geojson, // Only inserted if $geojson is not null
             ]);
 
             // Retrieve the latest data from the database
             $updatedShip = Ship::where('mmsi', $shipData['mmsi'])->first();
             $updatedRealtimePosition = ShipRealtimePosition::where('mmsi', $shipData['mmsi'])->first();
 
-            // Merge data for broadcasting
+            // Prepare data for broadcasting
             if ($updatedShip && $updatedRealtimePosition) {
                 return [
                     'mmsi' => $updatedShip->mmsi,

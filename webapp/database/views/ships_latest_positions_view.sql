@@ -43,4 +43,10 @@ LEFT JOIN cargo_categories
     ON cargo_types.cargo_category_id = cargo_categories.id
 LEFT JOIN countries
     ON LEFT(ships.mmsi::text, 3) = countries.number::text
-WHERE ship_realtime_positions.updated_at IS NOT NULL;
+WHERE 
+    ship_realtime_positions.updated_at IS NOT NULL
+    AND (
+        ship_realtime_positions.geojson IS NOT NULL
+        AND ship_realtime_positions.geojson::jsonb @> '{"type": "Point", "coordinates": [0, 0]}' = false
+        AND ship_realtime_positions.geojson::jsonb @> '{"type": "Point", "coordinates": [null, null]}' = false
+    );
