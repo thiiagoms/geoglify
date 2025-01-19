@@ -3,6 +3,7 @@ import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 const ZOOM_THRESHOLD = 14;
+const DEFAULT_COLOR = "#51829B";
 
 export default {
     // Generate properties for the ship based on available data
@@ -11,12 +12,13 @@ export default {
             ? -ship.cargo_category_priority
             : 0;
 
+        let defau;
         return {
             mmsi: ship.mmsi,
             name: ship.name ? ship.name : "N/A",
             color: !!ship.cargo_category_color
                 ? ship.cargo_category_color
-                : "#000000",
+                : DEFAULT_COLOR,
             hdg: ship.hdg ?? 511,
             image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon",
             priority: ship.hdg && ship.hdg !== 511 ? priority : priority * 1000,
@@ -37,7 +39,6 @@ export default {
     // Convert coordinates to meters
     convertCoordsToMeters(coords, target) {
         if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
-            console.error("Invalid coordinates:", coords);
             return null;
         }
 
@@ -48,7 +49,6 @@ export default {
     // Convert coordinates to WGS84
     convertCoordsToWGS84(coords, source) {
         if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
-            console.error("Invalid coordinates:", coords);
             return null;
         }
 
@@ -69,46 +69,52 @@ export default {
 
     // Create a collection of GeoJSON features for the ships
     createShipFeatures(ships) {
-        return ships.flatMap((ship) => {
-            const shipProperties = this.generateShipProperties(ship);
-            const { geometry, centroid } = this.createShipGeoJson(ship);
+        return ships
+            .flatMap((ship) => {
+                const shipProperties = this.generateShipProperties(ship);
+                const { geometry, centroid } = this.createShipGeoJson(ship);
 
-            return [
-                {
-                    type: "Feature",
-                    geometry: JSON.parse(ship.geojson),
-                    properties: {
-                        mmsi: ship.mmsi,
-                        color: shipProperties.color,
-                        hdg: shipProperties.hdg,
-                        image: shipProperties.image,
-                        type: "icon",
+                if (!geometry || !centroid) {
+                    return null;
+                }
+
+                return [
+                    {
+                        type: "Feature",
+                        geometry: JSON.parse(ship.geojson),
+                        properties: {
+                            mmsi: ship.mmsi,
+                            color: shipProperties.color,
+                            hdg: shipProperties.hdg,
+                            image: shipProperties.image,
+                            type: "icon",
+                        },
                     },
-                },
-                {
-                    type: "Feature",
-                    geometry,
-                    properties: {
-                        mmsi: ship.mmsi,
-                        color: shipProperties.color,
-                        hdg: shipProperties.hdg,
-                        type: "skeleton",
+                    {
+                        type: "Feature",
+                        geometry,
+                        properties: {
+                            mmsi: ship.mmsi,
+                            color: shipProperties.color,
+                            hdg: shipProperties.hdg,
+                            type: "skeleton",
+                        },
                     },
-                },
-                {
-                    type: "Feature",
-                    geometry: {
-                        type: "Point",
-                        coordinates: centroid,
+                    {
+                        type: "Feature",
+                        geometry: {
+                            type: "Point",
+                            coordinates: centroid,
+                        },
+                        properties: {
+                            name: shipProperties.name,
+                            hdg: shipProperties.hdg,
+                            type: "text",
+                        },
                     },
-                    properties: {
-                        name: shipProperties.name,
-                        hdg: shipProperties.hdg,
-                        type: "text",
-                    },
-                },
-            ];
-        });
+                ];
+            })
+            .filter((feature) => feature !== null);
     },
 
     // Update an existing feature with new data
@@ -137,8 +143,12 @@ export default {
 
         const [longitude, latitude] = JSON.parse(geojson).coordinates;
 
-        if (!isFinite(longitude) || !isFinite(latitude)) {
-            console.error("Invalid longitude or latitude:", geojson);
+        if (
+            !isFinite(longitude) ||
+            !isFinite(latitude) ||
+            !latitude ||
+            !longitude
+        ) {
             return { geometry: null, centroid: null };
         }
 
