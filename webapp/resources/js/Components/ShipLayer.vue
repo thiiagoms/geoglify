@@ -13,20 +13,27 @@ export default {
     props: ["mapInstance"],
 
     async mounted() {
-        // Initialize the ship layer
+        // Initialize the ship layer and fetch initial ship data
         await this.initializeLayer();
-
-        // Fetch ships data
         await this.fetchShips();
 
-        // Update the map store every second
-        setInterval(async () => {
-            await this.updateSource();
-        }, 1000);
+        // Listen for real-time ship position updates
+        window.Echo.channel("realtime_ships").listen(
+            "ShipPositionUpdated",
+            (data) => {
+                data.forEach((ship) => {
+                    store.dispatch("addOrUpdateShip", ship);
+                });
+            }
+        );
+
+        // Start the update loop with a timestamp for the last update
+        this.lastUpdate = Date.now(); // Store the time of the last update
+        this.updateLoop();
     },
 
     computed: {
-        // Computed property to access ships directly from the store
+        // Access ships data from the store
         ships() {
             return store.getters.getShips;
         },
@@ -34,7 +41,7 @@ export default {
 
     methods: {
         async initializeLayer() {
-            // Add icons to the map
+            // Add ship and circle icons to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "shipIcon",
@@ -50,7 +57,7 @@ export default {
             ShipHelper.removeLayers(this.mapInstance, "shipLayer");
             ShipHelper.removeSource(this.mapInstance, "shipSource");
 
-            // Add the ship source and layer
+            // Add the ship source and layer to the map
             MapHelper.addSource(this.mapInstance, "shipSource");
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
@@ -63,7 +70,7 @@ export default {
 
         async fetchShips() {
             try {
-                // Fetch ships data from the API
+                // Fetch ship data from the API
                 const response = await fetch("/api/ships/realtime/all");
                 const data = await response.json();
 
@@ -76,15 +83,29 @@ export default {
             }
         },
 
-        async updateSource() {
+        updateSource() {
             // Flatten the features array from the store
             const features = this.ships
-                .map((ship) => ship.features) // Extract the features arrays from each ship
-                .flat(); // Flatten the array of arrays into a single array
+                .map((ship) => ship.features) // Extract features arrays
+                .flat(); // Flatten into a single array
 
-            // Update the ship source
+            // Update the ship source on the map
             ShipHelper.updateSource(this.mapInstance, "shipSource", features);
         },
+
+        updateLoop() {
+            const now = Date.now(); // Get the current time
+            const delta = now - this.lastUpdate; // Calculate time since the last update
+
+            // Check if 1 second (1000ms) has passed
+            if (delta >= 1000) {
+                this.updateSource(); // Update the data source
+                this.lastUpdate = now; // Reset the last update time
+            }
+
+            // Schedule the next frame using requestAnimationFrame
+            requestAnimationFrame(() => this.updateLoop());
+        }
     },
 };
 </script>
