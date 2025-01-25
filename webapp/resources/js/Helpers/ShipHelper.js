@@ -1,464 +1,122 @@
 import MapHelper from "@/Helpers/MapHelper";
 import * as turf from "@turf/turf";
-import proj4 from "proj4";
 
-const ZOOM_THRESHOLD = 14;
-const DEFAULT_COLOR = "#51829B";
+const DEFAULT_COLOR = "#51829B"; // Default color for ships
 
 export default {
-    // Generate properties for the ship based on available data
+    // Generates properties for a ship feature
     generateShipProperties(ship) {
-        const priority = ship.cargo_category_priority
-            ? -ship.cargo_category_priority
-            : 0;
-
-        let defau;
         return {
-            mmsi: ship.mmsi,
-            name: ship.name ? ship.name : "N/A",
-            color: !!ship.cargo_category_color
-                ? ship.cargo_category_color
-                : DEFAULT_COLOR,
-            hdg: ship.hdg ?? 511,
-            image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon",
-            priority: ship.hdg && ship.hdg !== 511 ? priority : priority * 1000,
+            mmsi: ship.mmsi, // Ship's MMSI (Maritime Mobile Service Identity)
+            name: ship.name || "N/A", // Ship's name or "N/A" if not available
+            color: ship.cargo_category_color || DEFAULT_COLOR, // Ship's color based on cargo category or default color
+            hdg: ship.hdg || 511, // Ship's heading or 511 (default value for unknown heading)
+            image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon", // Icon to use based on heading
         };
     },
 
-    // Get UTM zone from longitude
-    utmzone_from_lon(lon_deg) {
-        return 1 + Math.floor((lon_deg + 180) / 6);
-    },
-
-    // Set projection definition based on longitude
-    proj4_setdef(lon_deg) {
-        const utm_zone = this.utmzone_from_lon(lon_deg);
-        return `+proj=utm +zone=${utm_zone} +datum=WGS84 +units=m +no_defs`;
-    },
-
-    // Convert coordinates to meters
-    convertCoordsToMeters(coords, target) {
-        if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
-            return null;
-        }
-
-        const source = "+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
-        return proj4(source, target, coords);
-    },
-
-    // Convert coordinates to WGS84
-    convertCoordsToWGS84(coords, source) {
-        if (!coords || coords.length !== 2 || !coords.every(Number.isFinite)) {
-            return null;
-        }
-
-        const target = "+proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees";
-        return proj4(source, target, coords);
-    },
-
-    // Calculate the centroid of a geometry
-    calculateCentroid(geometry) {
-        if (geometry.type === "Polygon") {
-            return turf.centroid(turf.polygon(geometry.coordinates)).geometry
-                .coordinates;
-        } else if (geometry.type === "Point") {
-            return geometry.coordinates;
-        }
-        return null;
-    },
-    
-    // Create a collection of GeoJSON features for 1 ship
+    // Creates a ship feature for the map
     createShipFeature(ship) {
-        const shipProperties = this.generateShipProperties(ship);
-        const { geometry, centroid } = this.createShipGeoJson(ship);
+        const shipProperties = this.generateShipProperties(ship); // Generate ship properties
+        const geometry = JSON.parse(ship.geojson); // Parse the ship's GeoJSON geometry
+        const centroid = this.calculateCentroid(geometry); // Calculate the centroid of the geometry
 
-        if (!geometry || !centroid) {
-            return null;
-        }
+        if (!geometry || !centroid) return null; // Skip if geometry or centroid is invalid
 
+        // Return an array of two features: one for the icon and one for the text label
         return [
-            {
-                type: "Feature",
-                geometry: JSON.parse(ship.geojson),
-                properties: {
-                    mmsi: ship.mmsi,
-                    color: shipProperties.color,
-                    hdg: shipProperties.hdg,
-                    image: shipProperties.image,
-                    type: "icon",
-                },
-            },
             {
                 type: "Feature",
                 geometry,
                 properties: {
-                    mmsi: ship.mmsi,
-                    color: shipProperties.color,
-                    hdg: shipProperties.hdg,
-                    type: "skeleton",
+                    ...shipProperties,
+                    type: "icon", // Feature type for the icon
                 },
             },
             {
                 type: "Feature",
                 geometry: {
                     type: "Point",
-                    coordinates: centroid,
+                    coordinates: centroid, // Centroid coordinates for the text label
                 },
                 properties: {
-                    name: shipProperties.name,
-                    hdg: shipProperties.hdg,
-                    type: "text",
+                    name: shipProperties.name, // Ship's name for the label
+                    type: "text", // Feature type for the text
                 },
             },
         ];
     },
 
-    // Create a collection of GeoJSON features for the ships
-    createShipFeatures(ships) {
-        return ships
-            .flatMap((ship) => {
-                const shipProperties = this.generateShipProperties(ship);
-                const { geometry, centroid } = this.createShipGeoJson(ship);
-
-                if (!geometry || !centroid) {
-                    return null;
-                }
-
-                return [
-                    {
-                        type: "Feature",
-                        geometry: JSON.parse(ship.geojson),
-                        properties: {
-                            mmsi: ship.mmsi,
-                            color: shipProperties.color,
-                            hdg: shipProperties.hdg,
-                            image: shipProperties.image,
-                            type: "icon",
-                        },
-                    },
-                    {
-                        type: "Feature",
-                        geometry,
-                        properties: {
-                            mmsi: ship.mmsi,
-                            color: shipProperties.color,
-                            hdg: shipProperties.hdg,
-                            type: "skeleton",
-                        },
-                    },
-                    {
-                        type: "Feature",
-                        geometry: {
-                            type: "Point",
-                            coordinates: centroid,
-                        },
-                        properties: {
-                            name: shipProperties.name,
-                            hdg: shipProperties.hdg,
-                            type: "text",
-                        },
-                    },
-                ];
-            })
-            .filter((feature) => feature !== null);
-    },
-
-    // Update an existing feature with new data
-    updateShipFeature(existingFeature, ship) {
-        const updatedProperties = this.generateShipProperties(ship);
-        existingFeature.properties = {
-            ...existingFeature.properties,
-            ...updatedProperties,
-        };
-
-        if (ship.geojson) {
-            existingFeature.geometry = JSON.parse(ship.geojson);
+    // Calculates the centroid of a geometry
+    calculateCentroid(geometry) {
+        if (geometry.type === "Polygon") {
+            // Use Turf.js to calculate the centroid of a polygon
+            return turf.centroid(turf.polygon(geometry.coordinates)).geometry
+                .coordinates;
+        } else if (geometry.type === "Point") {
+            // Use the coordinates directly for a point
+            return geometry.coordinates;
         }
-
-        return existingFeature;
+        return null; // Return null for unsupported geometry types
     },
 
-    // Create GeoJSON for the ship (skeleton or circle)
-    createShipGeoJson(ship) {
-        let dim_a = ship.dim_a ? ship.dim_a : 10;
-        let dim_b = ship.dim_b ? ship.dim_b : 10;
-        let dim_c = ship.dim_c ? ship.dim_c : 5;
-        let dim_d = ship.dim_d ? ship.dim_d : 5;
-        let geojson = ship.geojson ? ship.geojson : null;
-        let hdg = ship.hdg ? ship.hdg : 511;
-
-        const [longitude, latitude] = JSON.parse(geojson).coordinates;
-
-        if (
-            !isFinite(longitude) ||
-            !isFinite(latitude) ||
-            !latitude ||
-            !longitude
-        ) {
-            return { geometry: null, centroid: null };
-        }
-
-        let geometry;
-        if (hdg && hdg !== 511) {
-            geometry = this.createSkeletonGeoJson(
-                longitude,
-                latitude,
-                dim_a,
-                dim_b,
-                dim_c,
-                dim_d,
-                hdg
-            );
-        } else {
-            const radius = Math.max((dim_a + dim_b) / 2, (dim_c + dim_d) / 2);
-            geometry = this.createCircleGeoJson(longitude, latitude, radius);
-        }
-
-        const centroid = this.calculateCentroid(geometry);
-        return { geometry, centroid };
-    },
-
-    // Create a skeleton GeoJSON for the ship
-    createSkeletonGeoJson(
-        longitude,
-        latitude,
-        lengthA,
-        lengthB,
-        lengthC,
-        lengthD,
-        heading
-    ) {
-        const targetProjection = this.proj4_setdef(longitude);
-        const centerInMeters = this.convertCoordsToMeters(
-            [longitude, latitude],
-            targetProjection
-        );
-
-        const offsets = [
-            { x: -lengthC, y: -lengthB },
-            { x: -lengthC, y: lengthA - (lengthA + lengthB) * 0.1 },
-            { x: lengthD - (lengthC + lengthD) / 2, y: lengthA },
-            { x: lengthD, y: lengthA - (lengthA + lengthB) * 0.1 },
-            { x: lengthD, y: -lengthB },
-            { x: -lengthC, y: -lengthB },
-        ];
-
-        const rotatedCoordinates = offsets.map(({ x, y }) => {
-            const adjustedCoords = [
-                centerInMeters[0] + x,
-                centerInMeters[1] + y,
-            ];
-            return this.convertCoordsToWGS84(adjustedCoords, targetProjection);
-        });
-
-        const polygon = turf.polygon([rotatedCoordinates]);
-        const rotatedPolygon = turf.transformRotate(polygon, heading, {
-            pivot: [longitude, latitude],
-        });
-
-        return rotatedPolygon.geometry;
-    },
-
-    // Create a circle GeoJSON for the ship
-    createCircleGeoJson(longitude, latitude, radius) {
-        const circle = turf.circle([longitude, latitude], radius, {
-            steps: 64,
-            units: "meters",
-        });
-        return circle.geometry;
-    },
-
-    // Add a ship layer to the map
+    // Adds a ship layer to the map
     addLayer(map, id, source) {
-        const paintOptions = {
-            "icon-color": ["get", "color"],
-        };
-
-        const layoutOptions = {
-            "icon-rotate": ["get", "hdg"],
-            "icon-rotation-alignment": "map",
-            "icon-image": ["get", "image"],
-            "icon-size": 0.5,
-            "icon-allow-overlap": true,
-            "icon-ignore-placement": false,
-            "symbol-sort-key": ["to-number", ["get", "priority"]],
-            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "none" : "visible",
-        };
-
-        const filterOptions = ["all", ["==", ["get", "type"], "icon"]];
-
+        // Add the icon layer for ships
         MapHelper.addLayer(
             map,
             id,
             source,
             "symbol",
-            layoutOptions,
-            paintOptions,
-            filterOptions
+            {
+                "icon-image": ["get", "image"], // Use the ship's icon
+                "icon-size": 0.5, // Set icon size
+                "icon-rotate": ["get", "hdg"], // Rotate icon based on heading
+                "icon-rotation-alignment": "map", // Align rotation with the map
+                "icon-allow-overlap": true, // Allow icons to overlap
+            },
+            {
+                "icon-color": ["get", "color"], // Set icon color
+            },
+            ["==", ["get", "type"], "icon"] // Filter for icon features
         );
 
-        // Add skeleton layers (polygon and line)
-        this.addSkeletonLayers(map, id, source);
-
-        // Add text layer centered on the ship
-        this.addTextLayer(map, id, source);
-
-        // Update Text HDG
-        this.updateTextHdg(map, id);
-
-        // Update layer visibility on zoom
-        map.on("zoom", () => this.updateLayerVisibility(map, id));
-
-        // Update Text HDG on rotate
-        map.on("rotate", () => this.updateTextHdg(map, id));
-    },
-
-    // Add skeleton layers (polygon and line)
-    addSkeletonLayers(map, id, source) {
-        let layoutPolygonOptions = {
-            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
-        };
-
-        let paintPolygonOptions = {
-            "fill-color": ["get", "color"],
-            "fill-opacity": 0.1,
-        };
-
-        let filterOptions = ["all", ["==", ["get", "type"], "skeleton"]];
-
+        // Add the text label layer for ships
         MapHelper.addLayer(
             map,
-            `${id}-polygon-skeleton`,
-            source,
-            "fill",
-            layoutPolygonOptions,
-            paintPolygonOptions,
-            filterOptions
-        );
-
-        let layoutLineOptions = {
-            visibility: map.getZoom() >= ZOOM_THRESHOLD ? "visible" : "none",
-            "line-join": "round",
-        };
-
-        let paintLineOptions = {
-            "line-color": ["get", "color"],
-            "line-width": 3,
-        };
-
-        MapHelper.addLayer(
-            map,
-            `${id}-line-skeleton`,
-            source,
-            "line",
-            layoutLineOptions,
-            paintLineOptions,
-            filterOptions
-        );
-    },
-
-    // Add text layer centered on the ship
-    addTextLayer(map, id, source) {
-        const zoom = map.getZoom();
-
-        let layoutOptions = {
-            "text-field": ["get", "name"],
-            "text-font": ["Open Sans Bold"],
-            "text-size": 16,
-            "text-rotate": ["get", "hdg"],
-            "text-rotation-alignment": "map",
-            "text-transform": "uppercase",
-            "text-optional": true,
-            "text-anchor": "center",
-            "text-offset": [0, 0],
-            visibility: zoom >= ZOOM_THRESHOLD ? "visible" : "none",
-        };
-
-        let paintOptions = {
-            "text-color": "#000000",
-            "text-halo-color": "#fff",
-            "text-halo-width": 2,
-        };
-
-        let filterOptions = ["all", ["==", ["get", "type"], "text"]];
-
-        // Add text layer centered on the ship
-        MapHelper.addLayer(
-            map,
-            `${id}-text-centroid`,
+            `${id}-text`,
             source,
             "symbol",
-            layoutOptions,
-            paintOptions,
-            filterOptions
+            {
+                "text-field": ["get", "name"], // Display the ship's name
+                "text-font": ["Open Sans Bold"], // Set font
+                "text-size": 16, // Set text size
+                "text-anchor": "center", // Center the text
+                "text-offset": [0, 0], // No offset
+            },
+            {
+                "text-color": "#000000", // Set text color
+                "text-halo-color": "#fff", // Set text halo color
+                "text-halo-width": 2, // Set text halo width
+            },
+            ["==", ["get", "type"], "text"] // Filter for text features
         );
     },
 
-    // Update layer visibility based on zoom level
-    updateLayerVisibility(map, id) {
-        const zoom = map.getZoom();
-
-        // Update the visibility of the ship layer (icon and text)
-        map.setLayoutProperty(
-            id,
-            "visibility",
-            zoom >= ZOOM_THRESHOLD ? "none" : "visible"
-        );
-
-        // Update the visibility of the ship layer (skeleton and text centroid)
-        map.setLayoutProperty(
-            `${id}-polygon-skeleton`,
-            "visibility",
-            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
-        );
-        map.setLayoutProperty(
-            `${id}-line-skeleton`,
-            "visibility",
-            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
-        );
-        map.setLayoutProperty(
-            `${id}-text-centroid`,
-            "visibility",
-            zoom >= ZOOM_THRESHOLD ? "visible" : "none"
-        );
-    },
-
-    updateTextHdg(map, id) {
-        // Get the current bearing of the map
-        let bearing = map.getBearing();
-
-        // Update the text-rotate property based on the hdg value
-        map.setLayoutProperty(`${id}-text-centroid`, "text-rotate", [
-            "case",
-            ["all", ["has", "hdg"], ["!=", ["get", "hdg"], null]],
-            [
-                "case",
-                ["==", ["get", "hdg"], 511], // Check if hdg is 511
-                bearing, // Use the bearing of the map
-                [
-                    "case",
-                    ["<", ["%", ["+", ["get", "hdg"], 90 + bearing], 360], 180], // Check if angle is good for legibility
-                    ["+", ["%", ["+", ["get", "hdg"], 90], 360], 180], // Adjust the angle to be more legible
-                    ["%", ["+", ["get", "hdg"], 90], 360], //otherwise, use the hdg value
-                ],
-            ],
-            bearing, // Use the bearing of the map
-        ]);
-    },
-
-    // Remove layers and sources from the map
+    // Removes ship layers from the map
     removeLayers(map, id) {
-        if (map.getLayer(id)) {
-            map.removeLayer(id);
-            map.removeLayer(`${id}-line-skeleton`);
-            map.removeLayer(`${id}-polygon-skeleton`);
-            map.removeLayer(`${id}-text-centroid`);
-        }
+        if (map.getLayer(id)) map.removeLayer(id); // Remove the icon layer
+        if (map.getLayer(`${id}-text`)) map.removeLayer(`${id}-text`); // Remove the text layer
     },
 
+    // Removes a ship source from the map
     removeSource(map, id) {
-        if (map.getSource(id)) {
-            map.removeSource(id);
-        }
+        if (map.getSource(id)) map.removeSource(id); // Remove the source if it exists
+    },
+
+    // Updates the ship source with new features
+    updateSource(map, id, features) {
+        console.log("updateSource", id, features); // Log the update
+        MapHelper.updateSource(map, id, features); // Update the source using MapHelper
     },
 };

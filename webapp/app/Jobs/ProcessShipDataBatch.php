@@ -155,4 +155,97 @@ class ProcessShipDataBatch implements ShouldQueue
             return $value !== '' && $value !== null;
         });
     }
+
+    /**
+     * Validate if the given data is a valid GeoJSON object.
+     *
+     * @param mixed $data Data to validate
+     * @return bool True if the data is a valid GeoJSON object, false otherwise
+     */
+    protected function isValidGeoJSON($data): bool
+    {
+        // Check if the data is an array and has the required 'type' key
+        if (!is_array($data) || !isset($data['type'])) {
+            return false;
+        }
+
+        // Validate based on the GeoJSON type
+        switch ($data['type']) {
+            case 'Point':
+                return $this->isValidPoint($data);
+            case 'LineString':
+                return $this->isValidLineString($data);
+            case 'Polygon':
+                return $this->isValidPolygon($data);
+            case 'MultiPoint':
+            case 'MultiLineString':
+            case 'MultiPolygon':
+            case 'GeometryCollection':
+            case 'Feature':
+            case 'FeatureCollection':
+                // Implement additional validation for other GeoJSON types if needed
+                return true; // Placeholder, adjust as needed
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Validate if the given data is a valid GeoJSON Point.
+     *
+     * @param array $data Data to validate
+     * @return bool True if the data is a valid Point, false otherwise
+     */
+    protected function isValidPoint(array $data): bool
+    {
+        return isset($data['coordinates']) && is_array($data['coordinates']) && count($data['coordinates']) >= 2;
+    }
+
+    /**
+     * Validate if the given data is a valid GeoJSON LineString.
+     *
+     * @param array $data Data to validate
+     * @return bool True if the data is a valid LineString, false otherwise
+     */
+    protected function isValidLineString(array $data): bool
+    {
+        if (!isset($data['coordinates']) || !is_array($data['coordinates'])) {
+            return false;
+        }
+
+        foreach ($data['coordinates'] as $point) {
+            if (!is_array($point) || count($point) < 2) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate if the given data is a valid GeoJSON Polygon.
+     *
+     * @param array $data Data to validate
+     * @return bool True if the data is a valid Polygon, false otherwise
+     */
+    protected function isValidPolygon(array $data): bool
+    {
+        if (!isset($data['coordinates']) || !is_array($data['coordinates'])) {
+            return false;
+        }
+
+        foreach ($data['coordinates'] as $ring) {
+            if (!is_array($ring)) {
+                return false;
+            }
+
+            foreach ($ring as $point) {
+                if (!is_array($point) || count($point) < 2) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }

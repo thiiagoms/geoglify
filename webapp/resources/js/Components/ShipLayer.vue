@@ -1,200 +1,89 @@
 <template>
     <div style="position: absolute; top: 90px; left: 10px; z-index: 5000">
-        <v-chip label color="primary">{{ this.ships.length }} ships </v-chip>
+        <v-chip label color="primary">{{ ships.length }} ships</v-chip>
     </div>
 </template>
 
 <script>
-import MapHelper from "@/Helpers/MapHelper"; // Imports the MapHelper, which contains helper functions for manipulating the map.
-import ShipHelper from "@/Helpers/ShipHelper"; // Imports the ShipHelper, which contains helper functions for handling ship layers.
+import MapHelper from "@/Helpers/MapHelper";
+import ShipHelper from "@/Helpers/ShipHelper";
+import store from "@/store";
 
 export default {
-    props: ["mapInstance"], // The 'mapInstance' prop is passed to the component, representing the map instance.
+    props: ["mapInstance"],
 
-    data() {
-        return {
-            ships: [], // List of ships that will be updated with data from the server.
-            isUpdating: false, // Flag to check if an update is already in progress. Prevents simultaneous updates.
-            updateQueue: [], // Queue to store updates to be processed sequentially.
-        };
-    },
+    async mounted() {
+        // Initialize the ship layer
+        await this.initializeLayer();
 
-    watch: {
-        mapInstance(newVal) {
-            // Watches for changes in 'mapInstance'. When it's available, it calls 'initializeLayer'.
-            if (newVal) {
-                this.initializeLayer();
-            }
-        },
+        // Fetch ships data
+        await this.fetchShips();
 
-        selectedShip(newShip) {
-            if (newShip) {
-                this.centerOnMap(newShip);
-            }
-        },
+        // Update the map store every second
+        setInterval(async () => {
+            await this.updateSource();
+        }, 1000);
     },
 
     computed: {
-        selectedShip() {
-            return this.$store.state.selectedShip;
+        // Computed property to access ships directly from the store
+        ships() {
+            return store.getters.getShips;
         },
     },
 
-    mounted() {
-        // When the component is mounted, checks if 'mapInstance' is available.
-        if (this.mapInstance) {
-            this.initializeLayer();
-        }
-    },
-
     methods: {
-        // Function responsible for initializing the layer on the map.
         async initializeLayer() {
-            // Add the ship icon to the map
+            // Add icons to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "shipIcon",
                 "/images/boat-sdf.png"
             );
-
-            // Add the circle icon to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "circleIcon",
                 "/images/circle-sdf.png"
             );
 
-            // Remove existing layers and sources to ensure no overlapping
+            // Remove existing layers and sources to avoid duplication
             ShipHelper.removeLayers(this.mapInstance, "shipLayer");
             ShipHelper.removeSource(this.mapInstance, "shipSource");
 
-            // Create the source for ships
+            // Add the ship source and layer
             MapHelper.addSource(this.mapInstance, "shipSource");
-
-            // Add the ships layer using the same source ID
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
-            // Handle ship clicks
+            // Add a click listener for ships
             this.mapInstance.on("click", "shipLayer", (e) => {
                 const ship = e.features[0].properties;
                 this.$emit("ship-clicked", ship.mmsi);
             });
-
-            this.mapInstance.on("click", "shipLayer-polygon-skeleton", (e) => {
-                const ship = e.features[0].properties;
-                this.$emit("ship-clicked", ship.mmsi);
-            });
-
-            // Fetch ship data in real-time from the server
-            fetch("/api/ships/realtime/all")
-                .then((response) => response.json())
-                .then((data) => {
-                    // Directly pass the API data to updateShipSource
-                    this.updateShipSource(data);
-                })
-                .catch((error) => {
-                    console.error("API Error:", error);
-                    this.ships = []; // Reset the ship list on error
-                })
-                .finally(() => {
-                    // Listen for real-time updates
-                    window.Echo.channel("realtime_ships").listen(
-                        "ShipPositionUpdated",
-                        (data) => {
-                            this.updateShipSource(data);
-                        }
-                    );
-                });
         },
 
-        updateShipSource(data) {
-            // Adiciona os novos dados à fila
-            this.updateQueue.push(data);
+        async fetchShips() {
+            try {
+                // Fetch ships data from the API
+                const response = await fetch("/api/ships/realtime/all");
+                const data = await response.json();
 
-            // Se já estiver processando, retorna
-            if (this.isUpdating) return;
-
-            // Processa a fila
-            this.processUpdateQueue();
-        },
-
-        processUpdateQueue() {
-            if (this.updateQueue.length === 0) {
-                this.isUpdating = false;
-                return;
-            }
-
-            this.isUpdating = true;
-
-            // Pega os próximos dados da fila
-            const data = this.updateQueue.shift();
-
-            requestAnimationFrame(() => {
-                const existingShipsMap = new Map(
-                    this.ships.map((ship) => [ship.mmsi, ship])
-                );
-
-                let updatedFeatures = [];
-
+                // Add or update ships in the store
                 data.forEach((ship) => {
-                    const existingShip = existingShipsMap.get(ship.mmsi);
-
-                    if (existingShip) {
-                        Object.assign(existingShip, ship);
-                        updatedFeatures.push(
-                            ShipHelper.createShipFeature(existingShip)
-                        );
-                    } else {
-                        this.ships.push(ship);
-                        updatedFeatures.push(
-                            ShipHelper.createShipFeature(ship)
-                        );
-                    }
+                    store.dispatch("addOrUpdateShip", ship);
                 });
-
-                // Clean null features
-                updatedFeatures = updatedFeatures.filter(
-                    (feature) => feature !== null
-                );
-                
-                // flat the array
-                updatedFeatures = updatedFeatures.flat();
-
-                if (updatedFeatures.length > 0) {
-                    console.log("Updated Features:", updatedFeatures);
-                    MapHelper.updateSource(
-                        this.mapInstance,
-                        "shipSource",
-                        updatedFeatures
-                    );
-                }
-
-                // Processa a próxima atualização na fila
-                this.processUpdateQueue();
-            });
+            } catch (error) {
+                console.error("API Error:", error);
+            }
         },
 
-        // Function to center the map on a selected ship
-        centerOnMap(ship) {
-            // Find the ship in the list of ships by MMSI
-            const selectedShip = this.ships.find((s) => s.mmsi === ship.mmsi);
+        async updateSource() {
+            // Flatten the features array from the store
+            const features = this.ships
+                .map((ship) => ship.features) // Extract the features arrays from each ship
+                .flat(); // Flatten the array of arrays into a single array
 
-            // Parse geojson data to get the coordinates
-            const point = JSON.parse(selectedShip.geojson);
-
-            // Get the coordinates of the ship
-            const coordinates = point.coordinates;
-
-            // If the ship is found, fly to its position on the map
-            if (coordinates) {
-                this.mapInstance.flyTo({
-                    center: coordinates,
-                    zoom: 17,
-                    bearing: -37.5,
-                    speed: 1.5,
-                    curve: 1,
-                });
-            }
+            // Update the ship source
+            ShipHelper.updateSource(this.mapInstance, "shipSource", features);
         },
     },
 };
