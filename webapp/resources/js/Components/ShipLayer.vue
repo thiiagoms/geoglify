@@ -102,6 +102,9 @@ export default {
                 this.updateSource(); // Update the data source
                 this.lastUpdate = now; // Reset the last update time
             }
+            
+            // Remove ships that have not been updated in the last hour
+            store.dispatch("removeInactiveShips", 60 * 60 * 1000);
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());

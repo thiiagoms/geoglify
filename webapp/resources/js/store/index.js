@@ -22,11 +22,28 @@ export default createStore({
                 state.ships.push(ship); // Add the new ship
             }
         },
+
+        removeInactiveShips(state, maxInactiveTime) {
+            const currentTime = new Date().getTime(); // Get the current timestamp in milliseconds
+
+            state.ships = state.ships.filter((ship) => {
+                // Convert the `last_updated` string to a timestamp
+                const lastUpdated = new Date(ship.last_updated).getTime();
+
+                // Check if the ship is still active
+                return currentTime - lastUpdated <= maxInactiveTime;
+            });
+        },
     },
     actions: {
         // Action to commit the addOrUpdateShip mutation
         addOrUpdateShip({ commit }, ship) {
             commit("addOrUpdateShip", ship);
+        },
+
+        // Action to commit the removeInactiveShips mutation
+        removeInactiveShips({ commit }, maxInactiveTime) {
+            commit("removeInactiveShips", maxInactiveTime);
         },
     },
     getters: {
