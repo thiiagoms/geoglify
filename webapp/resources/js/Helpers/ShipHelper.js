@@ -1,6 +1,5 @@
 import MapHelper from "@/Helpers/MapHelper";
 import * as turf from "@turf/turf";
-import { property } from "lodash";
 import proj4 from "proj4";
 
 const DEFAULT_COLOR = "#51829B"; // Default color for ships
