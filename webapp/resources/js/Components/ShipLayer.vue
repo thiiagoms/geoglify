@@ -12,6 +12,13 @@ import store from "@/store";
 export default {
     props: ["mapInstance"],
 
+    data() {
+        return {
+            lastUpdate: Date.now(), // Stores the time of the last update
+            isMapInteracting: false, // Tracks if the user is interacting with the map
+        };
+    },
+
     async mounted() {
         // Initialize the ship layer and fetch initial ship data
         await this.initializeLayer();
@@ -27,13 +34,45 @@ export default {
             }
         );
 
-        // Start the update loop with a timestamp for the last update
-        this.lastUpdate = Date.now(); // Store the time of the last update
+        // Start the update loop
         this.updateLoop();
+
+        // Monitor user interactions with the map
+        this.mapInstance.on("movestart", () => {
+            this.isMapInteracting = true; // User started moving the map
+        });
+
+        this.mapInstance.on("moveend", () => {
+            this.isMapInteracting = false; // User stopped moving the map
+        });
+
+        this.mapInstance.on("zoomstart", () => {
+            this.isMapInteracting = true; // User started zooming
+        });
+
+        this.mapInstance.on("zoomend", () => {
+            this.isMapInteracting = false; // User stopped zooming
+        });
+
+        this.mapInstance.on("pitchstart", () => {
+            this.isMapInteracting = true; // User started adjusting pitch
+        });
+
+        this.mapInstance.on("pitchend", () => {
+            this.isMapInteracting = false; // User stopped adjusting pitch
+        });
+
+        this.mapInstance.on("rotatestart", () => {
+            this.isMapInteracting = true; // User started rotating the map
+        });
+
+        this.mapInstance.on("rotateend", () => {
+            this.isMapInteracting = false; // User stopped rotating the map
+        });
     },
 
     computed: {
-        // Access ships data from the store
+        // Access ship data from the store
         ships() {
             return store.getters.getShips;
         },
@@ -78,12 +117,17 @@ export default {
                 data.forEach((ship) => {
                     store.dispatch("addOrUpdateShip", ship);
                 });
+
+                // Update the ship source on the map
+                this.updateSource();
             } catch (error) {
                 console.error("API Error:", error);
             }
         },
 
         updateSource() {
+            console.log("Updating ship source");
+
             // Flatten the features array from the store
             const features = this.ships
                 .map((ship) => ship.features) // Extract features arrays
@@ -97,18 +141,19 @@ export default {
             const now = Date.now(); // Get the current time
             const delta = now - this.lastUpdate; // Calculate time since the last update
 
-            // Check if 1 second (1000ms) has passed
-            if (delta >= 1000) {
-                this.updateSource(); // Update the data source
+            // Check if 1 second (1000ms) has passed and the map is not being interacted with
+            if (delta >= 1000 && !this.isMapInteracting) {
+                // Update the source directly without waiting for the map to be idle
+                this.updateSource();
                 this.lastUpdate = now; // Reset the last update time
             }
-            
-            // Remove ships that have not been updated in the two hours
+
+            // Remove ships that have not been updated in the last two hours
             store.dispatch("removeInactiveShips", 120 * 60 * 1000);
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());
-        }
+        },
     },
 };
 </script>

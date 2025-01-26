@@ -23,8 +23,6 @@ export default {
         const geometry = JSON.parse(ship.geojson); // Parse the ship's GeoJSON geometry
         const centroid = this.calculateCentroid(geometry); // Calculate the centroid of the geometry
 
-        console.log(ship);
-
         if (!geometry || !centroid || !centroid.every(Number.isFinite)) {
             // Skip if geometry or centroid is invalid
             console.warn(
@@ -155,7 +153,6 @@ export default {
 
     // Updates the ship source with new features
     updateSource(map, id, features) {
-        console.log("updateSource", id, features); // Log the update
         MapHelper.updateSource(map, id, features); // Update the source using MapHelper
     },
 
