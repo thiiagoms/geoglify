@@ -178,7 +178,7 @@ return [
             'num_retries' => env('TYPESENSE_NUM_RETRIES', 3),
             'retry_interval_seconds' => env('TYPESENSE_RETRY_INTERVAL_SECONDS', 1),
         ],
-        // 'max_total_results' => env('TYPESENSE_MAX_TOTAL_RESULTS', 1000),
+        'max_total_results' => env('TYPESENSE_MAX_TOTAL_RESULTS', 20),
         'model-settings' => [
             ShipLatestPositionView::class => [
                 'collection-schema' => [
@@ -228,7 +228,7 @@ return [
                             'type' => 'int64',
                         ],
                     ],
-                    'default_sorting_field' => 'created_at',
+                    'default_sorting_field' => 'updated_at',
                 ],
                 'search-parameters' => [
                     'query_by' => 'name,imo,callsign,mmsi,destination,country_name,cargo_name',
