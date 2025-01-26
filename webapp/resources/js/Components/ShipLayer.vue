@@ -1,5 +1,5 @@
 <template>
-    <div style="position: absolute; top: 90px; left: 10px; z-index: 5000">
+    <div style="position: absolute; top: 75px; left: 10px; z-index: 5000">
         <v-chip label color="primary">{{ ships.length }} ships</v-chip>
     </div>
 </template>
