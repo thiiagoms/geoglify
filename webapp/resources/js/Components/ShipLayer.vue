@@ -103,8 +103,8 @@ export default {
                 this.lastUpdate = now; // Reset the last update time
             }
             
-            // Remove ships that have not been updated in the last hour
-            store.dispatch("removeInactiveShips", 60 * 60 * 1000);
+            // Remove ships that have not been updated in the two hours
+            store.dispatch("removeInactiveShips", 120 * 60 * 1000);
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());

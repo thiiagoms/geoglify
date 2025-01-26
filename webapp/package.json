@@ -25,6 +25,7 @@
     },
     "dependencies": {
         "@mapbox/mapbox-gl-draw": "^1.5.0",
+        "@turf/truncate": "^7.2.0",
         "@turf/turf": "^7.2.0",
         "@vitejs/plugin-vue": "^5.1.2",
         "lodash": "^4.17.21",

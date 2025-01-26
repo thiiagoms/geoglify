@@ -39,6 +39,9 @@ export default {
         map.addSource(id, {
             type: "geojson", // Source type
             data: data, // GeoJSON data
+            buffer: 0, // Buffer size in pixels
+            maxzoom: 12, // Maximum zoom level
+            tolerance: 100, // Simplification tolerance
         });
     },
 
@@ -50,7 +53,9 @@ export default {
         type = "circle", // Layer type (e.g., circle, symbol, fill)
         layoutOptions = {}, // Layout properties for the layer
         paintOptions = {}, // Paint properties for the layer
-        filterOptions = ['all'] // Filter expression for the layer
+        filterOptions = ['all'], // Filter expression for the layer
+        minzoom = 0, // Minimum zoom level
+        maxzoom = 24, // Maximum zoom level
     ) {
         const layerConfig = {
             id: id,
@@ -59,6 +64,8 @@ export default {
             layout: layoutOptions,
             paint: paintOptions,
             filter: filterOptions,
+            minzoom: minzoom,
+            maxzoom: maxzoom,
         };
 
         map.addLayer(layerConfig); // Add the layer to the map
