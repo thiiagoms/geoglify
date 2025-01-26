@@ -110,7 +110,8 @@ export default {
             {},
             {
                 "fill-color": ["get", "color"], // Set fill color
-                "fill-opacity": 0.2, // Set fill opacity
+                "fill-opacity": 0.6, // Set fill opacity
+                "fill-outline-color": 'black', // Set outline color
             },
             ["==", ["get", "type"], "skeleton"], // Filter for skeleton features
             15, // Set the minimum zoom level

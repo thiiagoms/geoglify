@@ -17,6 +17,7 @@ export default createStore({
 
             // If the ship already exists, update it; otherwise, add it to the array
             if (index !== -1) {
+                console.log("Updating ship with MMSI:", ship);
                 state.ships.splice(index, 1, ship); // Replace the existing ship
             } else {
                 state.ships.push(ship); // Add the new ship

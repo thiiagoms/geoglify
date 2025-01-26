@@ -133,8 +133,8 @@ class ProcessShipDataBatch implements ShouldQueue
                     'geojson' => $updatedRealtimePosition->geojson,
                     'cargo_name' => $updatedShip->cargo_type_name,
                     'cargo_code' => $updatedShip->cargo_type_code,
-                    'category_name' => $updatedShip->cargo_category_name,
-                    'category_color' => $updatedShip->cargo_category_color,
+                    'cargo_category_name' => $updatedShip->cargo_category_name,
+                    'cargo_category_color' => $updatedShip->cargo_category_color,
                 ];
             }
         });
