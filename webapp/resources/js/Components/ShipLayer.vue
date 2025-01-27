@@ -126,7 +126,6 @@ export default {
         },
 
         updateSource() {
-            console.log("Updating ship source");
 
             // Flatten the features array from the store
             const features = this.ships

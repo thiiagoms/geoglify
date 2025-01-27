@@ -59,7 +59,7 @@ export default {
                 // Check if the map is loaded and do something
                 this.map.on("load", async () => {
                     // Create style control
-                    const styleControl = new StyleFlipperControl(mapStyles);
+                    /*const styleControl = new StyleFlipperControl(mapStyles);
 
                     // Set the initial style code (default style)
                     styleControl.setCurrentStyleCode(
@@ -67,7 +67,7 @@ export default {
                     );
 
                     // Add style control to the map
-                    this.map.addControl(styleControl, "bottom-left");
+                    this.map.addControl(styleControl, "bottom-left");*/
 
                     // Set the map as ready
                     this.mapIsReady = true;

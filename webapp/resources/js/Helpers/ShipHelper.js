@@ -7,6 +7,7 @@ const DEFAULT_COLOR = "#51829B"; // Default color for ships
 export default {
     // Generates properties for a ship feature
     generateShipProperties(ship) {
+        console.log(ship);
         return {
             mmsi: ship.mmsi, // Ship's MMSI (Maritime Mobile Service Identity)
             name: ship.name || "N/A", // Ship's name or "N/A" if not available
@@ -110,7 +111,6 @@ export default {
             {
                 "fill-color": ["get", "color"], // Set fill color
                 "fill-opacity": 0.6, // Set fill opacity
-                "fill-outline-color": 'black', // Set outline color
             },
             ["==", ["get", "type"], "skeleton"], // Filter for skeleton features
             15, // Set the minimum zoom level
