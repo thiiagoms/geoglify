@@ -7,7 +7,7 @@ use App\Models\Ship;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
-use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ShipController extends Controller
 {
@@ -37,6 +37,58 @@ class ShipController extends Controller
     public function all()
     {
         return response()->json(ShipLatestPositionView::all());
+    }
+
+    /**
+     * Shows the Livemap with the ship's coordinates based on IMO.
+     *
+     * @param string $imo
+     * @return \Inertia\Response
+     */
+    public function showByImo($imo)
+    {
+        // Search for the ship by IMO
+        $ship = Ship::where('imo', $imo)->first();
+
+        // If the ship or its real-time position is not found, redirect or return an error message
+        $realtimePosition = ShipLatestPositionView::where('mmsi', $ship->mmsi)->first();
+
+        // If the ship or its real-time position is not found, redirect or return an error message
+        if (!$ship || !$realtimePosition) {
+            return redirect('/')->with('error', 'IMO não encontrado.');
+        }
+
+        // Pass the data to the dashboard
+        return Inertia::render('Livemap', [
+            'ship' => $ship,
+            'realtimePosition' => $realtimePosition,
+        ]);
+    }
+
+    /**
+     * Show the Livemap with the ship's coordinates based on MMSI.
+     *
+     * @param string $mmsi
+     * @return \Inertia\Response
+     */
+    public function showByMmsi($mmsi)
+    {
+        // Search for the ship by IMO
+        $ship = Ship::where('mmsi', $mmsi)->first();
+
+        // Search for the ship by MMSI
+        $realtimePosition = ShipLatestPositionView::where('mmsi', $mmsi)->first();
+
+        // If the ship or its real-time position is not found, redirect or return an error message
+        if (!$ship || !$realtimePosition) {
+            return redirect('/')->with('error', 'MMSI não encontrado.');
+        }
+        
+        // Pass the data to the dashboard
+        return Inertia::render('Livemap', [
+            'ship' => $ship,
+            'realtimePosition' => $realtimePosition,
+        ]);
     }
 
     /**
@@ -76,9 +128,8 @@ class ShipController extends Controller
             $ship->cargo_name = $this->highlightString($ship->cargo_name, $text);
             return $ship;
         });
-        
-        return response()->json($realtimeShips);
 
+        return response()->json($realtimeShips);
     }
 
     // Helper function to highlight search terms in a string
@@ -165,27 +216,5 @@ class ShipController extends Controller
     private function respondWithImage($file)
     {
         return response($file, 200)->header('Content-Type', 'image/jpeg');
-    }
-
-    /**
-     * Fetches ship data based on IMO or MMSI and returns coordinates for map centering.
-     */
-    public function center(Request $request)
-    {
-        $imo = $request->query('imo');
-        $mmsi = $request->query('mmsi');
-
-        $ship = ShipLatestPositionView::when($imo, function ($query, $imo) {
-            return $query->where('imo', $imo);
-        })->when($mmsi, function ($query, $mmsi) {
-            return $query->where('mmsi', $mmsi);
-        })->first();
-
-        if ($ship) {
-            $coordinates = json_decode($ship->geojson)->coordinates;
-            return response()->json(['coordinates' => $coordinates]);
-        } else {
-            return response()->json(['message' => 'Ship not found'], 404);
-        }
     }
 }

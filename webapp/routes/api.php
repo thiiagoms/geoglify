@@ -22,9 +22,6 @@ Route::get('/ships/realtime/search', [ShipController::class, 'search'])->name('s
 // Real-time ship details
 Route::get('/ships/details/{mmsi}', [ShipController::class, 'details'])->name('ships.details');
 
-// Fetch ship data based on IMO or MMSI
-Route::get('/ships/center', [ShipController::class, 'center'])->name('ships.center');
-
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     // Your protected routes here

@@ -1,9 +1,14 @@
+<template>
+    <div id="map"></div>
+    <ShipLayer :mapInstance="map" v-if="mapIsReady" />
+</template>
+
 <script>
 import ShipLayer from "@/Components/ShipLayer.vue";
 import MapHelper from "@/Helpers/MapHelper";
 import "maplibre-theme/icons.lucide.css";
 import "maplibre-theme/classic.css";
-import StyleFlipperControl from "maplibre-gl-style-flipper";
+import { mapState, mapActions } from "vuex";
 
 // Map styles with URLs and image paths
 const mapStyles = {
@@ -29,11 +34,37 @@ export default {
         ShipLayer,
     },
 
+    props: {
+        ship: Object, // Ship object
+        realtimePosition: Object, // Real-time position object
+    },
+
     data() {
         return {
             map: null,
             mapIsReady: false,
         };
+    },
+
+    computed: {
+        // Mapping Vuex state to local computed properties
+        ...mapState(["selectedShip"]),
+    },
+
+    watch: {
+        // Watch for changes in the selected ship
+        realtimePosition(newPosition) {
+            if (!!newPosition && this.mapIsReady) {
+                this.centerMapOnShip(newPosition);
+            }
+        },
+
+        // Watch for changes in the selected ship
+        selectedShip(newShip) {
+            if (!!newShip && !!this.realtimePosition && this.mapIsReady) {
+                this.centerMapOnShip(this.realtimePosition);
+            }
+        },
     },
 
     mounted() {
@@ -42,47 +73,56 @@ export default {
 
     methods: {
         initializeMap() {
-            // Check if the map instance is already created
+            // If the map is not initialized
             if (!this.map) {
                 let zoom = 2;
                 let center = [0, 0];
                 let bearing = 0;
-                // Create the map instance
+
+                // Create the map
                 this.map = MapHelper.createMap("map", center, zoom, bearing);
 
-                // Add navigation control
+                // Add the base layer
                 MapHelper.addNavigationControl(this.map);
 
-                // Add globe projection control
+                // Add the base layer
                 MapHelper.addGlobeProjectionControl(this.map);
-                
-                // Check if the map is loaded and do something
+
+                // Add the base layer
                 this.map.on("load", async () => {
-                    // Create style control
-                    /*const styleControl = new StyleFlipperControl(mapStyles);
-
-                    // Set the initial style code (default style)
-                    styleControl.setCurrentStyleCode(
-                        Object.values(mapStyles)[0].code
-                    );
-
-                    // Add style control to the map
-                    this.map.addControl(styleControl, "bottom-left");*/
-
-                    // Set the map as ready
+                    // Load the base layer
                     this.mapIsReady = true;
+
+                    // Define the base layer
+                    if (!!this.realtimePosition) {
+                        this.centerMapOnShip(this.realtimePosition);
+                    }
+
+                    // Define the base layer
+                    if (!!this.ship) {
+                        this.setSelectedShip(this.ship);
+                    }
                 });
             }
         },
+
+        // Center the map on the ship
+        centerMapOnShip(position) {
+            
+            let geojson = JSON.parse(position.geojson);
+            
+            if (geojson && geojson.coordinates && geojson.coordinates.length === 2) {
+                const [longitude, latitude] = geojson.coordinates;
+                this.map.setCenter([longitude, latitude]);
+                this.map.setZoom(17);
+            }
+        },
+
+        // Add or update the ship
+        ...mapActions(["addOrUpdateShip", "setSelectedShip"]),
     },
 };
 </script>
-
-<template>
-    <div id="map"></div>
-
-    <ShipLayer :mapInstance="map" v-if="mapIsReady" />
-</template>
 
 <style>
 #map {

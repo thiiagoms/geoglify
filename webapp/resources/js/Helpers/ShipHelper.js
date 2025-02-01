@@ -7,7 +7,6 @@ const DEFAULT_COLOR = "#51829B"; // Default color for ships
 export default {
     // Generates properties for a ship feature
     generateShipProperties(ship) {
-        console.log(ship);
         return {
             mmsi: ship.mmsi, // Ship's MMSI (Maritime Mobile Service Identity)
             name: ship.name || "N/A", // Ship's name or "N/A" if not available

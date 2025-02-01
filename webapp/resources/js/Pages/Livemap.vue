@@ -1,9 +1,3 @@
-<script setup>
-import Map from "@/Components/Map.vue";
-import DashboardLayout from "@/Layouts/DashboardLayout.vue";
-import { Head } from "@inertiajs/vue3";
-</script>
-
 <template>
     <Head title="Dashboard" />
 
@@ -18,9 +12,27 @@ import { Head } from "@inertiajs/vue3";
             />
         </template>
 
-        <Map></Map>
+        <Map :ship="ship" :realtimePosition="realtimePosition"></Map>
     </DashboardLayout>
 </template>
+
+<script>
+import Map from "@/Components/Map.vue";
+import DashboardLayout from "@/Layouts/DashboardLayout.vue";
+import { Head } from "@inertiajs/vue3";
+
+export default {
+    components: {
+        Map,
+        DashboardLayout,
+        Head,
+    },
+    props: {
+        ship: Object,
+        realtimePosition: Object,
+    },
+};
+</script>
 
 <style>
 html,
