@@ -166,4 +166,26 @@ class ShipController extends Controller
     {
         return response($file, 200)->header('Content-Type', 'image/jpeg');
     }
+
+    /**
+     * Fetches ship data based on IMO or MMSI and returns coordinates for map centering.
+     */
+    public function center(Request $request)
+    {
+        $imo = $request->query('imo');
+        $mmsi = $request->query('mmsi');
+
+        $ship = ShipLatestPositionView::when($imo, function ($query, $imo) {
+            return $query->where('imo', $imo);
+        })->when($mmsi, function ($query, $mmsi) {
+            return $query->where('mmsi', $mmsi);
+        })->first();
+
+        if ($ship) {
+            $coordinates = json_decode($ship->geojson)->coordinates;
+            return response()->json(['coordinates' => $coordinates]);
+        } else {
+            return response()->json(['message' => 'Ship not found'], 404);
+        }
+    }
 }

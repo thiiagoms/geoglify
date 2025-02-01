@@ -121,4 +121,10 @@ export default {
         map.addControl(draw); // Add the control to the map
         return draw; // Return the draw control instance
     },
+
+    // Add a method to center the map on given coordinates
+    centerMapOnCoordinates(map, coordinates) {
+        map.setCenter(coordinates);
+        map.setZoom(12);
+    },
 };

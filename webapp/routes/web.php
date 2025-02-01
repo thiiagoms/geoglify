@@ -6,6 +6,7 @@ use App\Http\Controllers\LdapController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\LayerController;
 use App\Http\Controllers\SearouteController;
+use App\Http\Controllers\ShipController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -48,5 +49,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/searoutes/geojson', [SearouteController::class, 'geojson'])->name('searoutes.geojson');
     Route::resource('searoutes', SearouteController::class);
 });
+
+// Add a route to handle URL parameters for map centering
+Route::get('/ships/center', [ShipController::class, 'center'])->name('ships.center');
 
 require __DIR__ . '/auth.php';
