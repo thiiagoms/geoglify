@@ -49,7 +49,7 @@ class ShipController extends Controller
     {
         // Search for the ship by IMO
         $ship = Ship::where('imo', $imo)->first();
-        
+
         // If the ship is not found, redirect or return an error message
         if (!$ship) {
             return redirect('/')->with('error', 'IMO não encontrado.');
@@ -88,7 +88,7 @@ class ShipController extends Controller
         if (!$ship || !$realtimePosition) {
             return redirect('/')->with('error', 'MMSI não encontrado.');
         }
-        
+
         // Pass the data to the dashboard
         return Inertia::render('Livemap', [
             'ship' => $ship,
