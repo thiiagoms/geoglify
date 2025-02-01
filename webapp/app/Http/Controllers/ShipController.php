@@ -49,12 +49,17 @@ class ShipController extends Controller
     {
         // Search for the ship by IMO
         $ship = Ship::where('imo', $imo)->first();
+        
+        // If the ship is not found, redirect or return an error message
+        if (!$ship) {
+            return redirect('/')->with('error', 'IMO não encontrado.');
+        }
 
-        // If the ship or its real-time position is not found, redirect or return an error message
+        // Search for the position of the ship in real-time
         $realtimePosition = ShipLatestPositionView::where('mmsi', $ship->mmsi)->first();
 
-        // If the ship or its real-time position is not found, redirect or return an error message
-        if (!$ship || !$realtimePosition) {
+        // If the real-time position is not found, redirect or return an error message
+        if (!$realtimePosition) {
             return redirect('/')->with('error', 'IMO não encontrado.');
         }
 
