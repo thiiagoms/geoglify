@@ -6,7 +6,7 @@
                 class="d-flex align-center pe-2 bg-secondary sticky-title"
             >
                 <country-flag
-                    :country="data.country_iso_code ?? 'XX'"
+                    :country="this.loading ? 'XX' : data.country_iso_code ?? 'XX'"
                     class="flag"
                     left
                 />
@@ -154,12 +154,18 @@ export default {
         };
     },
 
-    mounted() {
-        this.fetchShipDetails();
+    watch: {
+        ship: {
+            handler() {
+                if (this.ship && this.ship.mmsi) this.fetchShipDetails();
+            },
+            immediate: true,
+        },
     },
 
     methods: {
         fetchShipDetails() {
+            this.open = true;
             this.loading = true;
             fetch(`/api/ships/details/${this.ship.mmsi}`, {
                 method: "get",
@@ -180,8 +186,11 @@ export default {
         },
 
         close() {
+            // Close the drawer
             this.open = false;
-            this.$emit("close");
+
+            // Reset the selected ship in the Vuex store
+            this.$store.commit("setSelectedShip", null);
         },
     },
 };

@@ -1,7 +1,7 @@
 <template>
     <div id="map"></div>
     <ShipLayer :mapInstance="map" v-if="mapIsReady" />
-    <ShipDetails :ship="selectedShip" @close="selectedShip = null" v-if="selectedShip"/>
+    <ShipDetails :ship="selectedShip"/>
 </template>
 
 <script>

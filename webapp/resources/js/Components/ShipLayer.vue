@@ -69,15 +69,6 @@ export default {
         this.mapInstance.on("rotateend", () => {
             this.isMapInteracting = false; // User stopped rotating the map
         });
-
-        // Capture and parse URL parameters for IMO or MMSI
-        const urlParams = new URLSearchParams(window.location.search);
-        const imo = urlParams.get("imo");
-        const mmsi = urlParams.get("mmsi");
-
-        if (imo || mmsi) {
-            await this.centerMapOnShip(imo, mmsi);
-        }
     },
 
     computed: {
@@ -112,7 +103,8 @@ export default {
             // Add a click listener for ships
             this.mapInstance.on("click", "shipLayer", (e) => {
                 const ship = e.features[0].properties;
-                this.$emit("ship-clicked", ship.mmsi);
+                console.log("Selected Ship:", ship);
+                store.dispatch("setSelectedShip", ship);
             });
         },
 
@@ -161,22 +153,6 @@ export default {
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());
-        },
-
-        async centerMapOnShip(imo, mmsi) {
-            try {
-                const response = await fetch(`/api/ships/center?imo=${imo}&mmsi=${mmsi}`);
-                const data = await response.json();
-
-                if (data && data.coordinates) {
-                    this.mapInstance.setCenter(data.coordinates);
-                    this.mapInstance.setZoom(12);
-                } else {
-                    console.error("Ship not found or invalid coordinates");
-                }
-            } catch (error) {
-                console.error("API Error:", error);
-            }
         },
     },
 };
