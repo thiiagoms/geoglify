@@ -1,56 +1,64 @@
-import { createStore } from "vuex"; // Import Vuex's createStore function
-import ShipHelper from "@/Helpers/ShipHelper"; // Import ShipHelper for ship feature creation
+import { createStore } from "vuex"; // Importa a função createStore do Vuex
+import ShipHelper from "@/Helpers/ShipHelper"; // Importa ShipHelper para criar features do navio
 
-// Create and export the Vuex store
+// Cria e exporta a store Vuex
 export default createStore({
     state: {
-        ships: [], // Array to store ship data
+        ships: [], // Array para armazenar os dados dos navios
+        selectedShip: null, // Navio selecionado atualmente
     },
     mutations: {
-        // Mutation to add or update a ship in the state
+        // Mutação para adicionar ou atualizar um navio no estado
         addOrUpdateShip(state, ship) {
-            // Find the index of the ship in the array based on its MMSI (unique identifier)
             const index = state.ships.findIndex((s) => s.mmsi === ship.mmsi);
-
-            // Generate ship features using ShipHelper
             ship.features = ShipHelper.createShipFeature(ship) || [];
 
-            // If the ship already exists, update it; otherwise, add it to the array
             if (index !== -1) {
-                console.log("Updating ship with MMSI:", ship);
-                state.ships.splice(index, 1, ship); // Replace the existing ship
+                state.ships.splice(index, 1, ship); // Substitui o navio existente
             } else {
-                state.ships.push(ship); // Add the new ship
+                state.ships.push(ship); // Adiciona o novo navio
             }
         },
 
+        // Remove navios inativos
         removeInactiveShips(state, maxInactiveTime) {
-            const currentTime = new Date().getTime(); // Get the current timestamp in milliseconds
-
+            const currentTime = new Date().getTime();
             state.ships = state.ships.filter((ship) => {
-                // Convert the `last_updated` string to a timestamp
                 const lastUpdated = new Date(ship.last_updated).getTime();
-
-                // Check if the ship is still active
                 return currentTime - lastUpdated <= maxInactiveTime;
             });
         },
+
+        // Define o navio selecionado
+        setSelectedShip(state, ship) {
+            state.selectedShip = ship;
+        },
     },
     actions: {
-        // Action to commit the addOrUpdateShip mutation
+        // Ação para cometer a mutação addOrUpdateShip
         addOrUpdateShip({ commit }, ship) {
             commit("addOrUpdateShip", ship);
         },
 
-        // Action to commit the removeInactiveShips mutation
+        // Ação para cometer a mutação removeInactiveShips
         removeInactiveShips({ commit }, maxInactiveTime) {
             commit("removeInactiveShips", maxInactiveTime);
         },
+
+        // Ação para definir o navio selecionado
+        setSelectedShip({ commit }, ship) {
+            commit("setSelectedShip", ship);
+        },
     },
     getters: {
-        // Getter to retrieve the list of ships from the state
+        // Getter para recuperar a lista de navios do estado
         getShips(state) {
             return state.ships;
+        },
+
+        // Getter para recuperar o navio selecionado
+        getSelectedShip(state) {
+            return state.selectedShip;
         },
     },
 });
