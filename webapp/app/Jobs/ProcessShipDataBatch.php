@@ -23,13 +23,24 @@ class ProcessShipDataBatch implements ShouldQueue
     public function handle()
     {
         collect($this->batchData)
-            ->chunk(100) // Processa em chunks de 100
-            ->each(fn(Collection $chunk) => $this->processChunk($chunk));
+            ->chunk(100) // Divide os dados em chunks de 100 itens
+            ->each(function (Collection $chunk) {
+                // Itera sobre cada item no chunk e processa individualmente
+                $chunk->each(function (array $shipData) {
+                    $this->processChunk($shipData);
+                });
+            });
     }
 
-    protected function processChunk(Collection $shipData)
+    protected function processChunk(array $shipData)
     {
         try {
+            // Valida se o item tem a chave 'mmsi'
+            if (!isset($shipData['mmsi'])) {
+                \Log::warning("Skipping ship data: Missing 'mmsi' key", $shipData);
+                return;
+            }
+
             $cargoType = $this->getCargoType($shipData);
             $geojson = $this->prepareGeoJSON($shipData);
 
@@ -37,26 +48,26 @@ class ProcessShipDataBatch implements ShouldQueue
             $this->updateOrCreateRealtimePosition($shipData, $geojson);
             $this->createHistoricalPosition($shipData, $geojson);
         } catch (\Exception $e) {
-            // Logar o erro ou notificar em caso de falha
-            \Log::error("Error processing ship data: " . $e->getMessage());
+            // Loga o erro ou notifica em caso de falha
+            \Log::error("Error processing ship data: " . $e->getMessage(), $shipData);
         }
     }
 
-    protected function getCargoType(Collection $shipData): ?CargoType
+    protected function getCargoType(array $shipData): ?CargoType
     {
         return isset($shipData['cargo'])
             ? CargoType::where('code', (int) $shipData['cargo'])->first()
             : null;
     }
 
-    protected function prepareGeoJSON(Collection $shipData): ?string
+    protected function prepareGeoJSON(array $shipData): ?string
     {
         return isset($shipData['location']) && $this->isValidGeoJSON($shipData['location'])
             ? json_encode($shipData['location'])
             : null;
     }
 
-    protected function updateOrCreateShip(Collection $shipData, ?CargoType $cargoType): void
+    protected function updateOrCreateShip(array $shipData, ?CargoType $cargoType): void
     {
         Ship::updateOrCreate(
             ['mmsi' => $shipData['mmsi']],
@@ -74,7 +85,7 @@ class ProcessShipDataBatch implements ShouldQueue
         );
     }
 
-    protected function updateOrCreateRealtimePosition(Collection $shipData, ?string $geojson): void
+    protected function updateOrCreateRealtimePosition(array $shipData, ?string $geojson): void
     {
         ShipRealtimePosition::updateOrCreate(
             ['mmsi' => $shipData['mmsi']],
@@ -90,7 +101,7 @@ class ProcessShipDataBatch implements ShouldQueue
         );
     }
 
-    protected function createHistoricalPosition(Collection $shipData, ?string $geojson): void
+    protected function createHistoricalPosition(array $shipData, ?string $geojson): void
     {
         ShipHistoricalPosition::create($this->filterData([
             'mmsi' => $shipData['mmsi'],

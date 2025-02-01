@@ -1,11 +1,13 @@
 <template>
     <div id="map"></div>
     <ShipLayer :mapInstance="map" v-if="mapIsReady" />
+    <ShipDetails :ship="selectedShip" @close="selectedShip = null" v-if="selectedShip"/>
 </template>
 
 <script>
-import ShipLayer from "@/Components/ShipLayer.vue";
 import MapHelper from "@/Helpers/MapHelper";
+import ShipLayer from "@/Components/ShipLayer.vue";
+import ShipDetails from "@/Components/ShipDetails.vue";
 import "maplibre-theme/icons.lucide.css";
 import "maplibre-theme/classic.css";
 import { mapState, mapActions } from "vuex";
@@ -32,6 +34,7 @@ const mapStyles = {
 export default {
     components: {
         ShipLayer,
+        ShipDetails,
     },
 
     props: {

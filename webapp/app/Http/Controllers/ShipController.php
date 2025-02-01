@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ShipController extends Controller
 {
@@ -52,7 +53,7 @@ class ShipController extends Controller
 
         // If the ship is not found, redirect or return an error message
         if (!$ship) {
-            return redirect('/')->with('error', 'IMO não encontrado.');
+            return redirect('/')->with('error', 'IMO not found.');
         }
 
         // Search for the position of the ship in real-time
@@ -60,7 +61,7 @@ class ShipController extends Controller
 
         // If the real-time position is not found, redirect or return an error message
         if (!$realtimePosition) {
-            return redirect('/')->with('error', 'IMO não encontrado.');
+            return redirect('/')->with('error', 'Real-time position not found.');
         }
 
         // Pass the data to the dashboard
@@ -78,15 +79,20 @@ class ShipController extends Controller
      */
     public function showByMmsi($mmsi)
     {
-        // Search for the ship by IMO
-        $ship = Ship::where('mmsi', $mmsi)->first();
-
         // Search for the ship by MMSI
+        $ship = Ship::where('mmsi', $mmsi)->first();
+        
+        // If the ship is not found, redirect or return an error message
+        if (!$ship) {
+            return redirect('/')->with('error', 'MMSI not found.');
+        }
+
+        // Search for the ship's real-time position by MMSI
         $realtimePosition = ShipLatestPositionView::where('mmsi', $mmsi)->first();
 
         // If the ship or its real-time position is not found, redirect or return an error message
-        if (!$ship || !$realtimePosition) {
-            return redirect('/')->with('error', 'MMSI não encontrado.');
+        if (!$realtimePosition) {
+            return redirect('/')->with('error', 'MMSI not found.');
         }
 
         // Pass the data to the dashboard
@@ -138,7 +144,7 @@ class ShipController extends Controller
     }
 
     // Helper function to highlight search terms in a string
-    function highlightString($str, $search_terms)
+    private function highlightString($str, $search_terms)
     {
         if (empty($search_terms)) {
             return $str;
@@ -160,10 +166,19 @@ class ShipController extends Controller
      */
     public function photo($id)
     {
-        $imo = Ship::find($id)->imo;
+        $ship = Ship::find($id);
 
-        // Return placeholder image if the IMO number is empty or not found or null
+        // Check if the ship exists
+        if (!$ship) {
+            Log::info("Ship with ID {$id} not found.");
+            return $this->getPlaceholderImage();
+        }
+
+        $imo = $ship->imo;
+
+        // Check if the IMO is defined
         if (empty($imo)) {
+            Log::info("IMO not defined for ship with ID {$id}.");
             return $this->getPlaceholderImage();
         }
 
@@ -175,12 +190,17 @@ class ShipController extends Controller
             return $this->getStoredPhoto($photoPath);
         }
 
-        // Fetch photo from MarineTraffic or use placeholder if it fails
-        $photoContent = $this->fetchPhotoFromMarineTraffic($imo) ?? Storage::get("public/placeholder.png");
+        // Fetch the photo from MarineTraffic
+        $photoContent = $this->fetchPhotoFromMarineTraffic($imo);
 
-        // Store and return the fetched photo
-        Storage::put($photoPath, $photoContent);
-        return $this->respondWithImage($photoContent);
+        // If the photo is fetched successfully, store it and return it
+        if ($photoContent) {
+            Storage::put($photoPath, $photoContent);
+            return $this->respondWithImage($photoContent);
+        }
+
+        // If all else fails, return the placeholder image
+        return $this->getPlaceholderImage();
     }
 
     /**
@@ -191,9 +211,18 @@ class ShipController extends Controller
         $photoUrl = "https://photos.marinetraffic.com/ais/showphoto.aspx?imo={$imo}";
 
         try {
-            return file_get_contents($photoUrl);
+            $photoContent = file_get_contents($photoUrl);
+
+            // Check if the content was fetched successfully
+            if ($photoContent === false) {
+                Log::error("Failed to fetch photo from MarineTraffic for IMO: {$imo}");
+                return null;
+            }
+
+            return $photoContent;
         } catch (\Exception $e) {
-            return null;  // If fetching fails, return null
+            Log::error("Exception while fetching photo from MarineTraffic for IMO: {$imo} - " . $e->getMessage());
+            return null;
         }
     }
 
@@ -202,7 +231,15 @@ class ShipController extends Controller
      */
     private function getPlaceholderImage()
     {
-        $file = Storage::get("public/placeholder.png");
+        $placeholderPath = "public/images/placeholder.jpg";
+
+        // Check if the placeholder exists
+        if (!Storage::exists($placeholderPath)) {
+            Log::error("Placeholder not found at path: {$placeholderPath}");
+            return response('Placeholder not found', 404);
+        }
+
+        $file = Storage::get($placeholderPath);
         return $this->respondWithImage($file);
     }
 
@@ -220,6 +257,11 @@ class ShipController extends Controller
      */
     private function respondWithImage($file)
     {
+        if (empty($file)) {
+            Log::error("Image content is empty or invalid.");
+            return response('Invalid image', 500);
+        }
+
         return response($file, 200)->header('Content-Type', 'image/jpeg');
     }
 }
