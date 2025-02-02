@@ -103,9 +103,51 @@ export default {
             // Add a click listener for ships
             this.mapInstance.on("click", "shipLayer", (e) => {
                 const ship = e.features[0].properties;
-                console.log("Selected Ship:", ship);
-                store.dispatch("setSelectedShip", ship);
+                this.highlightShip(ship);
             });
+
+            // Add a click listener for ships
+            this.mapInstance.on("click", "shipLayer-skeleton", (e) => {
+                const ship = e.features[0].properties;
+                this.highlightShip(ship);
+            });
+        },
+
+        highlightShip(ship) {
+            // Get previous clicked ship id from selected ship state
+            let clickedShipId = store.getters.getSelectedShip?.mmsi;
+
+            if (clickedShipId) {
+                // Reset the previous clicked ship skeleton
+                this.mapInstance.setFeatureState(
+                    { source: "shipSource", id: clickedShipId * 10000 },
+                    { highlighted: false }
+                );
+
+                // Reset the previous clicked ship icon
+                this.mapInstance.setFeatureState(
+                    { source: "shipSource", id: clickedShipId * 100 },
+                    { highlighted: false }
+                );
+            }
+
+            // Get the clicked ship id
+            clickedShipId = ship.mmsi;
+
+            // Highlight the clicked ship icon
+            this.mapInstance.setFeatureState(
+                { source: "shipSource", id: clickedShipId * 100 },
+                { highlighted: true }
+            );
+
+            // Highlight the clicked ship skeleton
+            this.mapInstance.setFeatureState(
+                { source: "shipSource", id: clickedShipId * 10000 },
+                { highlighted: true }
+            );
+
+            // Set the selected ship in the store
+            store.dispatch("setSelectedShip", ship);
         },
 
         async fetchShips() {
@@ -127,7 +169,6 @@ export default {
         },
 
         updateSource() {
-
             // Flatten the features array from the store
             const features = this.ships
                 .map((ship) => ship.features) // Extract features arrays

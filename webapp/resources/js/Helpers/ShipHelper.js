@@ -13,6 +13,7 @@ export default {
             color: ship.cargo_category_color || DEFAULT_COLOR, // Ship's color based on cargo category or default color
             hdg: ship.hdg || 511, // Ship's heading or 511 (default value for unknown heading)
             image: ship.hdg && ship.hdg !== 511 ? "shipIcon" : "circleIcon", // Icon to use based on heading
+            highlighted: ship.highlighted || false, // Flag to highlight the ship
         };
     },
 
@@ -35,6 +36,7 @@ export default {
         // Return an array of two features: one for the icon and one for the text label
         return [
             {
+                id: ship.mmsi * 100, // Unique ID for the icon
                 type: "Feature",
                 geometry,
                 properties: {
@@ -43,6 +45,7 @@ export default {
                 },
             },
             {
+                id: ship.mmsi * 1000, // Unique ID for the text label
                 type: "Feature",
                 geometry: {
                     type: "Point",
@@ -54,6 +57,7 @@ export default {
                 },
             },
             {
+                id: ship.mmsi * 10000, // Unique ID for the ship skeleton
                 type: "Feature",
                 geometry: this.createSkeleton(centroid, ship),
                 properties: {
@@ -93,7 +97,12 @@ export default {
                 "icon-allow-overlap": true, // Allow icons to overlap
             },
             {
-                "icon-color": ["get", "color"], // Set icon color
+                "icon-color": [
+                    "case",
+                    ["boolean", ["feature-state", "highlighted"], false],
+                    "yellow", // If highlighted is true, use yellow
+                    ["get", "color"], // Otherwise, use the color from the feature properties
+                ],
             },
             ["==", ["get", "type"], "icon"], // Filter for icon features
             0, // Set the minimum zoom level
@@ -108,7 +117,12 @@ export default {
             "fill",
             {},
             {
-                "fill-color": ["get", "color"], // Set fill color
+                "fill-color": [
+                    "case",
+                    ["boolean", ["feature-state", "highlighted"], false],
+                    "yellow", // If highlighted is true, use yellow
+                    ["get", "color"], // Otherwise, use the color from the feature properties
+                ],
                 "fill-opacity": 0.6, // Set fill opacity
             },
             ["==", ["get", "type"], "skeleton"], // Filter for skeleton features
@@ -194,7 +208,7 @@ export default {
         let lengthC = ship.dim_c || 5;
         let lengthD = ship.dim_d || 5;
         let angle = ship.hdg || 0;
-        
+
         // if hdg = 511, draw a circle
         if (!ship.hdg || ship.hdg === 511) {
             const radius = Math.max(lengthA, lengthB, lengthC, lengthD);
