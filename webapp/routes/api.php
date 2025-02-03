@@ -10,9 +10,6 @@ Route::post('/auth/token', [AuthController::class, 'generateToken'])->name('auth
 // Create ship data
 Route::post('/ships', [ShipController::class, 'store'])->name('ships.store');
 
-// View specific ship photo
-Route::get('/ships/{id}/photo', [ShipController::class, 'photo'])->name('ships.photo');
-
 // Real-time view of all ships
 Route::get('/ships/realtime/all', [ShipController::class, 'all'])->name('ships.realtime.all');
 

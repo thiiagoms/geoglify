@@ -78,6 +78,9 @@ composer dump-autoload --optimize
 # Route cache
 php artisan route:cache
 
+# Import the data into the Typesense search engine
+php artisan scout:import "App\Models\ShipLatestPositionView"
+
 # Install node dependencies
 npm install
 

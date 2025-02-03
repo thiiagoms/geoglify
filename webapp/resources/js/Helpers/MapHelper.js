@@ -19,7 +19,7 @@ export default {
             zoom: zoom, // Initial zoom level
             bearing: bearing, // Initial bearing (rotation)
             antialias: true, // Enable antialiasing
-            hash: "map", // Enable URL hash for map state
+            //hash: "map", // Enable URL hash for map state
             glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf", // Font glyphs URL
         });
     },

@@ -4,11 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ShipLatestPositionView;
 use App\Models\Ship;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Jobs\ProcessShipDataBatch;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
 
 class ShipController extends Controller
 {
@@ -81,7 +79,7 @@ class ShipController extends Controller
     {
         // Search for the ship by MMSI
         $ship = Ship::where('mmsi', $mmsi)->first();
-        
+
         // If the ship is not found, redirect or return an error message
         if (!$ship) {
             return redirect('/')->with('error', 'MMSI not found.');
@@ -118,18 +116,24 @@ class ShipController extends Controller
     public function search(Request $request)
     {
         // Define pagination parameters
-        $text = $request->input('text');
+        $text = trim($request->input('text', '') ?? '');
+        $perPage = $request->input('per_page', 5); // Default to 5 items per page
+        $page = $request->input('page', 1); // Default to the first page
+
+        $searchParameters = [
+            'q'         => $text,
+            'sort_by'   => 'name:desc',
+            'per_page'  => (int)$perPage,
+            'page'      => (int)$page,
+        ];
 
         // Perform the search directly
-        $realtimeShips = empty(trim($text))
-            ? ShipLatestPositionView::all()
-            : ShipLatestPositionView::search($text)->get();
-
-        // Filter first 5 ships
-        $realtimeShips = $realtimeShips->take(5);
-
+        $realtimeShips = $text === '' || $text === 'null'
+            ? ShipLatestPositionView::query()->paginate($perPage, ['*'], 'page', $page)
+            : ShipLatestPositionView::search($searchParameters);
+            
         // Highlight search term in the results
-        $realtimeShips = $realtimeShips->transform(function ($ship) use ($text) {
+        $realtimeShips->getCollection()->transform(function ($ship) use ($text) {
             $ship->name = $this->highlightString($ship->name, $text);
             $ship->imo = $this->highlightString($ship->imo, $text);
             $ship->callsign = $this->highlightString($ship->callsign, $text);
@@ -140,7 +144,18 @@ class ShipController extends Controller
             return $ship;
         });
 
-        return response()->json($realtimeShips);
+        // Customize the response to include the current page explicitly
+        $response = [
+            'current_page' => $realtimeShips->currentPage(), // Página atual
+            'data' => $realtimeShips->items(), // Dados paginados
+            'per_page' => $realtimeShips->perPage(), // Itens por página
+            'total' => $realtimeShips->total(), // Total de itens
+            'last_page' => $realtimeShips->lastPage(), // Última página
+            'next_page_url' => $realtimeShips->nextPageUrl(), // URL da próxima página
+            'prev_page_url' => $realtimeShips->previousPageUrl(), // URL da página anterior
+        ];
+
+        return response()->json($response);
     }
 
     // Helper function to highlight search terms in a string
@@ -159,109 +174,5 @@ class ShipController extends Controller
         }
 
         return $str;
-    }
-
-    /**
-     * Fetches and returns the photo of a ship based on ID
-     */
-    public function photo($id)
-    {
-        $ship = Ship::find($id);
-
-        // Check if the ship exists
-        if (!$ship) {
-            Log::info("Ship with ID {$id} not found.");
-            return $this->getPlaceholderImage();
-        }
-
-        $imo = $ship->imo;
-
-        // Check if the IMO is defined
-        if (empty($imo)) {
-            Log::info("IMO not defined for ship with ID {$id}.");
-            return $this->getPlaceholderImage();
-        }
-
-        // Define the path where the photo is stored
-        $photoPath = "ships/photos/{$imo}.jpeg";
-
-        // Check if the photo already exists in storage
-        if (Storage::exists($photoPath)) {
-            return $this->getStoredPhoto($photoPath);
-        }
-
-        // Fetch the photo from MarineTraffic
-        $photoContent = $this->fetchPhotoFromMarineTraffic($imo);
-
-        // If the photo is fetched successfully, store it and return it
-        if ($photoContent) {
-            Storage::put($photoPath, $photoContent);
-            return $this->respondWithImage($photoContent);
-        }
-
-        // If all else fails, return the placeholder image
-        return $this->getPlaceholderImage();
-    }
-
-    /**
-     * Fetches photo from MarineTraffic based on IMO number.
-     */
-    private function fetchPhotoFromMarineTraffic($imo)
-    {
-        $photoUrl = "https://photos.marinetraffic.com/ais/showphoto.aspx?imo={$imo}";
-
-        try {
-            $photoContent = file_get_contents($photoUrl);
-
-            // Check if the content was fetched successfully
-            if ($photoContent === false) {
-                Log::error("Failed to fetch photo from MarineTraffic for IMO: {$imo}");
-                return null;
-            }
-
-            return $photoContent;
-        } catch (\Exception $e) {
-            Log::error("Exception while fetching photo from MarineTraffic for IMO: {$imo} - " . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Returns a placeholder image from storage.
-     */
-    private function getPlaceholderImage()
-    {
-        $placeholderPath = "public/images/placeholder.jpg";
-
-        // Check if the placeholder exists
-        if (!Storage::exists($placeholderPath)) {
-            Log::error("Placeholder not found at path: {$placeholderPath}");
-            return response('Placeholder not found', 404);
-        }
-
-        $file = Storage::get($placeholderPath);
-        return $this->respondWithImage($file);
-    }
-
-    /**
-     * Returns a stored photo from the given path.
-     */
-    private function getStoredPhoto($photoPath)
-    {
-        $file = Storage::get($photoPath);
-        return $this->respondWithImage($file);
-    }
-
-    /**
-     * Returns the image response with appropriate headers.
-     */
-    private function respondWithImage($file)
-    {
-        if (empty($file)) {
-            Log::error("Image content is empty or invalid.");
-            return response('Invalid image', 500);
-        }
-
-        return response($file, 200)->header('Content-Type', 'image/jpeg');
     }
 }

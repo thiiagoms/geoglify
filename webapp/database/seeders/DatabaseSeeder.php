@@ -11,8 +11,6 @@ use Database\Seeders\RoleUserTableSeeder;
 use Database\Seeders\CargoCategoriesSeeder;
 use Database\Seeders\CargoTypesSeeder;
 use Database\Seeders\CountriesTableSeeder;
-use Database\Seeders\PortsTableSeeder;
-use Database\Seeders\SearoutesTableSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -30,8 +28,6 @@ class DatabaseSeeder extends Seeder
             CargoCategoriesSeeder::class,
             CargoTypesSeeder::class,
             CountriesTableSeeder::class,
-            //PortsTableSeeder::class,
-            //SearoutesTableSeeder::class,
         ]);
     }
 }

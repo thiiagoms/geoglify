@@ -35,7 +35,7 @@
                     <v-img
                         cover
                         v-if="!!data.id"
-                        :src="`/api/ships/${data.id}/photo`"
+                        :src="`https://photos.marinetraffic.com/ais/showphoto.aspx?imo=${data.imo}`"
                     />
                 </v-avatar>
 
