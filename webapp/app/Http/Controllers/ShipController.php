@@ -117,62 +117,29 @@ class ShipController extends Controller
     {
         // Define pagination parameters
         $text = trim($request->input('text', '') ?? '');
-        $perPage = $request->input('per_page', 5); // Default to 5 items per page
-        $page = $request->input('page', 1); // Default to the first page
+        $perPage = (int)$request->input('per_page', 5); // Default to 5 items per page
+        $page = (int)$request->input('page', 1); // Default to the first page
 
-        $searchParameters = [
-            'q'         => $text,
-            'sort_by'   => 'name:desc',
-            'per_page'  => (int)$perPage,
-            'page'      => (int)$page,
-        ];
-
-        // Perform the search directly
-        $realtimeShips = $text === '' || $text === 'null'
-            ? ShipLatestPositionView::query()->paginate($perPage, ['*'], 'page', $page)
-            : ShipLatestPositionView::search($searchParameters);
-            
-        // Highlight search term in the results
-        $realtimeShips->getCollection()->transform(function ($ship) use ($text) {
-            $ship->name = $this->highlightString($ship->name, $text);
-            $ship->imo = $this->highlightString($ship->imo, $text);
-            $ship->callsign = $this->highlightString($ship->callsign, $text);
-            $ship->mmsi = $this->highlightString($ship->mmsi, $text);
-            $ship->destination = $this->highlightString($ship->destination, $text);
-            $ship->country_name = $this->highlightString($ship->country_name, $text);
-            $ship->cargo_name = $this->highlightString($ship->cargo_name, $text);
-            return $ship;
-        });
+        // Perform the search using Laravel Scout
+        if ($text === '' || $text === 'null') {
+            // If no search text, return all ships with pagination
+            $realtimeShips = ShipLatestPositionView::search('*')->paginate($perPage, 'page', $page);
+        } else {
+            // If search text is provided, use Scout to search
+            $realtimeShips = ShipLatestPositionView::search($text)->paginate($perPage, 'page', $page);
+        }
 
         // Customize the response to include the current page explicitly
         $response = [
-            'current_page' => $realtimeShips->currentPage(), // Página atual
-            'data' => $realtimeShips->items(), // Dados paginados
-            'per_page' => $realtimeShips->perPage(), // Itens por página
-            'total' => $realtimeShips->total(), // Total de itens
-            'last_page' => $realtimeShips->lastPage(), // Última página
-            'next_page_url' => $realtimeShips->nextPageUrl(), // URL da próxima página
-            'prev_page_url' => $realtimeShips->previousPageUrl(), // URL da página anterior
+            'current_page' => $realtimeShips->currentPage(), // Current page
+            'data' => $realtimeShips->items(), // Paginated data
+            'per_page' => $realtimeShips->perPage(), // Items per page
+            'total' => $realtimeShips->total(), // Total items
+            'last_page' => $realtimeShips->lastPage(), // Last page
+            'next_page_url' => $realtimeShips->nextPageUrl(), // URL for the next page
+            'prev_page_url' => $realtimeShips->previousPageUrl(), // URL for the previous page
         ];
 
         return response()->json($response);
-    }
-
-    // Helper function to highlight search terms in a string
-    private function highlightString($str, $search_terms)
-    {
-        if (empty($search_terms)) {
-            return $str;
-        }
-
-        $terms = explode(' ', $search_terms);
-
-        foreach ($terms as $term) {
-            if (!empty($term)) {
-                $str = preg_replace('/(' . preg_quote($term, '/') . ')/i', '<em>$1</em>', $str);
-            }
-        }
-
-        return $str;
     }
 }
