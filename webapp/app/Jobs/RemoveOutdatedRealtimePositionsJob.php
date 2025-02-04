@@ -27,6 +27,6 @@ class RemoveOutdatedRealtimePositionsJob implements ShouldQueue
         $threshold = Carbon::now()->subMinutes(30);
 
         // Delete all records in ShipRealtimePosition older than the threshold
-        ShipRealtimePosition::where('last_updated', '<=', $threshold)->delete();
+        //ShipRealtimePosition::where('last_updated', '<=', $threshold)->delete();
     }
 }

@@ -32,6 +32,16 @@ class ShipLatestPositionView extends Model
     ];
 
     /**
+     * Get the index name for the model.
+     *
+     * @return string
+     */
+    public function searchableAs()
+    {
+        return 'ships_index';
+    }
+
+    /**
      * Get the indexable data array for the model.
      *
      * @return array<string, mixed>

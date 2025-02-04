@@ -23,7 +23,6 @@
                         v-model="search"
                         placeholder="SEARCH"
                         autofocus
-                        @input="debouncedFetchShips"
                         hide-details="auto"
                         clearable
                         variant="solo"
@@ -33,7 +32,12 @@
                     <!-- List of search results -->
                     <div v-if="ships.length > 0">
                         <!-- Total results found -->
-                        <div class="text-body-2 font-weight-bold text-right pa-3" style="border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;">
+                        <div
+                            class="text-body-2 font-weight-bold text-right pa-3"
+                            style="
+                                border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
+                            "
+                        >
                             Total results: {{ totalItems }}
                         </div>
 
@@ -47,11 +51,11 @@
                                 <template v-slot:prepend>
                                     <v-avatar
                                         rounded="md"
-                                        class="bg-red-lighten-4"
+                                        class="bg-white"
                                         style="
                                             border-radius: 2px;
                                             height: 80px;
-                                            width: 120px;
+                                            width: 100px;
                                         "
                                     >
                                         <v-img
@@ -71,8 +75,15 @@
                                 <!-- Ship name and MMSI -->
                                 <v-list-item-title
                                     class="font-weight-black text-h6"
-                                    v-html="ship.name ?? 'N/A'"
-                                ></v-list-item-title>
+                                >
+                                    <country-flag
+                                        :country="ship.country_iso_code ?? 'XX'"
+                                        rounded
+                                    />
+                                    <span class="pl-3">{{
+                                        ship.name ?? "N/A"
+                                    }}</span>
+                                </v-list-item-title>
                                 <v-list-item-subtitle
                                     class="text-body-1"
                                     v-html="`MMSI: ${ship.mmsi}`"
@@ -95,6 +106,16 @@
                             @update:modelValue="fetchShips"
                             density="comfortable"
                         ></v-pagination>
+                    </div>
+
+                    <!-- Loading spinner -->
+                    <div v-else-if="isLoading" class="text-center py-10 ma-5">
+                        <v-skeleton-loader
+                            class="mx-auto border bg-primary"
+                            type="list-item-avatar-three-line"
+                            v-for="n in 5"
+                            :key="n"
+                        ></v-skeleton-loader>
                     </div>
 
                     <!-- No results message -->
@@ -143,16 +164,13 @@ export default {
         // Remove the global event listener when the component is destroyed
         window.removeEventListener("keydown", this.handleGlobalKeydown);
     },
+    mounted() {
+        this.debouncedFetchShips(); // Fetch ships when the component is mounted
+    },
     watch: {
         search() {
             // Call the debounced version of fetchShips when the search query changes
             this.debouncedFetchShips();
-        },
-        dialog(val) {
-            if (val) {
-                this.search = ""; // Clear the search query when the dialog is closed
-                this.debouncedFetchShips(); // Fetch ships when the dialog is closed
-            }
         },
     },
     methods: {
@@ -164,7 +182,10 @@ export default {
         },
         async fetchShips() {
             // Fetch ships only if the search query is longer than 0 characters
-            this.isLoading = true;
+            this.isLoading = true; // Set loading state to true
+            this.ships = []; // Clear the ships list
+            this.totalItems = 0; // Reset total items
+
             try {
                 const response = await fetch(
                     `/api/ships/realtime/search?text=${this.search}&page=${this.currentPage}&per_page=${this.itemsPerPage}`

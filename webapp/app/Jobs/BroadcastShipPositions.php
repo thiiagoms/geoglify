@@ -19,5 +19,8 @@ class BroadcastShipPositions implements ShouldQueue
         ShipLatestPositionView::chunk(100, function ($chunk) {
             broadcast(new ShipPositionUpdated($chunk->toArray()));
         });
+        
+        // Mark the view as searchable
+        //ShipLatestPositionView::whereNull('mmsi')->searchable();
     }
 }
