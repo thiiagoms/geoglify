@@ -76,6 +76,31 @@ export default {
         ships() {
             return store.getters.getShips;
         },
+
+        // Access selected ship from the store
+        selectedShip() {
+            return store.getters.getSelectedShip;
+        },
+    },
+
+    watch: {
+        // Watch for changes to the selectedShip
+        selectedShip(newShip, oldShip) {
+            if (oldShip) {
+                // De-highlight the previously selected ship
+                this.dehighlightShip(oldShip);
+            }
+
+            if (newShip) {
+                // Highlight the newly selected ship
+                this.highlightShip(newShip);
+            } else {
+                // If newShip is null, clear the previous highlight
+                if (oldShip) {
+                    this.dehighlightShip(oldShip);
+                }
+            }
+        },
     },
 
     methods: {
@@ -114,25 +139,8 @@ export default {
         },
 
         highlightShip(ship) {
-            // Get previous clicked ship id from selected ship state
-            let clickedShipId = store.getters.getSelectedShip?.mmsi;
-
-            if (clickedShipId) {
-                // Reset the previous clicked ship skeleton
-                this.mapInstance.setFeatureState(
-                    { source: "shipSource", id: clickedShipId * 10000 },
-                    { highlighted: false }
-                );
-
-                // Reset the previous clicked ship icon
-                this.mapInstance.setFeatureState(
-                    { source: "shipSource", id: clickedShipId * 100 },
-                    { highlighted: false }
-                );
-            }
-
             // Get the clicked ship id
-            clickedShipId = ship.mmsi;
+            const clickedShipId = ship.mmsi;
 
             // Highlight the clicked ship icon
             this.mapInstance.setFeatureState(
@@ -148,6 +156,23 @@ export default {
 
             // Set the selected ship in the store
             store.dispatch("setSelectedShip", ship);
+        },
+
+        dehighlightShip(ship) {
+            // Get the ship id
+            const shipId = ship.mmsi;
+
+            // De-highlight the ship icon
+            this.mapInstance.setFeatureState(
+                { source: "shipSource", id: shipId * 100 },
+                { highlighted: false }
+            );
+
+            // De-highlight the ship skeleton
+            this.mapInstance.setFeatureState(
+                { source: "shipSource", id: shipId * 10000 },
+                { highlighted: false }
+            );
         },
 
         async fetchShips() {
@@ -190,7 +215,7 @@ export default {
             }
 
             // Remove ships that have not been updated in the last two hours
-            store.dispatch("removeInactiveShips", 120 * 60 * 1000);
+            store.dispatch("removeInactiveShips", 120000 * 60 * 1000);
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());

@@ -45,7 +45,7 @@
                             <v-list-item
                                 v-for="ship in ships"
                                 :key="ship.mmsi"
-                                @click="centerOnMap(ship)"
+                                @click="selectShip(ship)"
                             >
                                 <!-- Ship photo -->
                                 <template v-slot:prepend>
@@ -138,7 +138,6 @@ export default {
     data() {
         return {
             dialog: false, // Controls the visibility of the dialog
-            selectedShip: null,
             ships: [], // List of ships from the search
             isLoading: false, // Loading state
             search: "", // Search query
@@ -154,21 +153,23 @@ export default {
         },
     },
     created() {
-        // Create a debounced version of the fetchShips function
-        this.debouncedFetchShips = debounce(this.fetchShips, 300);
+        // Create a debounced version of the fetchShips function with a 500ms delay
+        this.debouncedFetchShips = debounce(this.fetchShips, 500);
 
         // Add global event listener for Ctrl+K
         window.addEventListener("keydown", this.handleGlobalKeydown);
+        
+        // Fetch ships when the component is created
+        this.fetchShips();
     },
     beforeUnmount() {
         // Remove the global event listener when the component is destroyed
         window.removeEventListener("keydown", this.handleGlobalKeydown);
     },
-    mounted() {
-        this.debouncedFetchShips(); // Fetch ships when the component is mounted
-    },
     watch: {
         search() {
+            // Reset the current page to 1 when the search query changes
+            this.currentPage = 1;
             // Call the debounced version of fetchShips when the search query changes
             this.debouncedFetchShips();
         },
@@ -181,7 +182,7 @@ export default {
             this.dialog = false; // Close the dialog
         },
         async fetchShips() {
-            // Fetch ships only if the search query is longer than 0 characters
+
             this.isLoading = true; // Set loading state to true
             this.ships = []; // Clear the ships list
             this.totalItems = 0; // Reset total items
@@ -193,17 +194,22 @@ export default {
                 const data = await response.json();
                 this.ships = data.data; // Update the ships list with the search results
                 this.totalItems = data.total; // Update the total number of items
-                this.isLoading = false;
             } catch (error) {
+                console.error("Error fetching ships:", error);
                 this.ships = []; // Reset the ships list on error
                 this.totalItems = 0; // Reset total items
-                this.isLoading = false;
-                console.error("Error fetching ships:", error);
+            } finally {
+                this.isLoading = false; // Set loading state to false
             }
+        },
+        selectShip(ship) {
+            // Update the selectedShip in the store
+            this.$store.dispatch("setSelectedShip", ship);
+            this.closeDialog(); // Close the dialog after selecting a ship
         },
         centerOnMap(ship) {
             // Logic to center the map on the selected ship
-            this.$store.dispatch("updateSelectedShip", ship);
+            this.$store.dispatch("setSelectedShip", ship);
             this.closeDialog(); // Close the dialog after selecting a ship
         },
         handleGlobalKeydown(event) {

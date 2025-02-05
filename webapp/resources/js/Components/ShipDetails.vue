@@ -6,7 +6,7 @@
                 class="d-flex align-center pe-2 bg-secondary sticky-title"
             >
                 <country-flag
-                    :country="this.loading ? 'XX' : data.country_iso_code ?? 'XX'"
+                    :country="loading ? 'XX' : data.country_iso_code ?? 'XX'"
                     class="flag"
                     left
                 />
@@ -22,7 +22,7 @@
                 <v-skeleton-loader
                     class="mx-auto"
                     type="image, article"
-                    v-if="this.loading"
+                    v-if="loading"
                 ></v-skeleton-loader>
 
                 <v-avatar
@@ -30,112 +30,47 @@
                     class="ma-0"
                     color="#ccc"
                     style="width: 100%; height: 200px"
-                    v-if="!this.loading"
+                    v-if="!loading"
                 >
                     <v-img
                         cover
-                        v-if="!!data.id"
-                        :src="`https://photos.marinetraffic.com/ais/showphoto.aspx?imo=${data.imo}`"
-                    />
+                        :src="`https://photos.marinetraffic.com/ais/showphoto.aspx?mmsi=${data.mmsi}`"
+                    >
+                        <template v-slot:error>
+                            <v-img src="/images/placeholder.png"></v-img>
+                        </template>
+                    </v-img>
                 </v-avatar>
 
-                <v-table v-if="!this.loading">
-                    <tbody class="details-table">
-                        <tr>
-                            <td class="font-weight-black">Name</td>
-                            <td>{{ data.name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">MMSI</td>
-                            <td>{{ data.mmsi }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">IMO</td>
-                            <td>{{ data.imo }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Call Sign</td>
-                            <td>{{ data.callsign }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Country</td>
-                            <td>{{ data.country_name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Cargo Type</td>
-                            <td>{{ data.cargo_type_name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Cargo Category</td>
-                            <td>{{ data.cargo_category_name }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Length</td>
-                            <td>{{ (data.dim_a + data.dim_b) / 2 }}m</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Width</td>
-                            <td>{{ (data.dim_c + data.dim_d) / 2 }}m</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Destination</td>
-                            <td>{{ data.destination }}</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Speed Over Ground</td>
-                            <td>{{ data.sog }} knots</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">
-                                Course Over Ground
-                            </td>
-                            <td>{{ data.cog }} degrees</td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Heading</td>
-                            <td>{{ data.hdg }} degrees</td>
-                        </tr>
+                <v-btn
+                    flat
+                    @click="centerOnMap"
+                    color="primary"
+                    block
+                    size="large"
+                    rounded="0"
+                >
+                    Center on Map
+                </v-btn>
 
-                        <tr>
-                            <td class="font-weight-black">ETA</td>
-                            <td>
-                                {{
-                                    data.eta
-                                        ? new Date(data.eta).toLocaleString()
-                                        : ""
-                                }}
-                            </td>
-                        </tr>
-                        <tr class="bg-primary" v-if="data.routes?.planned">
-                            <td class="font-weight-black">
-                                Distance Planned (NM)
-                            </td>
-                            <td>{{ data?.routes?.planned.distance_nm }}</td>
-                        </tr>
-                        <tr class="bg-primary" v-if="data.routes?.real">
-                            <td class="font-weight-black">Predicted ETA</td>
-                            <td>
-                                {{
-                                    data.predicted_eta
-                                        ? new Date(
-                                              data.predicted_eta
-                                          ).toLocaleString()
-                                        : ""
-                                }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="font-weight-black">Last Updated</td>
-                            <td>
-                                {{
-                                    data.last_updated
-                                        ? new Date(
-                                              data.last_updated
-                                          ).toLocaleString()
-                                        : ""
-                                }}
-                            </td>
-                        </tr>
+                <v-table v-if="!loading">
+                    <tbody class="details-table">
+                        <template
+                            v-for="(value, key) in shipDetails"
+                            :key="key"
+                        >
+                            <tr
+                                v-if="
+                                    data[key] !== null &&
+                                    data[key] !== undefined
+                                "
+                            >
+                                <td class="font-weight-black">
+                                    {{ value.label }}
+                                </td>
+                                <td>{{ formatValue(key, data[key]) }}</td>
+                            </tr>
+                        </template>
                     </tbody>
                 </v-table>
             </v-card-text>
@@ -151,13 +86,32 @@ export default {
             open: false,
             loading: false,
             data: {},
+            // Ship details mapping
+            shipDetails: {
+                name: { label: "Name" },
+                mmsi: { label: "MMSI" },
+                imo: { label: "IMO" },
+                callsign: { label: "Call Sign" },
+                country_name: { label: "Country" },
+                cargo_type_name: { label: "Cargo Type" },
+                cargo_category_name: { label: "Cargo Category" },
+                dim_a: { label: "Length", unit: "m" },
+                dim_b: { label: "Beam", unit: "m" },
+                destination: { label: "Destination" },
+                sog: { label: "Speed Over Ground", unit: "knots" },
+                cog: { label: "Course Over Ground", unit: "°" },
+                hdg: { label: "Heading", unit: "°" },
+                eta: { label: "ETA", isDate: true },
+                predicted_eta: { label: "Predicted ETA", isDate: true },
+                last_updated: { label: "Last Updated", isDate: true },
+            },
         };
     },
 
     watch: {
         ship: {
             handler() {
-                if (this.ship && this.ship.mmsi) this.fetchShipDetails();
+                if (this.ship?.mmsi) this.fetchShipDetails();
             },
             immediate: true,
         },
@@ -167,30 +121,40 @@ export default {
         fetchShipDetails() {
             this.open = true;
             this.loading = true;
-            fetch(`/api/ships/details/${this.ship.mmsi}`, {
-                method: "get",
-                headers: { "Content-Type": "application/json" },
-            })
+            fetch(`/api/ships/details/${this.ship.mmsi}`)
                 .then((response) => response.json())
                 .then((data) => {
-                    this.data = data; // Sets the ship details
-                    this.open = true; // Opens the drawer
+                    this.data = data;
                 })
                 .catch(() => {
-                    this.data = {}; // Resets the ship details
-                    this.open = false; // Closes the drawer
+                    this.data = {};
+                    this.open = false;
                 })
                 .finally(() => {
-                    this.loading = false; // Hides the loading spinner
+                    this.loading = false;
                 });
         },
 
         close() {
-            // Close the drawer
             this.open = false;
-
-            // Reset the selected ship in the Vuex store
             this.$store.commit("setSelectedShip", null);
+        },
+
+        // Format values based on unit type or date format
+        formatValue(key, value) {
+            if (this.shipDetails[key]?.isDate) {
+                return value ? new Date(value).toLocaleString() : "-";
+            }
+            if (this.shipDetails[key]?.unit) {
+                return `${value} ${this.shipDetails[key].unit}`;
+            }
+            return value;
+        },
+
+        // Center the map on the selected ship
+        centerOnMap() {
+            //Emit the centerOnMap event with the ship data
+            this.$emit("centerMapOnShip", this.data);
         },
     },
 };
@@ -208,14 +172,6 @@ export default {
     top: 0;
     z-index: 1;
     color: white;
-}
-
-table tbody * {
-    font-family: "Roboto Mono", monospace !important;
-}
-
-table tbody td:first-child {
-    width: 40%;
 }
 
 .flag {

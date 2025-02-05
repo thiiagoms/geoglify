@@ -1,7 +1,7 @@
 <template>
     <div id="map"></div>
     <ShipLayer :mapInstance="map" v-if="mapIsReady" />
-    <ShipDetails :ship="selectedShip"/>
+    <ShipDetails :ship="selectedShip" @centerMapOnShip="centerMapOnShip" />
 </template>
 
 <script>
@@ -110,11 +110,14 @@ export default {
         },
 
         // Center the map on the ship
-        centerMapOnShip(position) {
-            
-            let geojson = JSON.parse(position.geojson);
-            
-            if (geojson && geojson.coordinates && geojson.coordinates.length === 2) {
+        centerMapOnShip(ship) {
+            let geojson = JSON.parse(ship.geojson);
+
+            if (
+                geojson &&
+                geojson.coordinates &&
+                geojson.coordinates.length === 2
+            ) {
                 const [longitude, latitude] = geojson.coordinates;
                 this.map.setCenter([longitude, latitude]);
                 this.map.setZoom(17);
