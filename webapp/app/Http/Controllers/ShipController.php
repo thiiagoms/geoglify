@@ -10,6 +10,39 @@ use Inertia\Inertia;
 
 class ShipController extends Controller
 {
+
+    /**
+     * Show the Livemap with all ships, and a filtered ship by IMO or MMSI
+     *
+     * @param string|null $imo
+     * @param string|null $mmsi
+     * @return \Inertia\Response
+     */
+    public function index($imo = null, $mmsi = null)
+    {
+        // Capture parameters directly from the route
+        $imo = request()->route('imo');   // Explicitly capture the 'imo' parameter from the route
+        $mmsi = request()->route('mmsi'); // Explicitly capture the 'mmsi' parameter from the route
+
+        // Query to get all ships
+        $ships = ShipLatestPositionView::all();
+
+        // If IMO or MMSI is provided, filter by IMO or MMSI
+        if ($imo) {
+            $ship = ShipLatestPositionView::where('imo', $imo)->first();
+        } elseif ($mmsi) {
+            $ship = ShipLatestPositionView::where('mmsi', $mmsi)->first();
+        } else {
+            $ship = null;
+        }
+
+        // Return data to the frontend
+        return Inertia::render('Livemap', [
+            'ships' => $ships,
+            'ship' => $ship,
+        ]);
+    }
+
     /**
      * Store incoming ship data in batches and dispatch job.
      *
@@ -28,76 +61,6 @@ class ShipController extends Controller
         ProcessShipDataBatch::dispatch($data);
 
         return response()->json(['message' => 'Batch processing started'], 202);
-    }
-
-    /**
-     * Returns a list of all ships in real-time view.
-     */
-    public function all()
-    {
-        return response()->json(ShipLatestPositionView::all());
-    }
-
-    /**
-     * Shows the Livemap with the ship's coordinates based on IMO.
-     *
-     * @param string $imo
-     * @return \Inertia\Response
-     */
-    public function showByImo($imo)
-    {
-        // Search for the ship by IMO
-        $ship = Ship::where('imo', $imo)->first();
-
-        // If the ship is not found, redirect or return an error message
-        if (!$ship) {
-            return redirect('/')->with('error', 'IMO not found.');
-        }
-
-        // Search for the position of the ship in real-time
-        $realtimePosition = ShipLatestPositionView::where('mmsi', $ship->mmsi)->first();
-
-        // If the real-time position is not found, redirect or return an error message
-        if (!$realtimePosition) {
-            return redirect('/')->with('error', 'Real-time position not found.');
-        }
-
-        // Pass the data to the dashboard
-        return Inertia::render('Livemap', [
-            'ship' => $ship,
-            'realtimePosition' => $realtimePosition,
-        ]);
-    }
-
-    /**
-     * Show the Livemap with the ship's coordinates based on MMSI.
-     *
-     * @param string $mmsi
-     * @return \Inertia\Response
-     */
-    public function showByMmsi($mmsi)
-    {
-        // Search for the ship by MMSI
-        $ship = Ship::where('mmsi', $mmsi)->first();
-
-        // If the ship is not found, redirect or return an error message
-        if (!$ship) {
-            return redirect('/')->with('error', 'MMSI not found.');
-        }
-
-        // Search for the ship's real-time position by MMSI
-        $realtimePosition = ShipLatestPositionView::where('mmsi', $mmsi)->first();
-
-        // If the ship or its real-time position is not found, redirect or return an error message
-        if (!$realtimePosition) {
-            return redirect('/')->with('error', 'MMSI not found.');
-        }
-
-        // Pass the data to the dashboard
-        return Inertia::render('Livemap', [
-            'ship' => $ship,
-            'realtimePosition' => $realtimePosition,
-        ]);
     }
 
     /**

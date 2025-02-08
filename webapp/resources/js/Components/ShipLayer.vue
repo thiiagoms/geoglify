@@ -10,7 +10,7 @@ import ShipHelper from "@/Helpers/ShipHelper";
 import store from "@/store";
 
 export default {
-    props: ["mapInstance"],
+    props: ["mapInstance", "data"],
 
     data() {
         return {
@@ -28,14 +28,12 @@ export default {
         window.Echo.channel("realtime_ships").listen(
             "ShipPositionUpdated",
             (data) => {
+                console.log("Real-time ship position update:", data.length);
                 data.forEach((ship) => {
                     store.dispatch("addOrUpdateShip", ship);
                 });
             }
         );
-
-        // Start the update loop
-        this.updateLoop();
 
         // Monitor user interactions with the map
         this.mapInstance.on("movestart", () => {
@@ -177,17 +175,14 @@ export default {
 
         async fetchShips() {
             try {
-                // Fetch ship data from the API
-                const response = await fetch("/api/ships/realtime/all");
-                const data = await response.json();
-
                 // Add or update ships in the store
-                data.forEach((ship) => {
+                this.data.forEach((ship) => {
                     store.dispatch("addOrUpdateShip", ship);
                 });
 
                 // Update the ship source on the map
-                this.updateSource();
+                this.updateLoop();
+                
             } catch (error) {
                 console.error("API Error:", error);
             }
@@ -215,7 +210,7 @@ export default {
             }
 
             // Remove ships that have not been updated in the last two hours
-            store.dispatch("removeInactiveShips", 120000 * 60 * 1000);
+            //store.dispatch("removeInactiveShips", 120000 * 60 * 1000);
 
             // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());

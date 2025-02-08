@@ -1,6 +1,6 @@
 <template>
     <div id="map"></div>
-    <ShipLayer :mapInstance="map" v-if="mapIsReady" />
+    <ShipLayer :mapInstance="map" :data="ships" v-if="mapIsReady" />
     <ShipDetails :ship="selectedShip" @centerMapOnShip="centerMapOnShip" />
 </template>
 
@@ -38,6 +38,7 @@ export default {
     },
 
     props: {
+        ships: Array, // Array of ship objects
         ship: Object, // Ship object
         realtimePosition: Object, // Real-time position object
     },
@@ -111,7 +112,13 @@ export default {
 
         // Center the map on the ship
         centerMapOnShip(ship) {
-            let geojson = JSON.parse(ship.geojson);
+            //find the ship with the same mmsi
+            const selectedShip = this.ships.find((s) => s.mmsi === ship.mmsi);
+            
+            if (!selectedShip) return;
+
+            // Get the ship's geojson
+            const geojson = JSON.parse(selectedShip.geojson);
 
             if (
                 geojson &&
