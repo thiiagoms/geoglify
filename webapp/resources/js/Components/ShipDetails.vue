@@ -216,6 +216,12 @@ export default {
                     replace: true, // Substitui a entrada no histórico
                     preserveState: true, // Mantém o estado da página atual
                 });
+            } else {
+                // Use Inertia to visit the new URL
+                this.$inertia.visit("/", {
+                    replace: true, // Substitui a entrada no histórico
+                    preserveState: true, // Mantém o estado da página atual
+                });
             }
         },
     },
