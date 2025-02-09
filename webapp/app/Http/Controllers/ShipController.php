@@ -78,31 +78,15 @@ class ShipController extends Controller
      */
     public function search(Request $request)
     {
-        // Define pagination parameters
-        $text = trim($request->input('text', '') ?? '');
-        $perPage = (int)$request->input('per_page', 5); // Default to 5 items per page
-        $page = (int)$request->input('page', 1); // Default to the first page
+        $text = trim($request->input('text', '*') ?? '*'); // Captura o texto de busca
+        $perPage = (int)$request->input('per_page', 5); // Quantidade de itens por página
 
-        // Perform the search using Laravel Scout
         if ($text === '' || $text === 'null') {
-            // If no search text, return all ships with pagination
-            $realtimeShips = ShipLatestPositionView::search('*')->paginate($perPage, 'page', $page);
-        } else {
-            // If search text is provided, use Scout to search
-            $realtimeShips = ShipLatestPositionView::search($text)->paginate($perPage, 'page', $page);
+            $text = '*';
         }
 
-        // Customize the response to include the current page explicitly
-        $response = [
-            'current_page' => $realtimeShips->currentPage(), // Current page
-            'data' => $realtimeShips->items(), // Paginated data
-            'per_page' => $realtimeShips->perPage(), // Items per page
-            'total' => $realtimeShips->total(), // Total items
-            'last_page' => $realtimeShips->lastPage(), // Last page
-            'next_page_url' => $realtimeShips->nextPageUrl(), // URL for the next page
-            'prev_page_url' => $realtimeShips->previousPageUrl(), // URL for the previous page
-        ];
+        $realtimeShips = ShipLatestPositionView::search($text)->paginate($perPage);
 
-        return response()->json($response);
+        return response()->json($realtimeShips);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\{InteractsWithQueue, SerializesModels};
 use Illuminate\Support\Collection;
+use App\Models\ShipLatestPositionView;
 
 class ProcessShipDataBatch implements ShouldQueue
 {
@@ -47,6 +48,10 @@ class ProcessShipDataBatch implements ShouldQueue
             $this->updateOrCreateShip($shipData, $cargoType);
             $this->updateOrCreateRealtimePosition($shipData, $geojson);
             $this->createHistoricalPosition($shipData, $geojson);
+            
+            // Force Searchable trait to update the index
+            ShipLatestPositionView::where('mmsi', $shipData['mmsi'])->searchable();
+            
         } catch (\Exception $e) {
             // Loga o erro ou notifica em caso de falha
             \Log::error("Error processing ship data: " . $e->getMessage(), $shipData);
