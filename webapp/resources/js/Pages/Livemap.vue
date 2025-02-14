@@ -12,7 +12,11 @@
             />
         </template>
 
-        <Map :ship="ship" :realtimePosition="realtimePosition"></Map>
+        <Map
+            :ships="ships"
+            :ship="ship"
+            :realtimePosition="realtimePosition"
+        ></Map>
     </DashboardLayout>
 </template>
 
@@ -28,6 +32,7 @@ export default {
         Head,
     },
     props: {
+        ships: Array,
         ship: Object,
         realtimePosition: Object,
     },

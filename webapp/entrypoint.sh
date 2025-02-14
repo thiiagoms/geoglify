@@ -78,6 +78,9 @@ composer dump-autoload --optimize
 # Route cache
 php artisan route:cache
 
+# Flush the data in the Typesense search engine
+php artisan scout:flush "App\Models\ShipLatestPositionView"
+
 # Import the data into the Typesense search engine
 php artisan scout:import "App\Models\ShipLatestPositionView"
 

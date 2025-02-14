@@ -9,62 +9,38 @@ class ShipLatestPositionView extends Model
 {
     use Searchable;
 
+    // Define that this model maps to a view (not a physical table)
     protected $table = 'ships_latest_positions_view';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'id',
-        'mmsi',
-        'name',
-        'callsign',
-        'imo',
-        'updated_at',
-        'created_at',
-        'cargo_name',
-        'eta',
-        'destination',
-        'country_iso_code',
-        'country_name',
-    ];
+    // No need to define fillable attributes for a read-only view
+    protected $guarded = [];
 
     /**
-     * Get the index name for the model.
-     *
-     * @return string
+     * Get the name of the index associated with the model.
      */
-    public function searchableAs()
+    public function searchableAs(): string
     {
-        return 'ships_index';
+        return 'ship_latest_position_view_index';
     }
 
     /**
-     * Get the indexable data array for the model.
+     * Get the array of searchable data for the model.
      *
      * @return array<string, mixed>
      */
     public function toSearchableArray()
     {
         return [
-            // Cast id to string and turn created_at into an int32 timestamp
-            // in order to maintain compatibility with the Typesense index definition below
             'id' => (string) $this->id,
             'mmsi' => (string) $this->mmsi,
+            'imo' => (string) $this->imo,
             'name' => (string) $this->name,
             'callsign' => (string) $this->callsign,
-            'imo' => (string) $this->imo,
-            'cargo_name' => (string) $this->cargo_name,
             'destination' => (string) $this->destination,
-            'country_iso_code' => (string) $this->country_iso_code,
+            'cargo_type_name' => (string) $this->cargo_type_name,
+            'cargo_category_name' => (string) $this->cargo_category_name,
             'country_name' => (string) $this->country_name,
-
-            // Use the UNIX timestamp for Typesense integration
-            // https://typesense.org/docs/26.0/api/collections.html#indexing-dates
-            'created_at' => $this->created_at->timestamp,
-            'updated_at' => $this->updated_at->timestamp,
+            'country_iso_code' => (string) $this->country_iso_code,
         ];
     }
 }

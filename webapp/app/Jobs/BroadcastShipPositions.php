@@ -16,11 +16,10 @@ class BroadcastShipPositions implements ShouldQueue
 
     public function handle()
     {
-        ShipLatestPositionView::chunk(100, function ($chunk) {
+        // Processing ships in chunks of 100
+        ShipLatestPositionView::chunk(200, function ($chunk) {
+            // Broadcasting the chunk of data after mapping
             broadcast(new ShipPositionUpdated($chunk->toArray()));
         });
-        
-        // Mark the view as searchable
-        //ShipLatestPositionView::whereNull('mmsi')->searchable();
     }
 }

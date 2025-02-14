@@ -1,6 +1,15 @@
 DROP VIEW IF EXISTS ships_latest_positions_view;
 
 CREATE OR REPLACE VIEW ships_latest_positions_view AS
+WITH latest_positions AS (
+    SELECT DISTINCT ON (mmsi) mmsi, updated_at, geojson, geom, eta, destination, cog, sog, hdg, last_updated
+    FROM ship_realtime_positions
+    WHERE geojson IS NOT NULL
+      AND geojson::jsonb @> '{"type": "Point", "coordinates": [0, 0]}' = false
+      AND geojson::jsonb @> '{"type": "Point", "coordinates": [null, null]}' = false
+      AND updated_at > NOW() - INTERVAL '2 hours'
+    ORDER BY mmsi, updated_at DESC
+)
 SELECT 
     LEFT(ships.mmsi::text, 3) AS country_code,
     ships.id,
@@ -18,35 +27,20 @@ SELECT
     cargo_categories.color AS cargo_category_color,
     cargo_categories.priority AS cargo_category_priority,
     ships.draught,
-    ship_realtime_positions.cog,
-    ship_realtime_positions.sog,
-    ship_realtime_positions.hdg,
-    ship_realtime_positions.last_updated,
-    ship_realtime_positions.eta,
-    ship_realtime_positions.destination,
-    ship_realtime_positions.geojson,
-    ship_realtime_positions.geom,
-    ship_realtime_positions.created_at,
-    ship_realtime_positions.updated_at,
+    lp.cog,
+    lp.sog,
+    lp.hdg,
+    lp.last_updated,
+    lp.eta,
+    lp.destination,
+    lp.geojson,
+    lp.geom,
+    lp.updated_at AS position_updated_at,
     countries.iso_code AS country_iso_code,
     countries.name AS country_name
 FROM ships
-INNER JOIN (
-    SELECT DISTINCT ON (mmsi) *
-    FROM ship_realtime_positions
-    ORDER BY mmsi, updated_at DESC
-) AS ship_realtime_positions
-    ON ships.mmsi = ship_realtime_positions.mmsi
-LEFT JOIN cargo_types
-    ON ships.cargo_type_id = cargo_types.id
-LEFT JOIN cargo_categories
-    ON cargo_types.cargo_category_id = cargo_categories.id
-LEFT JOIN countries
-    ON LEFT(ships.mmsi::text, 3) = countries.number::text
-WHERE 
-    ship_realtime_positions.updated_at IS NOT NULL
-    AND (
-        ship_realtime_positions.geojson IS NOT NULL
-        AND ship_realtime_positions.geojson::jsonb @> '{"type": "Point", "coordinates": [0, 0]}' = false
-        AND ship_realtime_positions.geojson::jsonb @> '{"type": "Point", "coordinates": [null, null]}' = false
-    );
+INNER JOIN latest_positions lp ON ships.mmsi = lp.mmsi
+LEFT JOIN cargo_types ON ships.cargo_type_id = cargo_types.id
+LEFT JOIN cargo_categories ON cargo_types.cargo_category_id = cargo_categories.id
+LEFT JOIN countries ON LEFT(ships.mmsi::text, 3) = countries.number::text
+WHERE ships.mmsi IS NOT NULL;

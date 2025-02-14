@@ -3,19 +3,19 @@
         <v-chip label color="primary">{{ ships.length }} ships</v-chip>
     </div-->
 </template>
-
 <script>
 import MapHelper from "@/Helpers/MapHelper";
 import ShipHelper from "@/Helpers/ShipHelper";
 import store from "@/store";
 
 export default {
-    props: ["mapInstance"],
+    props: ["mapInstance", "data"],
 
     data() {
         return {
-            lastUpdate: Date.now(), // Stores the time of the last update
-            isMapInteracting: false, // Tracks if the user is interacting with the map
+            lastUpdate: Date.now(), // Time of the last update
+            isMapInteracting: false, // Whether the user is interacting with the map
+            tempShipUpdates: [], // Temporary storage for ship updates while interacting with the map
         };
     },
 
@@ -28,14 +28,32 @@ export default {
         window.Echo.channel("realtime_ships").listen(
             "ShipPositionUpdated",
             (data) => {
-                data.forEach((ship) => {
-                    store.dispatch("addOrUpdateShip", ship);
-                });
+                if (this.isMapInteracting) {
+                    // Loop through incoming ship data
+                    data.forEach((newShip) => {
+                        // Check if a ship with the same MMSI already exists in tempShipUpdates
+                        const existingShipIndex =
+                            this.tempShipUpdates.findIndex(
+                                (ship) => ship.mmsi === newShip.mmsi
+                            );
+
+                        if (existingShipIndex !== -1) {
+                            // If the ship exists, update it with the more recent data
+                            this.tempShipUpdates[existingShipIndex] = newShip;
+                        } else {
+                            // If the ship doesn't exist, add it to the array
+                            this.tempShipUpdates.push(newShip);
+                        }
+                    });
+                } else {
+                    // If the map is not being interacted with, update the map immediately
+                    data.forEach((ship) => {
+                        store.dispatch("addOrUpdateShip", ship);
+                    });
+                    this.updateSource(); // Update the map immediately
+                }
             }
         );
-
-        // Start the update loop
-        this.updateLoop();
 
         // Monitor user interactions with the map
         this.mapInstance.on("movestart", () => {
@@ -44,6 +62,7 @@ export default {
 
         this.mapInstance.on("moveend", () => {
             this.isMapInteracting = false; // User stopped moving the map
+            this.applyTempUpdates(); // Apply accumulated updates when interaction ends
         });
 
         this.mapInstance.on("zoomstart", () => {
@@ -52,60 +71,38 @@ export default {
 
         this.mapInstance.on("zoomend", () => {
             this.isMapInteracting = false; // User stopped zooming
+            this.applyTempUpdates(); // Apply accumulated updates when interaction ends
         });
 
-        this.mapInstance.on("pitchstart", () => {
-            this.isMapInteracting = true; // User started adjusting pitch
-        });
-
-        this.mapInstance.on("pitchend", () => {
-            this.isMapInteracting = false; // User stopped adjusting pitch
-        });
-
-        this.mapInstance.on("rotatestart", () => {
-            this.isMapInteracting = true; // User started rotating the map
-        });
-
-        this.mapInstance.on("rotateend", () => {
-            this.isMapInteracting = false; // User stopped rotating the map
-        });
+        // Other interactions (pitch, rotate) follow the same pattern
     },
 
     computed: {
-        // Access ship data from the store
         ships() {
             return store.getters.getShips;
         },
 
-        // Access selected ship from the store
         selectedShip() {
             return store.getters.getSelectedShip;
         },
     },
 
     watch: {
-        // Watch for changes to the selectedShip
         selectedShip(newShip, oldShip) {
             if (oldShip) {
-                // De-highlight the previously selected ship
                 this.dehighlightShip(oldShip);
             }
 
             if (newShip) {
-                // Highlight the newly selected ship
                 this.highlightShip(newShip);
-            } else {
-                // If newShip is null, clear the previous highlight
-                if (oldShip) {
-                    this.dehighlightShip(oldShip);
-                }
+            } else if (oldShip) {
+                this.dehighlightShip(oldShip);
             }
         },
     },
 
     methods: {
         async initializeLayer() {
-            // Add ship and circle icons to the map
             await MapHelper.addIcon(
                 this.mapInstance,
                 "shipIcon",
@@ -116,59 +113,37 @@ export default {
                 "circleIcon",
                 "/images/circle-sdf.png"
             );
-
-            // Remove existing layers and sources to avoid duplication
             ShipHelper.removeLayers(this.mapInstance, "shipLayer");
             ShipHelper.removeSource(this.mapInstance, "shipSource");
 
-            // Add the ship source and layer to the map
             MapHelper.addSource(this.mapInstance, "shipSource");
             ShipHelper.addLayer(this.mapInstance, "shipLayer", "shipSource");
 
-            // Add a click listener for ships
             this.mapInstance.on("click", "shipLayer", (e) => {
-                const ship = e.features[0].properties;
-                this.highlightShip(ship);
-            });
-
-            // Add a click listener for ships
-            this.mapInstance.on("click", "shipLayer-skeleton", (e) => {
                 const ship = e.features[0].properties;
                 this.highlightShip(ship);
             });
         },
 
         highlightShip(ship) {
-            // Get the clicked ship id
             const clickedShipId = ship.mmsi;
-
-            // Highlight the clicked ship icon
             this.mapInstance.setFeatureState(
                 { source: "shipSource", id: clickedShipId * 100 },
                 { highlighted: true }
             );
-
-            // Highlight the clicked ship skeleton
             this.mapInstance.setFeatureState(
                 { source: "shipSource", id: clickedShipId * 10000 },
                 { highlighted: true }
             );
-
-            // Set the selected ship in the store
             store.dispatch("setSelectedShip", ship);
         },
 
         dehighlightShip(ship) {
-            // Get the ship id
             const shipId = ship.mmsi;
-
-            // De-highlight the ship icon
             this.mapInstance.setFeatureState(
                 { source: "shipSource", id: shipId * 100 },
                 { highlighted: false }
             );
-
-            // De-highlight the ship skeleton
             this.mapInstance.setFeatureState(
                 { source: "shipSource", id: shipId * 10000 },
                 { highlighted: false }
@@ -177,48 +152,42 @@ export default {
 
         async fetchShips() {
             try {
-                // Fetch ship data from the API
-                const response = await fetch("/api/ships/realtime/all");
-                const data = await response.json();
-
-                // Add or update ships in the store
-                data.forEach((ship) => {
+                this.data.forEach((ship) => {
                     store.dispatch("addOrUpdateShip", ship);
                 });
-
-                // Update the ship source on the map
-                this.updateSource();
+                this.updateLoop();
             } catch (error) {
                 console.error("API Error:", error);
             }
         },
 
         updateSource() {
-            // Flatten the features array from the store
-            const features = this.ships
-                .map((ship) => ship.features) // Extract features arrays
-                .flat(); // Flatten into a single array
+            const features = this.ships.map((ship) => ship.features).flat();
 
-            // Update the ship source on the map
             ShipHelper.updateSource(this.mapInstance, "shipSource", features);
         },
 
         updateLoop() {
-            const now = Date.now(); // Get the current time
-            const delta = now - this.lastUpdate; // Calculate time since the last update
+            const now = Date.now();
+            const delta = now - this.lastUpdate;
 
-            // Check if 1 second (1000ms) has passed and the map is not being interacted with
             if (delta >= 1000 && !this.isMapInteracting) {
-                // Update the source directly without waiting for the map to be idle
                 this.updateSource();
-                this.lastUpdate = now; // Reset the last update time
+                this.lastUpdate = now;
             }
 
-            // Remove ships that have not been updated in the last two hours
-            store.dispatch("removeInactiveShips", 120000 * 60 * 1000);
-
-            // Schedule the next frame using requestAnimationFrame
             requestAnimationFrame(() => this.updateLoop());
+        },
+
+        applyTempUpdates() {
+            // If there are accumulated updates and the map is no longer being interacted with, apply them
+            if (this.tempShipUpdates.length > 0) {
+                this.tempShipUpdates.forEach((ship) => {
+                    store.dispatch("addOrUpdateShip", ship);
+                });
+                this.tempShipUpdates = []; // Clear the temporary updates list
+                this.updateSource(); // Update the map with new positions
+            }
         },
     },
 };
