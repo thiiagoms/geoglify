@@ -16,7 +16,7 @@ services:
             - node-modules-data:/var/www/webapp/node_modules
             - vendor-data:/var/www/webapp/vendor
         healthcheck:
-            test: ['CMD', 'curl', '-f', 'http://webapp/']
+            test: [ 'CMD', 'curl', '-f', 'http://webapp/' ]
             interval: 30s
             timeout: 10s
             retries: 3
